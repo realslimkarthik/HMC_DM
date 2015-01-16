@@ -105,8 +105,7 @@ def count(jsonfilename):
 def makeCSVfromTwitterJSON(jsonfilename, errorfile=None, overwrite=False):
     if (not os.path.isfile(jsonfilename+".csv")) or overwrite:
         jsonfile = open(jsonfilename,"r")
-                 
-        csvfile = open(jsonfilename+".csv","w")
+        csvfile = open(jsonfilename.split('.')[0] +".csv","w")
         print jsonfilename+".csv"
         #Will track all variables seen across all tweets in the file
         mykeys = []
@@ -151,15 +150,16 @@ def makeCSVfromTwitterJSON(jsonfilename, errorfile=None, overwrite=False):
                         #Create an empty dictionary
                         a = {}
                         #Send the JSON dictionary, the empty dictionary, and the list of all keys
-                        extract(tweet,a,mykeys)
+                        extract(tweet, a, mykeys)
                         #Add the output dictionary to the list
                         tweetList.append(a)
         #Print the number of tweets processed
-
+        jsonfile.close()
         printCSV(csvfile,tweetList,mykeys)
         print "Finished... ", csvfile
+        csvfile.close()
         
-# ========================================================================================       
+# ========================================================================================
 #Recursive function to process the input dictionary
 def extract(DictIn, Dictout, allkeys, nestedKey=""):
     #If DictIn is a dictionary
