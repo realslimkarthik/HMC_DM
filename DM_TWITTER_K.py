@@ -4,6 +4,7 @@ import sys
 import os
 import random
 import re
+import ConfigParser
 
 #Creates the CSV
 #makeCSVfromTwitterJSON("H:\\Data\\RawData\\GNIP\\TwitterHistoricalPowertrack\\August-2014-Master\\legacy.json")
@@ -119,7 +120,7 @@ def CSVfromTwitterJSON(jsonfilename, csvfile, errorfile=None, overwrite=False):
         print "Finished... ", csvfile
 
 # ========================================================================================
-#Function that finds out if a key needs to be kept or thrown away
+# Function that finds out if a key needs to be kept or thrown away
 def keyInBlacklist(key, nested):
     for i in blacklist:
         if nested == False:
@@ -132,7 +133,8 @@ def keyInBlacklist(key, nested):
     return False
 
 # ========================================================================================
-#Function that finds out if a key needs to be kept or thrown away
+# Function that finds keys that we think should be thrown away
+# To show the group that what we're throwing away isn't really required
 def keyNotInBlacklist(key, nested):
     # print key
     for i in blacklist:
@@ -232,14 +234,18 @@ def printCSV(csvfile,resultList,mykeys):
 # ========================================================================================
 
 blacklist = ["generator", "provider", "verified", "indices", "id$", "sizes", "display_url", "media_url$", "^url$", "url_https$", "inReplyTo"]
-path = "H:\Data\RawData\GNIP\TwitterHistoricalPowertrack\\"
+#path = "H:\Data\RawData\GNIP\TwitterHistoricalPowertrack\\"
 
 if __name__ == "__main__":
 
+    conf = ConfigParser.ConfigParser()
+    conf.read("config.cfg")
     # TO DO: Write another loop to go over all of the months
     current_month = "August-2014-Master"
+    src_path = conf.get("twitter", "prod_src_path").format(current_month)
     fileList = os.listdir(path + current_month)
-    csvfile = open("H:\Data\RawData_csv\GNIP\TwitterHistoricalPowertrack\\" + current_month + "\\" + current_month + ".csv", 'w')
+    #csvfile = open("H:\Data\RawData_csv\GNIP\TwitterHistoricalPowertrack\\" + current_month + "\\" + current_month + ".csv", 'w')
+    csvfile = open(conf.get("twitter", "prod_dest_path").format(current_month), 'w')
     for i in fileList:
         print path + "August-2014-Master\\" + i
         CSVfromTwitterJSON(path + "August-2014-Master\\" + i, csvfile)
