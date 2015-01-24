@@ -6,56 +6,56 @@ import random
 import re
 import Tkinter as tk
 import ConfigParser
+from pymongo import MongoClient
 
 # ========================================================================================
-def flattenJSON(jsonFileName):
-    jsonFile = open(jsonFileName, 'r')
-    for line in jsonFile:
-        myline = string.strip(line)
-        if myline != "":
-            #For each tweet in the file, decode the weird characters without complaining
-            myline = myline.decode("utf-8", "ignore")
-            #print myline
-            #Remove new lines from within the tweet
-            mylines = myline.split("\\n")
-            if len(mylines) > 1:
-                myline = " ".join(mylines)
-            #Remove carriage returns from within the tweet
-            mylines = myline.split("\\r")
-            if len(mylines) > 1:
-                myline = " ".join(mylines)
-            #Remove problematic \s
-            mylines = myline.split("\\\\")
-            if len(mylines) > 1:
-                myline = " ".join(mylines)
-            mylines = myline.split("\\ ")
-            if len(mylines) > 1:
-                myline = " ".join(mylines)
-            #Create a dictionary using the JSON processor
-            tweet = json.loads(myline)
-            print tweet
-            # try:
-            #     tweet = json.loads(myline)
-            # except ValueError as e:
-            #     if errorfile != None:
-            #         write(jsonfilename+"\n"+myline+"\n"+e+"\n\n")
-            #     else:
-            #         print myline
-            #         print e
-            # else:
-            #     #Find the summary count
-            #     print "columbus"
-            #     if "Replay Request Completed" in myline:
-            #         print tweet['info']['activity_count']
-    #return flattenedJSON
-            # print tweet
-    jsonFile.close()
-
-# ========================================================================================
-def countHashtags(jsonFileName):
-    jsonFile = open(jsonFileName, 'r')
-    for line in jsonFile:
-        tweet = json.loads()
+#Recursive function to process the input dictionary
+# def extract(DictIn, Dictout, allkeys, nestedKey=""):
+#     #If DictIn is a dictionary
+#     if isinstance(DictIn, dict):
+#         #Process each entry
+#         for key, value in DictIn.iteritems():
+#             #If nested, prepend the previous variables
+#             if nestedKey != "":
+#                 mykey = nestedKey+"_"+key
+#             else:
+#                 mykey = key
+#             if isinstance(value, dict): # If value itself is dictionary
+#                 extract(value, Dictout, allkeys, nestedKey=mykey)
+#             elif isinstance(value, list): # If value itself is list
+#                 extract(value, Dictout, allkeys, nestedKey=mykey)
+#             else: #Value is just a string
+#                 if removeKey(mykey) == "":
+#                     return
+#                 if isinstance(value, unicode) or isinstance(value, str):
+#                     value = value.strip()
+#                 if value != "":
+#                     #If this is a new variable, add it to the list
+#                     if not mykey in allkeys:
+#                         allkeys.append(mykey)
+#                     #Add it to the output dictionary
+#                     if not mykey in Dictout:
+#                         Dictout[mykey] = value
+#                     else:
+#                         Dictout[mykey] = unicode(Dictout[mykey])+"; "+unicode(value)
+#     #If DictIn is a list, call extract on each member of the list
+#     elif isinstance(DictIn, list):
+#         for value in DictIn:
+#             extract(value,Dictout,allkeys,nestedKey=nestedKey)
+#     #If DictIn is a string, check if it is a new variable and then add to dictionary
+#     else:
+#         if isinstance(DictIn, unicode) or isinstance(DictIn, str):
+#             if removeKey(DictIn) == "":
+#                 return
+#             if isinstance(DictIn, unicode) or isinstance(DictIn, str):
+#                 DictIn = DictIn.strip()
+#             if DictIn != "":
+#                 if not nestedKey in allkeys:
+#                     allkeys.append(nestedKey)
+#                 if not nestedKey in Dictout:
+#                     Dictout[nestedKey] = DictIn
+#                 else:
+#                     Dictout[nestedKey] = unicode(Dictout[nestedKey])+"; "+unicode(DictIn)
 
 # ========================================================================================
 # Populates the CSV. Gets CSV's file handle from caller
@@ -112,22 +112,10 @@ def CSVfromTwitterJSON(jsonfilename, csvfile, errorfile=None, overwrite=False):
                         tweetList.append(a)
         #Print the number of tweets processed
         jsonfile.close()
-        printCSV(csvfile, tweetList, mykeys)
+        populateMongo(tweetList, mykeys, csvfile)
+        # printCSV(csvfile, tweetList, mykeys)
         csvfile.write('\n')
         print "Finished... ", csvfile
-
-# ========================================================================================
-# Function that finds out if a key needs to be kept or thrown away
-def keyInBlacklist(key, nested):
-    for i in blacklist:
-        if nested == False:
-            outerMatch = re.search('^id$', key)
-            if outerMatch != None:
-                continue
-        match = re.search(i + '$', key)
-        if match != None:
-            return True
-    return False
 
 # ========================================================================================
 def removeKey(key):
@@ -137,11 +125,6 @@ def removeKey(key):
         return conf.get("fields", key)
     else:
         return ""
-    # try:
-    #     return conf.get("fields", key)
-    # except ConfigParser.NoOptionError:
-    #     pass
-    #    return ""
 
 # ========================================================================================
 #Recursive function to process the input dictionary
@@ -160,19 +143,27 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
             elif isinstance(value, list): # If value itself is list
                 extract(value, Dictout, allkeys, nestedKey=mykey)
             else: #Value is just a string
-                if removeKey(mykey) == "":
+                newKey = removeKey(mykey)
+                if newKey == "":
                     return
                 if isinstance(value, unicode) or isinstance(value, str):
                     value = value.strip()
                 if value != "":
                     #If this is a new variable, add it to the list
-                    if not mykey in allkeys:
-                        allkeys.append(mykey)
+                    if not newKey in allkeys:
+                        allkeys.append(newKey)
                     #Add it to the output dictionary
-                    if not mykey in Dictout:
-                        Dictout[mykey] = value
+                    if not newKey in Dictout:
+                        Dictout[newKey] = value
                     else:
-                        Dictout[mykey] = unicode(Dictout[mykey])+"; "+unicode(value)
+                        Dictout[newKey] = unicode(Dictout[newKey])+"; "+unicode(value)
+                else:
+                    print "hello"
+                    if not newKey in allkeys:
+                        allkeys.append(newKey)
+                    if not newKey in Dictout:
+                        Dictout[newKey] = ""
+
     #If DictIn is a list, call extract on each member of the list
     elif isinstance(DictIn, list):
         for value in DictIn:
@@ -180,64 +171,55 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
     #If DictIn is a string, check if it is a new variable and then add to dictionary
     else:
         if isinstance(DictIn, unicode) or isinstance(DictIn, str):
-            if removeKey(DictIn) == "":
+            newKey = removeKey(DictIn)
+            if newKey == "":
                 return
             if isinstance(DictIn, unicode) or isinstance(DictIn, str):
                 DictIn = DictIn.strip()
             if DictIn != "":
-                if not nestedKey in allkeys:
-                    allkeys.append(nestedKey)
-                if not nestedKey in Dictout:
-                    Dictout[nestedKey] = DictIn
+                if not newKey in allkeys:
+                    allkeys.append(newKey)
+                if not newKey in Dictout:
+                    Dictout[newKey] = DictIn
                 else:
-                    Dictout[nestedKey] = unicode(Dictout[nestedKey])+"; "+unicode(DictIn)
+                    Dictout[newKey] = unicode(Dictout[newKey])+"; "+unicode(DictIn)
+            else:
+                print "hello"
+                if not newKey in allkeys:
+                    allkeys.append(newKey)
+                if not newKey in Dictout:
+                    Dictout[newKey] = ""
 
 # ========================================================================================
-#Recursive function to process the input dictionary
-# def extract(DictIn, Dictout, allkeys, nestedKey=""):
-#     #If DictIn is a dictionary
-#     if isinstance(DictIn, dict):
-#         #Process each entry
-#         for key, value in DictIn.iteritems():
-#             #If nested, prepend the previous variables
-#             if keyInBlacklist(key, True if nestedKey != "" else False):
-#             # if keyNotInBlacklist(key, True if nestedKey != "" else False):
-#                 continue
-#             if nestedKey != "":
-#                 mykey = nestedKey+"_"+key
-#             else:
-#                 mykey = key
-#             if isinstance(value, dict): # If value itself is dictionary
-#                 extract(value, Dictout, allkeys, nestedKey=mykey)
-#             elif isinstance(value, list): # If value itself is list
-#                 extract(value, Dictout, allkeys, nestedKey=mykey)
-#             else: #Value is just a string
-#                 if isinstance(value, unicode) or isinstance(value, str):
-#                     value = value.strip()
-#                 if value != "":
-#                     #If this is a new variable, add it to the list
-#                     if not mykey in allkeys:
-#                         allkeys.append(mykey)
-#                     #Add it to the output dictionary
-#                     if not mykey in Dictout:
-#                         Dictout[mykey] = value
-#                     else:
-#                         Dictout[mykey] = unicode(Dictout[mykey])+"; "+unicode(value)
-#     #If DictIn is a list, call extract on each member of the list
-#     elif isinstance(DictIn, list):
-#         for value in DictIn:
-#             extract(value,Dictout,allkeys,nestedKey=nestedKey)
-#     #If DictIn is a string, check if it is a new variable and then add to dictionary
-#     else:
-#         if isinstance(DictIn, unicode) or isinstance(DictIn, str):
-#             DictIn = DictIn.strip()
-#         if DictIn != "":
-#             if not nestedKey in allkeys:
-#                 allkeys.append(nestedKey)
-#             if not nestedKey in Dictout:
-#                 Dictout[nestedKey] = DictIn
-#             else:
-#                 Dictout[nestedKey] = unicode(Dictout[nestedKey])+"; "+unicode(DictIn)
+def populateMongo(inputJson, mykeys, outputFile):
+    # host = conf.get("mongo", "host")
+    # port = conf.get("mongo", "port")
+    host = conf.get("mongo_dev", "host")
+    port = int(conf.get("mongo_dev", "port"))
+    client = MongoClient(host, port)
+    db = client.twitter
+    collection = db['smoking']
+    ruleConf = ConfigParser.ConfigParser()
+    ruleConf.read("rules.cfg")
+    print len(mykeys)
+    for i in inputJson:
+        print len(i)
+        # print i
+        # collection.insert(json.dumps(i, ensure_ascii=False).encode("utf-8"))
+        i['_id'] = "tw" + i['Idpost'].split(':')[2]
+        i['matchingrulesvalue'] = i['matchingrulesvalue'].split(';')
+        # i['entitieshtagstext'] = i['entitieshtagstext'].split(';')
+        i['ruleIndex'] = []
+        for j in i['matchingrulesvalue']:
+            i['ruleIndex'].append(ruleConf.get("rules", j))
+        i.pop('Idpost', None)
+        print i['ruleIndex']
+        collection.insert(i)
+    # print inputJson
+    # outputFile.write(json.dumps(inputJson, ensure_ascii=False).encode('utf-8'))
+
+
+
 # ========================================================================================
 
 def printCSV(csvfile,resultList,mykeys):
@@ -250,21 +232,23 @@ def printCSV(csvfile,resultList,mykeys):
     csvfile.write(f + delim)
     print mykeys
     for item in mykeys:
-        if item == "id":
+        if item == "Idpost":
             continue
-        f = conf.get("fields", item)
-        csvfile.write(f + delim)
+        if item == "postedTime":
+            csvfile.write("postedTime" + delim + "Year" + delim + "Month" + delim + "Day" + delim + "Time" + delim)
+            continue
+        csvfile.write(item + delim)
 
     #For each tweet in the list, print the variables in the correct order (or "" if not present)
     for result in resultList:
         csvfile.write("\n")
-        myid = result['id']
+        myid = result['Idpost']
         myids = myid.split(":")
         csvfile.write("\"tw"+myids[2]+"\""+delim)
         counter = 0
         for item in mykeys:
             if item in result:
-                if item == "id":
+                if item == "Idpost":
                     continue
                 if item == "postedTime":
                     csvfile.write(result[item] + delim)
@@ -276,8 +260,8 @@ def printCSV(csvfile,resultList,mykeys):
                     time = pTime[1].split('.')[0]
                     csvfile.write(time+delim)
                     continue
-                if item  == "actor_utcOffset":
-                    if result['actor_utcOffset'] is None:
+                if item  == "actorutcOffset":
+                    if result['actorutcOffset'] is None:
                         csvfile.write('.' + delim)
                         continue
                 entry = result[item]
@@ -312,8 +296,6 @@ if __name__ == "__main__":
     # outputFile = "dummy_sample_dropped.csv"
     inputFile = "Sample of tw2014-09-02.json"
     outputFile = "Sample of tw2014-09-02.csv"
-    # inputFile = "CrossDay_Sample.json"
-    # outputFile = "CrossDay_Sample.csv"
     choice = sys.argv[1]
     conf = ConfigParser.ConfigParser()
     conf.read("config.cfg")
