@@ -1,0 +1,521 @@
+[rules]
+from:projectfilter
+from:quitlinems
+from:quitnowindiana
+from:quitwithusla
+from:raze_wv
+from:showmesmokefree
+from:smkfreems
+from:smokefreegov
+from:smokefreeoregon
+from:smokefreeteen
+from:smokefreetexas
+from:smokefreewomen
+from:theexteam
+from:tobaccofreeca
+from:tobaccofreefla
+from:tobaccofreehi
+from:tobaccofreekids
+from:tobaccontrolbmj
+from:toxicbutts
+from:truthorange
+from:truthpr
+from:uwctri
+from:venomocity
+from:wvquitline
+quitline OR quitlines
+quitnow
+secondhand smoke
+smoke  (ban OR bans)
+smokefree
+smoke-free
+smokefree.gov
+tobaccofree
+tobacco-free
+Antismoking chicagoquits
+Antismoking chidont
+#secondhandsmoke
+cdc_cancer OR from:cdc_cancer OR to:cdc_cancer OR retweets_of:cdc_cancer OR @cdc_cancer
+cdc_ehealth OR from:cdc_ehealth OR to:cdc_ehealth OR retweets_of:cdc_ehealth OR @cdc_ehealth
+cdcconsejos
+cdcgov OR from:cdcgov OR to:cdcgov OR retweets_of:cdcgov OR @cdcgov
+cdctips
+cdctobaccofree OR from:cdctobaccofree OR to:cdctobaccofree OR retweets_of:cdctobaccofree OR @cdctobaccofree
+drfriedencdc OR from:drfriedencdc OR to:drfriedencdc OR retweets_of:drfriedencdc OR @drfriedencdc
+fdatobacco OR from:fdatobacco OR to:fdatobacco OR retweets_of:fdatobacco OR @fdatobacco
+nciprevention OR from:nciprevention OR to:nciprevention OR retweets_of:nciprevention OR @nciprevention
+sgregina OR from:sgregina OR to:sgregina OR retweets_of:sgregina OR @sgregina
+smokefreegov OR from:smokefreegov OR to:smokefreegov OR retweets_of:smokefreegov OR @smokefreegov
+smokefreeteen OR from:smokefreeteen OR to:smokefreeteen OR retweets_of:smokefreeteen OR @smokefreeteen
+smokefreewomen OR from:smokefreewomen OR to:smokefreewomen OR retweets_of:smokefreewomen OR @smokefreewomen
+champix
+chantix
+habitrol
+nicoderm
+nicorette
+nicotrol
+varenicline
+Copenhagen, snuff
+Grizzly, snuff
+Kodiak, snuff
+Levi Garret
+(pack OR packs OR packed)  a lip
+packing a lip
+Skoal
+snus
+\"lil cigar\" OR \"lil cigars\"
+cigarillo OR cigarillos
+hoodwrap OR hoodwraps
+littlecigar OR littlecigars
+rello OR rellos
+splitarillo OR splitarillos
+#cdcchat
+#cdctips
+#notobacco
+#quitnow
+#wntd
+2ndhandsmoke
+antismoking
+anti-smoking
+antitobacco
+anti-tobacco
+bigtobacco
+quitline
+quitnow
+smokeban OR smokebans
+smokefree
+smokingban OR smokingbans
+tobaccofree
+FDAtobacco
+@abovetheinfuenc
+@alabamaquitnow
+@anr_smokefree
+@behind_thesmoke
+@breathend
+@cdcgov
+@cdctobaccofree
+@clearthesmoke
+@clearwaymn
+@countertobacco
+@drfriedencdc
+@forgettobacco
+@hmcollab
+@its_a_waste
+@legacyforhealth
+@ltcp
+@lungassociation
+@makesmknghistry
+@no_limits
+@nysmokefree
+@projectfilter
+@quitlinems
+@quitnowindiana
+@quitwithusla
+@raze_wv
+@showmesmokefree
+@smkfreems
+@smokefreegov
+@smokefreeoregon
+@smokefreeteen
+@smokefreetexas
+@smokefreewomen
+@theexteam
+@tobaccofreeca
+@tobaccofreefla
+@tobaccofreehi
+@tobaccofreekids
+@tobaccontrolbmj
+@toxicbutts
+@truthorange
+@truthpr
+@uwctri
+@venomocity
+@wvquitline
+2ndhand smoke
+from:abovetheinfuenc
+from:alabamaquitnow
+from:anr_smokefree
+from:behind_thesmoke
+from:breathend
+from:cdcgov
+from:cdctobaccofree
+from:clearthesmoke
+from:clearwaymn
+from:countertobacco
+from:drfriedencdc
+from:fdatobacco
+from:forgettobacco
+from:hmcollab
+from:its_a_waste
+from:legacyforhealth
+from:ltcp
+from:lungassociation
+from:makesmknghistry
+from:no_limits
+from:nysmokefree
+whitecat OR whitecats
+whiteowl OR whiteowls
+Cohibas
+\"garcia y vega\" OR \"garcia y vegas\"
+stogie
+stogies
+stogs
+stogy
+\"cancer stick\" OR \"cancer sticks\"
+\"pack of squares\"
+\"smoking squares\"
+contains:\" cig\" lang:en
+contains:\"cig \" lang:en
+contains:cigar
+contains:cigg
+contains:cigs
+boges
+Dorals
+kreteks
+Marlboros
+Newports
+pack of blacks
+Pall Malls
+Turkish Royals
+Turkish Silvers
+\" e cig\" OR \" e cigs\"
+\" e hooka\" OR \" e hookas\"
+\" e hookah\" OR \" e hookahs\"
+\" e huka\" OR \" e hukas\"
+\" e hukah\" OR \" e hukahs\"
+\"Aqua Vapor\"
+\"Choice 7's\"
+\"e-cigarette\" OR \"e-cigarettes\" OR \"e-cig\" OR \"e-cigs\"
+\"First Vapor\"
+\"joye 510\"
+\"Njoy King\"
+\"south beach smoke\"
+\"v2 cig\" OR \"v2 cigs\" OR v2cig OR v2cigs
+\"Vapor eGo\" lang:en
+Easyvaping
+contains:ecig
+contains:e-cig
+ecigssavelives
+eshisha OR eshishas
+euecigban
+greensmoke OR greensmokes
+usaecigban
+(esmoke OR esmokes) lang:en
+@blucigs
+212Smoke
+3domecigs.com
+Addison Vaporizer OR Addison Vaporizers
+AltSmoke
+Bedford Slims
+blu and contains:cig
+cartomizer
+cartomizers
+CIG2O
+Cig-E lang:en
+Cignot
+Cigotine
+e hookah OR e hookahs
+e.cig OR e.cigs
+Easy Vape OR Easy Vapes
+easyvape OR easyvapes
+Easyvaping
+eCigLife
+eCig-Products
+eCigWizard
+EdSylver lang:en
+ego-c lang:en
+ego-t
+ehookah OR ehookahs OR e-hookah OR e-hookahs
+ejuice OR ejuices OR e-juice OR e-juices
+electric blunt OR electric blunts
+electric contains:cig
+electronic hookah OR electronic hookahs
+electronic contains:cig
+ElectronicStix
+eliquid OR eliquids OR e-liquid OR e-liquids
+Eliquidplanet
+E-Lites
+EonSmoke
+ePuffer lang:en
+eshish
+e-smoke OR e-smokes
+e-Smokey Treats
+E-Swisher
+E-Swishers
+e-zig lang:en
+Freshcig
+from:AEMSA1 OR to:AEMSA1 OR @AEMSA1
+from:blucigs OR to:blucigs OR @blucigs
+from:CASAAmedia OR to:CASAAmedia OR @CASAAmedia
+from:ECCA_U_K OR to:ECCA_U_K OR @ECCA_U_K
+from:ecigaretteforum OR to:ecigaretteforum OR @ecigaretteforum
+from:ecigcheck OR to:ecigcheck OR @ecigcheck
+from:ecigmedia OR to:ecigmedia OR @ecigmedia
+from:ecigreviewed OR to:ecigreviewed OR @ecigreviewed
+from:ECITA_EU OR to:ECITA_EU OR @ECITA_EU
+from:electronicvape OR to:electronicvape OR @electronicvape
+from:fincigs OR to:fincigs OR @fincigs
+from:greensmokecig OR to:greensmokecig OR @greensmokecig
+from:GregTHR OR to:GregTHR OR @GregTHR
+from:halocigs OR to:halocigs OR @halocigs
+from:logicecig OR to:logicecig OR @logicecig
+from:madvapes OR to:madvapes OR @madvapes
+from:mistereliquid OR to:mistereliquid OR @mistereliquid
+from:prosmoke OR to:prosmoke OR @prosmoke
+from:sfataorg OR to:sfataorg OR @sfataorg
+from:southbeachsmoke OR to:southbeachsmoke OR @southbeachsmoke
+from:SpinfuelDotCom OR to:SpinfuelDotCom OR @SpinfuelDotCom
+from:SteveVape OR to:SteveVape OR @SteveVape
+from:TheVapeBook OR to:TheVapeBook OR @TheVapeBook
+from:v2cigs OR to:v2cigs OR @v2cigs
+from:VapeSquad OR to:VapeSquad OR @VapeSquad
+from:vaporcast OR to:vaporcast OR @vaporcast
+from:vaporcouture OR to:vaporcouture OR @vaporcouture
+from:volcanoecigs OR to:volcanoecigs OR @volcanoecigs
+from:wccigs OR to:wccigs OR @wccigs
+Gamucci
+Greensmartliving
+Highbrow Vapor
+InnoVapor
+Intellicig
+Jacvapour
+LeCig OR LeCigs
+Liberro
+logicecig OR logicecigs
+Madvapes
+Modern Vapor
+Mount Baker Vapor
+Nashville Vapor
+Neatcigs
+njoy contains:cig
+Nucig
+OKC Vapes
+PiffCig
+Pink Spot Vapors
+Prime Vapor
+PrimeVapor
+Progressigs
+provape
+PureSmoke
+Skycig
+SmartSmoke
+smartsmoker
+Smokeless Image
+Smokeless Selects
+smokepass
+SoBe Vaporizers
+Steam Lite
+TABlites
+Tececig
+The House of Vapor
+Vapage lang:en
+Vape Dojo
+Vape King
+Vape Revolution
+Vape Store
+Vapefest
+vaper OR vapers OR vaping
+vapestick
+VapeWorld.com Store
+vapin
+Vapor Couture
+Vapor Envy
+Vapor King
+Vapor Shark
+Vapor4Life
+VaporBurst
+vaporchase
+VaporCorp
+VaporGenie
+Vaporium
+VaporKing
+VaporNine
+Vapouriz
+Vapure
+Vulcan Vape
+Zeecigs
+zerocig OR zerocigs
+Vaporizer OR Vaporizers
+iDrink
+Rawr Vapor
+Vape Dudes
+Innokin
+Kangertech
+Nzonic
+Smoktech
+eVic
+Ploom
+VaporZone
+\"Vapor 4 Life\"
+Cigavette
+Tankomizer
+tobacco
+tobaco
+baccy
+nicotine
+argileh OR argilehs
+hooka OR hookas
+hookah OR hookahs
+contains:hubblybubbl
+huka OR hukas
+hukah OR hukahs
+narghile OR narghiles
+nargila OR nargilas
+sheesha
+shisha
+Cannastick
+Daborizer
+Hippytrips
+Magic Flight Launch Box
+American Spirits
+Rizzla
+rizzlas
+@adhpio
+@alaska_dhss
+@alpublichealth
+@azdhs
+@capublichealth
+@cdphe
+@cdphepsd
+@cohealth
+@ctdph
+@delaware_dhss
+@delawarehealth
+@dhswi
+@dohdc
+@gadch
+@healthnygov
+@healthvermont
+@healthyfla
+@healthylivingmo
+@higov_health
+@iapublichealth
+@idhw
+@idph
+@inpublichealth
+@kdhe
+@kshealth
+@kyhealthalerts
+@marylanddhmh
+@massdph
+@mepublichealth
+@mihealth
+@mnhealth
+@msdh
+@myvdh
+@nebraskadhhs
+@nhdhhspio
+@njdhss
+@njpublichealth
+@nkyhealth
+@nmdoh
+@ohdeptofhealth
+@rihealth
+@scdhec
+@stayhealthyla
+@tndeptofhealth
+@utahdepofhealth
+@wa_deptofhealth
+@choucair
+American Legacy Foundation
+\"Legacy for Health\"
+\"big tobacco\"
+contains:cig selfie
+contains:cig contains:spokes
+\"end big tobacco\"
+\"end smoking\"
+\"end tobacco\"
+\"finish big tobacco\"
+\"finish it\"
+\"finish tobacco\"
+\"smokefree generation\"
+\"smoking photo\"
+contains:smok selfie
+contains:smok contains:spokes
+\"teen smoking\"
+thetruth.com
+tobacco selfie
+tobaccofree selfie
+tobacco contains:spokes
+\"tobaccofree generation\"
+Truth (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)
+\"Truth Orange\"
+unpaid contains:spokes
+contains:celeb (contains:cig OR tobacco OR contains:smok)
+\"x your profile\"
+smoke contains:monster
+\"erase and replace\"
+contains:Cig  (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)
+contains:Smok  (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)
+Nicotine  (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)
+contains:Tobacco  (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)
+quit  (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)
+cigaretteselfie
+cigaretteselfies
+cigselfie
+cigselfies
+endtobacco
+finishit
+finishtobacco
+smokefreegeneration
+smokefreeselfie
+smokefreeselfies
+smokingselfie
+smokingselfies
+tobaccoselfie
+tobaccoselfies
+tobaccofreeselfie
+tobaccofreeselfies
+contains:tobaccospokes
+truth  (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)
+truthorange
+contains: unpaidspokes
+contains: unpaidtobaccospokes
+bigtobacco
+tobaccoindustry
+smokingphoto
+smoking generation
+nomoresmoking
+quitsmoking
+xyourprofile
+xurprofile
+smokemonster
+smokemonsters
+truthxvans
+vans (contains:cig OR contains:smok OR tobacco OR truth)
+vansxtruth
+unpaid
+eraseandreplace
+(liam hemsworth OR liamhemsworth OR hemsworth) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"kate moss\" OR katemoss) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"lindsay lohan\" OR lindsaylohan) (contains:cig OR tobacco OR (contains:smok -weed))
+rihanna (contains:cig OR tobacco OR (contains:smok -weed))
+(\"robert pattinson\" OR robertpattinson) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"zayn malik\" OR zaynmalik OR #zaynmalik OR zayn) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"chris brown\" OR chrisbrown) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"kristen stewart\" OR kristenstewart) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"orlando bloom\" OR orlandobloom) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"johnny depp\" OR johnnydepp) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"kiefer sutherland\" OR keifersutherland OR realKeifer) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"lady gaga\" OR ladygaga OR #ladygaga OR gaga) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"emma roberts\" OR emmaroberts OR robertsEmma) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"kirsten dunst\" OR kirstendunst) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"jake gyllenhaal\" OR jakegyllenhaal) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"lily allen\" OR lilyallen) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"alessandra ambrosio\" OR alessandraambrosio OR #alessandraambrosio OR angelalessandra) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"mary kate olsen\" OR marykateolsen OR #marykateolsen OR immkolsen) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"ashley olsen\" OR ashleyolsen OR #ashleyolsen OR sisterolsen) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"Lana Del Rey\" OR lanadelrey) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"Kid Cudi\" OR kidcudi) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"Jemima Kirke\" OR jemimakirke) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"Ellie Goulding\" OR elliegoulding) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"Sienna Miller\" OR siennamiller) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"Parker Kelli Marie\" OR parkerlovespie) (contains:cig OR tobacco OR (contains:smok -weed))
+(\"Alexa Chung\" OR alexachung OR alexa_chung) (contains:cig OR tobacco OR (contains:smok -weed))
+@legacyforhealth
+@truthorange
+contains:smok generation
+finish_it
+@VANS_66
+cig
+ecig
