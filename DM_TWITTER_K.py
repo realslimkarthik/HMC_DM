@@ -9,55 +9,6 @@ import ConfigParser
 from pymongo import MongoClient
 
 # ========================================================================================
-#Recursive function to process the input dictionary
-# def extract(DictIn, Dictout, allkeys, nestedKey=""):
-#     #If DictIn is a dictionary
-#     if isinstance(DictIn, dict):
-#         #Process each entry
-#         for key, value in DictIn.iteritems():
-#             #If nested, prepend the previous variables
-#             if nestedKey != "":
-#                 mykey = nestedKey+"_"+key
-#             else:
-#                 mykey = key
-#             if isinstance(value, dict): # If value itself is dictionary
-#                 extract(value, Dictout, allkeys, nestedKey=mykey)
-#             elif isinstance(value, list): # If value itself is list
-#                 extract(value, Dictout, allkeys, nestedKey=mykey)
-#             else: #Value is just a string
-#                 if removeKey(mykey) == "":
-#                     return
-#                 if isinstance(value, unicode) or isinstance(value, str):
-#                     value = value.strip()
-#                 if value != "":
-#                     #If this is a new variable, add it to the list
-#                     if not mykey in allkeys:
-#                         allkeys.append(mykey)
-#                     #Add it to the output dictionary
-#                     if not mykey in Dictout:
-#                         Dictout[mykey] = value
-#                     else:
-#                         Dictout[mykey] = unicode(Dictout[mykey])+"; "+unicode(value)
-#     #If DictIn is a list, call extract on each member of the list
-#     elif isinstance(DictIn, list):
-#         for value in DictIn:
-#             extract(value,Dictout,allkeys,nestedKey=nestedKey)
-#     #If DictIn is a string, check if it is a new variable and then add to dictionary
-#     else:
-#         if isinstance(DictIn, unicode) or isinstance(DictIn, str):
-#             if removeKey(DictIn) == "":
-#                 return
-#             if isinstance(DictIn, unicode) or isinstance(DictIn, str):
-#                 DictIn = DictIn.strip()
-#             if DictIn != "":
-#                 if not nestedKey in allkeys:
-#                     allkeys.append(nestedKey)
-#                 if not nestedKey in Dictout:
-#                     Dictout[nestedKey] = DictIn
-#                 else:
-#                     Dictout[nestedKey] = unicode(Dictout[nestedKey])+"; "+unicode(DictIn)
-
-# ========================================================================================
 # Populates the CSV. Gets CSV's file handle from caller
 def CSVfromTwitterJSON(jsonfilename, csvfile, errorfile=None, overwrite=False):
     if (not os.path.isfile(jsonfilename+".csv")) or overwrite:
@@ -208,10 +159,24 @@ def populateMongo(inputJson, mykeys, outputFile):
         for (key, val) in fieldConf.items('fields'):
             if val not in i:
                 i[val] = ''
+
         print len(i)
+
+        # Renaming id field
         i['_id'] = "tw" + i['Idpost'].split(':')[2]
+
+        # packing the matchingrulesvalue field into an array
         i['matchingrulesvalue'] = i['matchingrulesvalue'].split(';')
+
+        #packing the entitieshtagstext field into an array
         i['entitieshtagstext'] = i['entitieshtagstext'].split(';')
+
+        # Changing postedTime into ISO format for processing using JavaScript in Mongo
+        dateStr = ''.join(' ' + d for d in i['postedTime'].split('T')).strip()
+        timeStruct = time.strptime(dateStr, "%Y-%m-%d %H:%M:%S")
+        dateObj = datetime.fromtimestamp(time.mktime(timeStruct))
+        i['postedTime'] = dateObj
+        
         i['ruleIndex'] = []
         for j in i['matchingrulesvalue']:
             i['ruleIndex'].append(ruleConf.get("rules", j))
