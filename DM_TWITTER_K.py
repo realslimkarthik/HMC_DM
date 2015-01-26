@@ -18,7 +18,7 @@ def CSVfromTwitterJSON(jsonfilename, csvfile, errorfile=None, overwrite=False):
         #Will contain a dictionary for each processed tweet
         tweetList = []
         conf = ConfigParser.ConfigParser()
-        conf.read("fields.txt")
+        conf.read("fields.cfg")
         
         for line in jsonfile:
             myline = string.strip(line)
@@ -71,7 +71,7 @@ def CSVfromTwitterJSON(jsonfilename, csvfile, errorfile=None, overwrite=False):
 # ========================================================================================
 def removeKey(key):
     conf = ConfigParser.ConfigParser()
-    conf.read("fields.txt")
+    conf.read("fields.cfg")
     if conf.has_option("fields", key):
         return conf.get("fields", key)
     else:
@@ -148,7 +148,7 @@ def populateMongo(inputJson, mykeys, outputFile):
     host = conf.get("mongo_dev", "host")
     port = int(conf.get("mongo_dev", "port"))
     fieldConf = ConfigParser.ConfigParser()
-    fieldConf.read("fields.txt")
+    fieldConf.read("fields.cfg")
     client = MongoClient(host, port)
     db = client.twitter
     collection = db['smoking']
@@ -180,7 +180,7 @@ def populateMongo(inputJson, mykeys, outputFile):
         i['ruleIndex'] = []
         for j in i['matchingrulesvalue']:
             i['ruleIndex'].append(ruleConf.get("rules", j))
-        i.pop('Idpost', None)
+        i.pop('Idpost', None)   
         print i['ruleIndex']
         collection.insert(i.encode('utf-8'))
     # outputFile.write(json.dumps(inputJson, ensure_ascii=False).encode('utf-8'))
@@ -192,7 +192,7 @@ def printCSV(csvfile,resultList,mykeys):
     delim = ","
     print "Number of tweets processed: ", len(resultList)
     conf = ConfigParser.ConfigParser()
-    conf.read("fields.txt")
+    conf.read("fields.cfg")
 
     f = conf.get("fields", "id")
     csvfile.write(f + delim)
