@@ -319,7 +319,7 @@ if __name__ == "__main__":
             
             for j in fileList:
                 fileName = j.split('-')
-                if len(j) == 3:
+                if len(fileName) == 3:
                     logging.info("Started uploading " + j)
                     if int(fileName[-1]) < 6:
                         CSVfromTwitterJSON(src_path + j, "August_1", "mongo")
