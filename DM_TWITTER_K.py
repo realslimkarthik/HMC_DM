@@ -111,7 +111,6 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
                     else:
                         Dictout[newKey] = unicode(Dictout[newKey])+"; "+unicode(value)
                 else:
-                    print "hello"
                     if not newKey in allkeys:
                         allkeys.append(newKey)
                     if not newKey in Dictout:
@@ -137,7 +136,6 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
                 else:
                     Dictout[newKey] = unicode(Dictout[newKey])+"; "+unicode(DictIn)
             else:
-                print "hello"
                 if not newKey in allkeys:
                     allkeys.append(newKey)
                 if not newKey in Dictout:
@@ -318,20 +316,20 @@ if __name__ == "__main__":
             fileList = os.listdir(src_path)
             
             for j in fileList:
-                fileName = j.split('-')
-                if len(fileName) == 3:
+                if len(j.split('-')) == 3:
+                    fileName = j.split('-')[-1].split('.')[0]
                     logging.info("Started uploading " + j)
-                    if int(fileName[-1]) < 6:
+                    if int(fileName) < 6:
                         CSVfromTwitterJSON(src_path + j, "August_1", "mongo")
-                    elif int(fileName[-1]) < 11:
+                    elif int(fileName) < 11:
                         CSVfromTwitterJSON(src_path + j, "August_2", "mongo")
-                    elif int(fileName[-1]) < 16:
+                    elif int(fileName) < 16:
                         CSVfromTwitterJSON(src_path + j, "August_3", "mongo")
-                    elif int(fileName[-1]) < 21:
+                    elif int(fileName) < 21:
                         CSVfromTwitterJSON(src_path + j, "August_4", "mongo")
-                    elif int(fileName[-1]) < 26:
+                    elif int(fileName) < 26:
                         CSVfromTwitterJSON(src_path + j, "August_5", "mongo")
-                    elif int(fileName[-1]) < 32:
+                    elif int(fileName) < 32:
                         CSVfromTwitterJSON(src_path + j, "August_6", "mongo")
 
 
