@@ -9,6 +9,7 @@ import ConfigParser
 from pymongo import MongoClient
 from datetime import datetime
 import time
+import logging
 
 # ========================================================================================
 # Populates the CSV. Gets CSV's file handle from caller
@@ -174,6 +175,7 @@ def populateMongo(inputJson, mykeys, collName, DorP):
 
         # Renaming id field
         i['_id'] = "tw" + i['Idpost'].split(':')[2]
+        logging.info('Started posting collection with id: ' + i['_id'])
         i.pop('Idpost', None)
         # packing the matchingrulesvalue field into an array
         i['matchingrulesvalue'] = i['matchingrulesvalue'].split(';')
@@ -308,6 +310,7 @@ if __name__ == "__main__":
         csvFiles = [dest_path + dayDict[day]['fileNames'][0]]
 
     elif choice =="prod":
+        logging.basicConfig(filename='prodUpload.log', level=logging.DEBUG)
         op = sys.argv[2]
         if op == "transform":
             current_month = "August-2014-Master"
@@ -317,6 +320,7 @@ if __name__ == "__main__":
             for j in fileList:
                 fileName = j.split('-')
                 if len(j) == 3:
+                    logging.info("Started uploading " + j)
                     if int(fileName[-1]) < 6:
                         CSVfromTwitterJSON(src_path + j, "August_1", 'mongo')
                     elif int(fileName[-1]) < 11:
