@@ -7,10 +7,12 @@ import re
 import Tkinter as tk
 import ConfigParser
 from pymongo import MongoClient
+from datetime import datetime
+import time
 
 # ========================================================================================
 # Populates the CSV. Gets CSV's file handle from caller
-def CSVfromTwitterJSON(jsonfilename, csvfile, errorfile=None, overwrite=False):
+def CSVfromTwitterJSON(jsonfilename, collName, DorP, errorfile=None, overwrite=False):
     if (not os.path.isfile(jsonfilename+".csv")) or overwrite:
         jsonfile = open(jsonfilename, 'r')
         #Will track all variables seen across all tweets in the file
@@ -63,10 +65,9 @@ def CSVfromTwitterJSON(jsonfilename, csvfile, errorfile=None, overwrite=False):
                         tweetList.append(a)
         #Print the number of tweets processed
         jsonfile.close()
-        populateMongo(tweetList, mykeys, csvfile)
+        populateMongo(tweetList, mykeys, collName, DorP)
         # printCSV(csvfile, tweetList, mykeys)
-        csvfile.write('\n')
-        print "Finished... ", csvfile
+        print "Finished populating collection ", collName
 
 # ========================================================================================
 def removeKey(key):
@@ -142,47 +143,62 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
                     Dictout[newKey] = ""
 
 # ========================================================================================
-def populateMongo(inputJson, mykeys, outputFile):
-    # host = conf.get("mongo", "host")
-    # port = conf.get("mongo", "port")
-    host = conf.get("mongo_dev", "host")
-    port = int(conf.get("mongo_dev", "port"))
+def populateMongo(inputJson, mykeys, collName, DorP):
+    host = conf.get(DorP, "host")
+    port = int(conf.get(DorP, "port"))
     fieldConf = ConfigParser.ConfigParser()
     fieldConf.read("fields.cfg")
     client = MongoClient(host, port)
     db = client.twitter
-    collection = db['smoking']
-    ruleConf = ConfigParser.ConfigParser()
-    ruleConf.read("rules.cfg")
+    collection = db[collName]
+    # ruleConf = ConfigParser.ConfigParser()
+    # ruleConf.read("rules.cfg")
+    r = open("rules.json")
+    ruleConf = json.loads(r.read())
+    mongoConf = ConfigParser.ConfigParser()
+    mongoConf.read("fieldsToMongo.cfg")
+
     print len(mykeys)
     for i in inputJson:
-        for (key, val) in fieldConf.items('fields'):
-            if val not in i:
-                i[val] = ''
+        if 'entitieshtagstext' not in i:
+            i['entitieshtagstext'] = []
+        else:
+            #packing the entitieshtagstext field into an array
+            i['entitieshtagstext'] = i['entitieshtagstext'].split(';')
+
+        # for (key, val) in fieldConf.items('fields'):
+        #     if val not in i:
+        #         i[val] = ''
 
         print len(i)
 
         # Renaming id field
         i['_id'] = "tw" + i['Idpost'].split(':')[2]
-
+        i.pop('Idpost', None)
         # packing the matchingrulesvalue field into an array
         i['matchingrulesvalue'] = i['matchingrulesvalue'].split(';')
 
-        #packing the entitieshtagstext field into an array
-        i['entitieshtagstext'] = i['entitieshtagstext'].split(';')
-
         # Changing postedTime into ISO format for processing using JavaScript in Mongo
-        dateStr = ''.join(' ' + d for d in i['postedTime'].split('T')).strip()
+        dateFrag = i['postedTime'].split('T')
+        dateFrag[1] = dateFrag[1].split('.')[0]
+        dateStr = ''.join(' ' + d for d in dateFrag).strip()
         timeStruct = time.strptime(dateStr, "%Y-%m-%d %H:%M:%S")
         dateObj = datetime.fromtimestamp(time.mktime(timeStruct))
         i['postedTime'] = dateObj
         
         i['ruleIndex'] = []
         for j in i['matchingrulesvalue']:
-            i['ruleIndex'].append(ruleConf.get("rules", j))
-        i.pop('Idpost', None)   
+            i['ruleIndex'].append(ruleConf[j.strip()])
+            # i['ruleIndex'].append(ruleConf.get("rules", j))
+            # print ruleConf.get("rules", j)
+        i.pop('matchingrulesvalue', None)   
         print i['ruleIndex']
-        collection.insert(i.encode('utf-8'))
+        mongoRecord = {}
+        for (key, val) in i.iteritems():
+            newKey = mongoConf.get('fields', key)
+            mongoRecord[newKey] = val
+
+        collection.insert(mongoRecord)
     # outputFile.write(json.dumps(inputJson, ensure_ascii=False).encode('utf-8'))
 
 
@@ -258,10 +274,10 @@ blacklist = ["generator", "provider", "verified", "indices", "id$", "sizes", "di
 
 if __name__ == "__main__":
 
-    # inputFile = "dummy_sample.json"
-    # outputFile = "dummy_sample_dropped.csv"
-    inputFile = "Sample of tw2014-09-02.json"
-    outputFile = "Sample of tw2014-09-02.csv"
+    inputFile = "dummy_sample.json"
+    outputFile = "dummy_sample_dropped.csv"
+    # inputFile = "Sample of tw2014-09-02.json"
+    # outputFile = "Sample of tw2014-09-02.csv"
     choice = sys.argv[1]
     conf = ConfigParser.ConfigParser()
     conf.read("config.cfg")
@@ -270,7 +286,7 @@ if __name__ == "__main__":
         op = sys.argv[2]
         if op == "transform":
             outF = open(outputFile, 'w')
-            CSVfromTwitterJSON(inputFile, outF)
+            CSVfromTwitterJSON(inputFile, outF, , 'mongo_dev')
             outF.close()
         elif op == "count":
             flattenJSON(inputFile)
@@ -296,35 +312,32 @@ if __name__ == "__main__":
         if op == "transform":
             current_month = "August-2014-Master"
             src_path = conf.get("twitter", "prod_src_path").format(current_month)
-            dest_path = conf.get("twitter", "prod_dest_path").format(current_month)
             fileList = os.listdir(src_path)
-            timeFrame = range(6)[1:]
-            for i in timeFrame:
-                csvfile = open(dest_path + '_' + str(i) + '.csv', 'w')
-
-                for j in fileList:
-                    if j == "byminutes":
-                        continue
-                    if int(j.split('-')[-1].split('.')[0]) == i:
-                        CSVfromTwitterJSON(src_path + j, csvfile)
-                        print j
-                csvfile.close()
-
-            # # TO DO: Write another loop to go over all of the months
-
-            # csvfile1 = open(dest_path + '1-7.csv', 'w')
-            # csvfile2 = open(dest_path + '8-15.csv', 'w')
-            # csvfile3 = open(dest_path + '16-23.csv', 'w')
-            # csvfile4 = open(dest_path + '24-30.csv', 'w')
-            # for i in fileList:
-            #     if int(i.split('-')[-3]) < 8:
-            #         CSVfromTwitterJSON(src_path + i, csvfile1)
-            #     # else:
-            #     #     CSVfromTwitterJSON(src_path + i, csvfile2)
-            # csvfile1.close()
-            # csvfile2.close()
-            # csvfile3.close()
-            # csvfile4.close()
+            
+            for j in fileList:
+                fileName = j.split('-')
+                if len(j) == 3:
+                    if int(fileName[-1]) < 6:
+                        CSVfromTwitterJSON(src_path + j, "August_1", 'mongo')
+                    elif int(fileName[-1]) < 11:
+                        CSVfromTwitterJSON(src_path + j, "August_2", 'mongo')
+                    elif int(fileName[-1]) < 16:
+                        CSVfromTwitterJSON(src_path + j, "August_3", 'mongo')
+                    elif int(fileName[-1]) < 21:
+                        CSVfromTwitterJSON(src_path + j, "August_4", 'mongo')
+                    elif int(fileName[-1]) < 26:
+                        CSVfromTwitterJSON(src_path + j, "August_5", 'mongo')
+                    elif int(fileName[-1]) < 32:
+                        CSVfromTwitterJSON(src_path + j, "August_6", 'mongo')
 
 
-    # TO DO: Write a function that prints only the fields that we want to throw away to show people why we're throwing them away
+            # TO DO: Implement Time Frame based uploading
+
+            # timeFrame = range(6)[1:]
+            # for i in timeFrame:
+
+            #     for j in fileList:
+            #         if len(j.split('-') == 3):
+            #             if int(j.split('-')[-1].split('.')[0]) == i:
+            #                 CSVfromTwitterJSON(src_path + j, csvfile, 'mongo')
+            #                 print j
