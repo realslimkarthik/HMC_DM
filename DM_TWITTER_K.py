@@ -196,6 +196,8 @@ def populateMongo(inputJson, mykeys, outputFile):
     # port = conf.get("mongo", "port")
     host = conf.get("mongo_dev", "host")
     port = int(conf.get("mongo_dev", "port"))
+    fieldConf = ConfigParser.ConfigParser()
+    fieldConf.read("fields.txt")
     client = MongoClient(host, port)
     db = client.twitter
     collection = db['smoking']
@@ -203,21 +205,20 @@ def populateMongo(inputJson, mykeys, outputFile):
     ruleConf.read("rules.cfg")
     print len(mykeys)
     for i in inputJson:
+        for (key, val) in fieldConf.items('fields'):
+            if val not in i:
+                i[val] = ''
         print len(i)
-        # print i
-        # collection.insert(json.dumps(i, ensure_ascii=False).encode("utf-8"))
         i['_id'] = "tw" + i['Idpost'].split(':')[2]
         i['matchingrulesvalue'] = i['matchingrulesvalue'].split(';')
-        # i['entitieshtagstext'] = i['entitieshtagstext'].split(';')
+        i['entitieshtagstext'] = i['entitieshtagstext'].split(';')
         i['ruleIndex'] = []
         for j in i['matchingrulesvalue']:
             i['ruleIndex'].append(ruleConf.get("rules", j))
         i.pop('Idpost', None)
         print i['ruleIndex']
-        collection.insert(i)
-    # print inputJson
+        collection.insert(i.encode('utf-8'))
     # outputFile.write(json.dumps(inputJson, ensure_ascii=False).encode('utf-8'))
-
 
 
 # ========================================================================================
