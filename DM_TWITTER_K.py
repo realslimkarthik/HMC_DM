@@ -288,7 +288,7 @@ if __name__ == "__main__":
         op = sys.argv[2]
         if op == "transform":
             outF = open(outputFile, 'w')
-            CSVfromTwitterJSON(inputFile, outF, , 'mongo_dev')
+            CSVfromTwitterJSON(inputFile, outF, "August_test", "mongo_dev")
             outF.close()
         elif op == "count":
             flattenJSON(inputFile)
@@ -322,17 +322,17 @@ if __name__ == "__main__":
                 if len(j) == 3:
                     logging.info("Started uploading " + j)
                     if int(fileName[-1]) < 6:
-                        CSVfromTwitterJSON(src_path + j, "August_1", 'mongo')
+                        CSVfromTwitterJSON(src_path + j, "August_1", "mongo")
                     elif int(fileName[-1]) < 11:
-                        CSVfromTwitterJSON(src_path + j, "August_2", 'mongo')
+                        CSVfromTwitterJSON(src_path + j, "August_2", "mongo")
                     elif int(fileName[-1]) < 16:
-                        CSVfromTwitterJSON(src_path + j, "August_3", 'mongo')
+                        CSVfromTwitterJSON(src_path + j, "August_3", "mongo")
                     elif int(fileName[-1]) < 21:
-                        CSVfromTwitterJSON(src_path + j, "August_4", 'mongo')
+                        CSVfromTwitterJSON(src_path + j, "August_4", "mongo")
                     elif int(fileName[-1]) < 26:
-                        CSVfromTwitterJSON(src_path + j, "August_5", 'mongo')
+                        CSVfromTwitterJSON(src_path + j, "August_5", "mongo")
                     elif int(fileName[-1]) < 32:
-                        CSVfromTwitterJSON(src_path + j, "August_6", 'mongo')
+                        CSVfromTwitterJSON(src_path + j, "August_6", "mongo")
 
 
             # TO DO: Implement Time Frame based uploading
