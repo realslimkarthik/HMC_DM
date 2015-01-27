@@ -198,7 +198,10 @@ def populateMongo(inputJson, mykeys, collName, DorP):
             newKey = mongoConf.get('fields', key)
             mongoRecord[newKey] = val
 
-        collection.insert(mongoRecord)
+        try:
+            collection.insert(mongoRecord)
+        except KeyError:
+            logging.debug("Duplicate tweet _id=" + i['_id'])
     # outputFile.write(json.dumps(inputJson, ensure_ascii=False).encode('utf-8'))
 
 
@@ -311,8 +314,9 @@ if __name__ == "__main__":
         logging.basicConfig(filename='prodUpload.log', level=logging.DEBUG)
         op = sys.argv[2]
         if op == "transform":
-            current_month = "August-2014-Master"
-            src_path = conf.get("twitter", "prod_src_path").format(current_month)
+            current_month = "August"
+            current_year = "2014"
+            src_path = conf.get("twitter", "prod_src_path").format(current_month + '-' + current_year + '-' + 'Master')
             fileList = os.listdir(src_path)
             
             for j in fileList:
@@ -320,17 +324,17 @@ if __name__ == "__main__":
                     fileName = j.split('-')[-1].split('.')[0]
                     logging.info("Started uploading " + j)
                     if int(fileName) < 6:
-                        CSVfromTwitterJSON(src_path + j, "August_1", "mongo")
+                        CSVfromTwitterJSON(src_path + j, current_month + "_1", "mongo")
                     elif int(fileName) < 11:
-                        CSVfromTwitterJSON(src_path + j, "August_2", "mongo")
+                        CSVfromTwitterJSON(src_path + j, current_month + "_2", "mongo")
                     elif int(fileName) < 16:
-                        CSVfromTwitterJSON(src_path + j, "August_3", "mongo")
+                        CSVfromTwitterJSON(src_path + j, current_month + "_3", "mongo")
                     elif int(fileName) < 21:
-                        CSVfromTwitterJSON(src_path + j, "August_4", "mongo")
+                        CSVfromTwitterJSON(src_path + j, current_month + "_4", "mongo")
                     elif int(fileName) < 26:
-                        CSVfromTwitterJSON(src_path + j, "August_5", "mongo")
+                        CSVfromTwitterJSON(src_path + j, current_month + "_5", "mongo")
                     elif int(fileName) < 32:
-                        CSVfromTwitterJSON(src_path + j, "August_6", "mongo")
+                        CSVfromTwitterJSON(src_path + j, current_month + "_6", "mongo")
 
 
             # TO DO: Implement Time Frame based uploading
