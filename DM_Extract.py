@@ -64,6 +64,7 @@ def printCSV(csvfile, resultList):
 
     #For each tweet in the list, print the variables in the correct order (or "" if not present)
     for result in resultList[0]:
+        # TO DO Add dummy keys to dict for the extra fields created
         for (key, val) in conf.items('fields'):
             if val not in result:
                 result[val] = ''
