@@ -157,7 +157,6 @@ def populateMongo(inputJson, mykeys, collName, DorP):
     mongoConf = ConfigParser.ConfigParser()
     mongoConf.read("fieldsToMongo.cfg")
 
-    print len(mykeys)
     for i in inputJson:
         if 'entitieshtagstext' not in i:
             i['entitieshtagstext'] = []
@@ -169,11 +168,9 @@ def populateMongo(inputJson, mykeys, collName, DorP):
         #     if val not in i:
         #         i[val] = ''
 
-        print len(i)
-
         # Renaming id field
         i['_id'] = "tw" + i['Idpost'].split(':')[2]
-        logging.info('Started posting collection with id: ' + i['_id'])
+        logging.info('Started posting collection with id: ' + i['_id'] + ' into collection ' + collName)
         i.pop('Idpost', None)
         # packing the matchingrulesvalue field into an array
         i['matchingrulesvalue'] = i['matchingrulesvalue'].split(';')
