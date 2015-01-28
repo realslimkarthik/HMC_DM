@@ -164,10 +164,6 @@ def populateMongo(inputJson, mykeys, collName, DorP):
             #packing the entitieshtagstext field into an array
             i['entitieshtagstext'] = i['entitieshtagstext'].split(';')
 
-        # for (key, val) in fieldConf.items('fields'):
-        #     if val not in i:
-        #         i[val] = ''
-
         # Renaming id field
         i['_id'] = "tw" + i['Idpost'].split(':')[2]
         logging.info('Started posting collection with id: ' + i['_id'] + ' into collection ' + collName)
@@ -186,8 +182,6 @@ def populateMongo(inputJson, mykeys, collName, DorP):
         i['ruleIndex'] = []
         for j in i['matchingrulesvalue']:
             i['ruleIndex'].append(ruleConf[j.strip()])
-            # i['ruleIndex'].append(ruleConf.get("rules", j))
-            # print ruleConf.get("rules", j)
         i.pop('matchingrulesvalue', None)   
         print i['ruleIndex']
         mongoRecord = {}
@@ -201,70 +195,8 @@ def populateMongo(inputJson, mykeys, collName, DorP):
             logging.debug("Duplicate tweet _id=" + i['_id'])
     # outputFile.write(json.dumps(inputJson, ensure_ascii=False).encode('utf-8'))
 
-
 # ========================================================================================
 
-def printCSV(csvfile,resultList,mykeys):
-    delim = ","
-    print "Number of tweets processed: ", len(resultList)
-    conf = ConfigParser.ConfigParser()
-    conf.read("fields.cfg")
-
-    f = conf.get("fields", "id")
-    csvfile.write(f + delim)
-    print mykeys
-    for item in mykeys:
-        if item == "Idpost":
-            continue
-        if item == "postedTime":
-            csvfile.write("postedTime" + delim + "Year" + delim + "Month" + delim + "Day" + delim + "Time" + delim)
-            continue
-        csvfile.write(item + delim)
-
-    #For each tweet in the list, print the variables in the correct order (or "" if not present)
-    for result in resultList:
-        csvfile.write("\n")
-        myid = result['Idpost']
-        myids = myid.split(":")
-        csvfile.write("\"tw"+myids[2]+"\""+delim)
-        counter = 0
-        for item in mykeys:
-            if item in result:
-                if item == "Idpost":
-                    continue
-                if item == "postedTime":
-                    csvfile.write(result[item] + delim)
-                    pTime = result[item].split('T')
-                    date = pTime[0].split('-')
-                    csvfile.write(date[1]+delim)
-                    csvfile.write(date[2]+delim)
-                    csvfile.write(date[0]+delim)
-                    time = pTime[1].split('.')[0]
-                    csvfile.write(time+delim)
-                    continue
-                if item  == "actorutcOffset":
-                    if result['actorutcOffset'] is None:
-                        csvfile.write('.' + delim)
-                        continue
-                entry = result[item]
-                if type(entry) == unicode or type(entry) == str:
-                    #entry = unicode(entry, "utf-8", errors="ignore")
-                    entry = entry.strip()
-                    entrys = entry.split(",")
-                    if len(entrys) > 1:
-                        entry = "".join(entrys)
-                    entrys = entry.split("\"")
-                    if len(entrys) > 1:
-                        entry = "-".join(entrys)
-                else:
-                    entry = unicode(entry)
-                #Override to avoid errors for weird characters
-                temp = entry.splitlines()
-                entry = "".join(temp)
-                csvfile.write(entry.encode('ascii','ignore')+delim)
-            else:
-                csvfile.write(delim)
-# ========================================================================================
 def daysInMonth(month):
     return 31 if month in exDays else (28 if month == 'feb' else 30)
 
@@ -311,27 +243,28 @@ if __name__ == "__main__":
         logging.basicConfig(filename='prodUpload.log', level=logging.DEBUG)
         op = sys.argv[2]
         if op == "transform":
-            current_month = "August"
-            current_year = "2014"
+            current_month = sys.argv[3]
+            current_year = sys.argv[4]
+            collName = current_month[0:3] + current_year[2:]
             src_path = conf.get("twitter", "prod_src_path").format(current_month + '-' + current_year + '-' + 'Master')
             fileList = os.listdir(src_path)
-            
+            current_month = current_month[0:2]
             for j in fileList:
                 if len(j.split('-')) == 3:
                     fileName = j.split('-')[-1].split('.')[0]
                     logging.info("Started uploading " + j)
                     if int(fileName) < 6:
-                        CSVfromTwitterJSON(src_path + j, current_month + "_1", "mongo")
+                        CSVfromTwitterJSON(src_path + j, collName + "_1", "mongo")
                     elif int(fileName) < 11:
-                        CSVfromTwitterJSON(src_path + j, current_month + "_2", "mongo")
+                        CSVfromTwitterJSON(src_path + j, collName + "_2", "mongo")
                     elif int(fileName) < 16:
-                        CSVfromTwitterJSON(src_path + j, current_month + "_3", "mongo")
+                        CSVfromTwitterJSON(src_path + j, collName + "_3", "mongo")
                     elif int(fileName) < 21:
-                        CSVfromTwitterJSON(src_path + j, current_month + "_4", "mongo")
+                        CSVfromTwitterJSON(src_path + j, collName + "_4", "mongo")
                     elif int(fileName) < 26:
-                        CSVfromTwitterJSON(src_path + j, current_month + "_5", "mongo")
+                        CSVfromTwitterJSON(src_path + j, collName + "_5", "mongo")
                     elif int(fileName) < 32:
-                        CSVfromTwitterJSON(src_path + j, current_month + "_6", "mongo")
+                        CSVfromTwitterJSON(src_path + j, collName + "_6", "mongo")
 
 
             # TO DO: Implement Time Frame based uploading
