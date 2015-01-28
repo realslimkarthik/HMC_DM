@@ -1,0 +1,3 @@
+Commonly used MongoDB queries:
+
+*Query for getting data after a date: db.August_1.count({'pT': {$gte: new Date('Sep 1, 2014')}})
