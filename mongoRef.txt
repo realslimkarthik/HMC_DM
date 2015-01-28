@@ -1,3 +1,4 @@
 Commonly used MongoDB queries:
 
-*Query for getting data after a date: db.August_1.count({'pT': {$gte: new Date('Sep 1, 2014')}})
+*Query for getting data after a date: db.Aug14_1.find({'pT': {$gte: new Date('Sep 1, 2014')}})
+*Query for checking if a value exists in an array: db.Oct14_1.find({'mrv': {'$in': ['22']}})
