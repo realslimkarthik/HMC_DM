@@ -53,7 +53,7 @@ def printCSV(csvfile, resultList):
             csvfile.write("postedTime" + delim + "Year" + delim + "Month" + delim + "Day" + delim + "Time" + delim)
             continue
         if val == "matchingrulesvalue" and resultList[1] > 1:
-            for i in range(1, resultList[2] + 1):
+            for i in range(1, resultList[1] + 1):
                 csvfile.write("matchingrulesvalue" + str(i) + delim)
             continue
         if val == "entitieshtagstext" and resultList[2] > 1:
