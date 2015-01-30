@@ -171,7 +171,7 @@ def populateMongo(inputTweet, collName, DorP):
         inputTweet['entitieshtagstext'] = inputTweet['entitieshtagstext'].split(';')
 
     # Renaming id field
-    inputTweet['_id'] = "tw" + inputTweet['Idpost'].split(':')[2]
+    inputTweet['_id'] = inputTweet['Idpost'].split(':')[2]
     logging.info('Started posting collection with id: ' + inputTweet['_id'] + ' into collection ' + collName)
     inputTweet.pop('Idpost', None)
     # packing the matchingrulesvalue field into an array
@@ -187,7 +187,11 @@ def populateMongo(inputTweet, collName, DorP):
     
     inputTweet['ruleIndex'] = []
     for j in inputTweet['matchingrulesvalue']:
-        inputTweet['ruleIndex'].append(ruleConf[j.strip()])
+        try:
+            inputTweet['ruleIndex'].append(ruleConf[j.strip()])
+        except IndexError:
+            logging.warning("Invalid rule fetched via GNIP with _id=" + inputTweet['_id'])
+            return
     inputTweet.pop('matchingrulesvalue', None)
     print inputTweet['ruleIndex']
     mongoRecord = {}
@@ -245,15 +249,15 @@ if __name__ == "__main__":
                     logging.info("Started uploading " + j)
                     if int(fileName) < 6:
                         CSVfromTwitterJSON(src_path + j, collName + "_1", "mongo")
-                    # elif int(fileName) < 11:
-                    #     CSVfromTwitterJSON(src_path + j, collName + "_2", "mongo")
-                    # elif int(fileName) < 16:
-                    #     CSVfromTwitterJSON(src_path + j, collName + "_3", "mongo")
-                    # elif int(fileName) < 21:
-                    #     CSVfromTwitterJSON(src_path + j, collName + "_4", "mongo")
-                    # elif int(fileName) < 26:
-                    #     CSVfromTwitterJSON(src_path + j, collName + "_5", "mongo")
-                    # elif int(fileName) < 32:
-                    #     CSVfromTwitterJSON(src_path + j, collName + "_6", "mongo")
+                    elif int(fileName) < 11:
+                        CSVfromTwitterJSON(src_path + j, collName + "_2", "mongo")
+                    elif int(fileName) < 16:
+                        CSVfromTwitterJSON(src_path + j, collName + "_3", "mongo")
+                    elif int(fileName) < 21:
+                        CSVfromTwitterJSON(src_path + j, collName + "_4", "mongo")
+                    elif int(fileName) < 26:
+                        CSVfromTwitterJSON(src_path + j, collName + "_5", "mongo")
+                    elif int(fileName) < 32:
+                        CSVfromTwitterJSON(src_path + j, collName + "_6", "mongo")
 
             # TO DO: Implement Time Frame based uploading
