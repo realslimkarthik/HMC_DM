@@ -17,6 +17,7 @@ def queryDB(window, filterRules):
     longestHtag = 0
     longestRule = 0
     longestUMen = 0
+    longestRTag = 0
     coll_names = set()
     # coll_names.add("Oct14_1")
     outputSet = []
@@ -34,12 +35,15 @@ def queryDB(window, filterRules):
                 if 'eum' in k:
                     if len(k['eum']) > longestUMen:
                         longestUMen = len(k['eum'])
+                if 'mrt' in k:
+                    if len(k['mrt'].split(';')) > longestRTag:
+                        longestRTag = len(k['mrt'].split(';'))
                 if len(k['mrv']) > longestRule:
                     longestRule = len(k['mrv'])
                 outputSet.append(k)
                 print k['pt']
 
-    return (outputSet, longestRule, longestHtag, longestUMen)
+    return (outputSet, longestRule, longestHtag, longestUMen, longestRTag)
 
 # ========================================================================================
 
@@ -60,8 +64,16 @@ def printCSV(csvfile, resultList):
             csvfile.write("postedTime" + delim + "Year" + delim + "Month" + delim + "Day" + delim + "Time" + delim)
             continue
         if val == "matchingrulesvalue" and resultList[1] > 1:
+            csvfile.write("matchingrulesvalues" + delim)
             for i in range(1, resultList[1] + 1):
                 csvfile.write("matchingrulesvalue" + str(i) + delim)
+            continue
+        elif val == "matchingrulesvalue" and resultList[1] <= 1:
+            csvfile.write("matchingrulesvalues" + delim + "matchingrulesvalue" + delim)
+            continue
+        if val == "matchingrulestag" and resultList[4] > 1:
+            for i in range(1, resultList[4] + 1):
+                csvfile.write("matchingrulestag" + str(i) + delim)
             continue
         if val == "entitieshtagstext" and resultList[2] > 1:
             for i in range(1, resultList[2] + 1):
@@ -75,11 +87,15 @@ def printCSV(csvfile, resultList):
             csvfile.write("entitiesusrmentionsidstr" + delim + "entitiesusrmentionssname" + delim + "entitiesusrmentionsname" + delim)
         csvfile.write(val + delim)
 
+    ruleFile = open("rules.json")
+    ruleJson = json.loads(ruleFile.read())
     # For each tweet in the list, print the variables in the correct order (or "" if not present)
     for result in resultList[0]:
         csvfile.write("\n")
         for key in keyList:
             if key in result:
+                if key == "_id":
+                    csvfile.write("tw" + result[key] + delim)
                 if key == "pt":
                     date = result[key]
                     csvfile.write(str(date) + delim)
@@ -95,6 +111,19 @@ def printCSV(csvfile, resultList):
                         continue
                 if key == "mrv":
                     if resultList[1] > 0:
+                        # translatedRules = []
+                        # for j in range(0, resultList[1]):
+                        #     try:
+                        #         for (key, val) in ruleJson:
+                        #             if val == result[key][j]:
+                        #                 translatedRules.append(key)
+                        #         # translatedRules.append(conf.get("fields", str(result[key][j])))
+                        #         translatedRules.append(ruleJson)
+                        #     except IndexError:
+                        #         pass
+                        # for j in translatedRules:
+                        #     csvfile.write(j + ';')
+                        csvfile.write("" + delim)
                         for j in range(0, resultList[1]):
                         # for j in result['mrv']:
                             try:
@@ -102,14 +131,23 @@ def printCSV(csvfile, resultList):
                             except IndexError:
                                 csvfile.write('.' + delim)
                         continue
+                if key == "mrt":
+                    if resultList[4] > 0:
+                        mrtList = result[key].split(';')
+                        for j in range(0, resultList[4]):
+                            try:
+                                csvfile.write(mrtList[j] + delim)
+                            except IndexError:
+                                csvfile.write('' + delim)
+                    continue
                 if key == "eumh":
                     if resultList[2] > 0:
                         for j in range(0, resultList[2]):
                         # for j in result['eumh']:
                             try:
-                                csvfile.write(result[key][j] + delim)
+                                csvfile.write("\"" + result[key][j] + "\"" + delim)
                             except IndexError:
-                                csvfile.write('.' + delim)
+                                csvfile.write('' + delim)
                         continue
                 if key == "eum":
                     if resultList[3] > 1:
@@ -118,10 +156,10 @@ def printCSV(csvfile, resultList):
                             try:
                                 csvfile.write((result[key][j]['is'] + delim + result[key][j]['sn'] + delim + result[key][j]['n'] + delim).encode('utf-8').strip())
                             except IndexError:
-                                csvfile.write('.' + delim + '.' + delim + '.' + delim)
+                                csvfile.write('' + delim + '' + delim + '' + delim)
                         continue
                     else:
-                        csvfile.write('.' + delim + '.' + delim + '.' + delim)
+                        csvfile.write('' + delim + '' + delim + '' + delim)
                         continue
                 entry = result[key]
                 if type(entry) == unicode or type(entry) == str:
@@ -138,9 +176,9 @@ def printCSV(csvfile, resultList):
                 #Override to avoid errors for weird characters
                 temp = entry.splitlines()
                 entry = "".join(temp)
-                csvfile.write(entry.encode('ascii','ignore')+delim)
+                csvfile.write("\"" + entry.encode('ascii','ignore') + "\"" + delim)
             else:
-                csvfile.write('.' + delim)
+                csvfile.write('' + delim)
 # ========================================================================================
 
 if __name__ == "__main__":
