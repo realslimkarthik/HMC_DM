@@ -103,3 +103,7 @@ twitterFields.txt
 
 *.csv
 dummy_sample.json
+.idea/encodings.xml
+.idea/.name
+*.iml
+*.xml
