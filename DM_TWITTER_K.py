@@ -6,7 +6,7 @@ import random
 import re
 import Tkinter as tk
 import ConfigParser
-from pymongo import MongoClient
+from pymongo import MongoClient, errors
 from datetime import datetime
 import time
 import logging
@@ -93,6 +93,13 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
             inObj['sn'] = i['screen_name']
             Dictout["entitiesusrmentions"].append(inObj)
             inObj = {}
+    elif nestedKey == "generator":
+        Dictout["generatordname"] = DictIn["displayName"]
+    elif nestedKey == "object_location":
+        Dictout["objlocdname"] = DictIn["geo"]["displayName"]
+        Dictout["objlocgeotype"] = DictIn["geo"]["type"]
+        Dictout["objlocgeocoordinates"] = DictIn["geo"]["coordinates"]
+
     elif isinstance(DictIn, dict):
         #Process each entry
         for key, value in DictIn.iteritems():
@@ -171,7 +178,7 @@ def populateMongo(inputTweet, collName, DorP):
         inputTweet['entitieshtagstext'] = inputTweet['entitieshtagstext'].split(';')
 
     # Renaming id field
-    inputTweet['_id'] = inputTweet['Idpost'].split(':')[2]
+    inputTweet['_id'] = int(inputTweet['Idpost'].split(':')[2])
     logging.info('Started posting collection with id: ' + inputTweet['_id'] + ' into collection ' + collName)
     inputTweet.pop('Idpost', None)
     # packing the matchingrulesvalue field into an array
@@ -189,8 +196,9 @@ def populateMongo(inputTweet, collName, DorP):
     for j in inputTweet['matchingrulesvalue']:
         try:
             inputTweet['ruleIndex'].append(ruleConf[j.strip()])
-        except IndexError:
-            logging.warning("Invalid rule fetched via GNIP with _id=" + inputTweet['_id'])
+        except KeyError:
+            logging.warning("Invalid rule fetched via GNIP with _id=" + inputTweet['_id'] + " with rule=" + j.strip())
+            print "Invalid rule fetched via GNIP with _id=" + inputTweet['_id'] + " with rule=" + j.strip()
             return
     inputTweet.pop('matchingrulesvalue', None)
     print inputTweet['ruleIndex']
@@ -202,9 +210,10 @@ def populateMongo(inputTweet, collName, DorP):
 
     try:
         collection.insert(mongoRecord)
-    except KeyError:
+    except errors.DuplicateKeyError:
+        updateMongo(collection, mongoRecord)
         logging.debug("Duplicate tweet _id=" + inputTweet['_id'])
-    # outputFile.write(json.dumps(inputTweet, ensure_ascii=False).encode('utf-8'))
+        print "Duplicate tweet _id=" + inputTweet['_id']
 
 # ========================================================================================
 
@@ -234,18 +243,18 @@ if __name__ == "__main__":
         elif op == "count":
             flattenJSON(inputFile)
     elif choice =="prod":
-        logging.basicConfig(filename='prodUpload.log', level=logging.DEBUG)
         op = sys.argv[2]
+        current_month = sys.argv[3]
+        current_year = sys.argv[4]
+        collName = current_month[0:3] + current_year[2:]
+        logging.basicConfig(filename='prodUpload' + collName +'.log', level=logging.DEBUG)
+        src_path = conf.get("twitter", "prod_src_path").format(current_month + '-' + current_year + '-' + 'Master')
+        fileList = os.listdir(src_path)
+        current_month = current_month[0:2]
         if op == "transform":
-            current_month = sys.argv[3]
-            current_year = sys.argv[4]
-            collName = current_month[0:3] + current_year[2:]
-            src_path = conf.get("twitter", "prod_src_path").format(current_month + '-' + current_year + '-' + 'Master')
-            fileList = os.listdir(src_path)
-            current_month = current_month[0:2]
             for j in fileList:
-                if len(j.split('-')) == 3:
-                    fileName = j.split('-')[-1].split('.')[0]
+                if len(j.split('_')) == 3:
+                    fileName = j.split('_')[-1].split('.')[0]
                     logging.info("Started uploading " + j)
                     if int(fileName) < 6:
                         CSVfromTwitterJSON(src_path + j, collName + "_1", "mongo")
@@ -259,5 +268,3 @@ if __name__ == "__main__":
                         CSVfromTwitterJSON(src_path + j, collName + "_5", "mongo")
                     elif int(fileName) < 32:
                         CSVfromTwitterJSON(src_path + j, collName + "_6", "mongo")
-
-            # TO DO: Implement Time Frame based uploading
