@@ -147,7 +147,7 @@ def printCSV(resultList, path, month, rule):
     delim = ","
     # print "Number of tweets processed: ", len(resultList[0])
     fileGen = fileGenerator(path, month, rule)
-    csvfile = fileGen.next()
+    csvfile = next(fileGen)
     keyList = printHead(csvfile, resultList, delim)
     ruleFile = open("rules.json")
     ruleFile.seek(0, 0)
@@ -157,7 +157,7 @@ def printCSV(resultList, path, month, rule):
     for result in resultList[0]:
         if os.path.getsize(csvfile.name) / 1048576 > 100:
             csvfile.close()
-            csvfile = fileGen.next()
+            csvfile = next(fileGen)
             keyList = printHead(csvfile, resultList, delim)
         csvfile.write("\n")
         for key in keyList:
