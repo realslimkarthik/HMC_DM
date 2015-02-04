@@ -7,9 +7,59 @@ from pymongo import MongoClient
 from datetime import datetime
 import time
 
-def queryDB(window, filterRules):
-    mongoConf = ConfigParser.ConfigParser()
-    mongoConf.read("config.cfg")
+# def queryDB(mongoConf, window, filterRule):
+#     host = mongoConf.get("mongo", "host")
+#     port = int(mongoConf.get("mongo", "port"))
+#     client = MongoClient(host, port)
+#     db = client.twitter
+#     longestHtag = 0
+#     longestRule = 0
+#     longestUMen = 0
+#     longestRTag = 0
+#     coll_names = set()
+#     # coll_names.add("Oct14_1")
+#     outputSet = []
+#     for i in window:
+#         for j in range(1, 7):
+#             coll_names.add(i + '_' + str(j))
+#     for i in coll_names:
+#         # for j in filterRule:
+#         #     coll = db[i]
+#         #     data = coll.find({'mrv': {'$in': [str(j)]}})
+#         #     for k in data:
+#         #         if 'eumh' in k:
+#         #             if len(k['eumh']) > longestHtag:
+#         #                 longestHtag = len(k['eumh'])
+#         #         if 'eum' in k:
+#         #             if len(k['eum']) > longestUMen:
+#         #                 longestUMen = len(k['eum'])
+#         #         if 'mrt' in k:
+#         #             if len(k['mrt'].split(';')) > longestRTag:
+#         #                 longestRTag = len(k['mrt'].split(';'))
+#         #         if len(k['mrv']) > longestRule:
+#         #             longestRule = len(k['mrv'])
+#         #         outputSet.append(k)
+#         #         print k['pt']
+#         coll = db[i]
+#         data = coll.find({'mrv': {'$in': [str(filterRule)]}})
+#         for k in data:
+#             if 'eumh' in k:
+#                 if len(k['eumh']) > longestHtag:
+#                     longestHtag = len(k['eumh'])
+#             if 'eum' in k:
+#                 if len(k['eum']) > longestUMen:
+#                     longestUMen = len(k['eum'])
+#             if 'mrt' in k:
+#                 if len(k['mrt'].split(';')) > longestRTag:
+#                     longestRTag = len(k['mrt'].split(';'))
+#             if len(k['mrv']) > longestRule:
+#                 longestRule = len(k['mrv'])
+#             outputSet.append(k)
+#             print k['pt']
+
+#     return (outputSet, longestRule, longestHtag, longestUMen, longestRTag)
+
+def queryDB(mongoConf, collName, filterRule):
     host = mongoConf.get("mongo", "host")
     port = int(mongoConf.get("mongo", "port"))
     client = MongoClient(host, port)
@@ -21,40 +71,34 @@ def queryDB(window, filterRules):
     coll_names = set()
     # coll_names.add("Oct14_1")
     outputSet = []
-    for i in window:
-        for j in range(1, 7):
-            coll_names.add(i + '_' + str(j))
+    for j in range(1, 7):
+        coll_names.add(collName + '_' + str(j))
     for i in coll_names:
-        for j in filterRules:
-            coll = db[i]
-            data = coll.find({'mrv': {'$in': [str(j)]}})
-            for k in data:
-                if 'eumh' in k:
-                    if len(k['eumh']) > longestHtag:
-                        longestHtag = len(k['eumh'])
-                if 'eum' in k:
-                    if len(k['eum']) > longestUMen:
-                        longestUMen = len(k['eum'])
-                if 'mrt' in k:
-                    if len(k['mrt'].split(';')) > longestRTag:
-                        longestRTag = len(k['mrt'].split(';'))
-                if len(k['mrv']) > longestRule:
-                    longestRule = len(k['mrv'])
-                outputSet.append(k)
-                print k['pt']
+        coll = db[i]
+        data = coll.find({'mrv': {'$in': [str(filterRule)]}})
+        for k in data:
+            if 'eumh' in k:
+                if len(k['eumh']) > longestHtag:
+                    longestHtag = len(k['eumh'])
+            if 'eum' in k:
+                if len(k['eum']) > longestUMen:
+                    longestUMen = len(k['eum'])
+            if 'mrt' in k:
+                if len(k['mrt'].split(';')) > longestRTag:
+                    longestRTag = len(k['mrt'].split(';'))
+            if len(k['mrv']) > longestRule:
+                longestRule = len(k['mrv'])
+            outputSet.append(k)
+            print k['_id']
 
     return (outputSet, longestRule, longestHtag, longestUMen, longestRTag)
 
 # ========================================================================================
-
-def printCSV(csvfile, resultList):
-    delim = ","
-    print "Number of tweets processed: ", len(resultList[0])
+def printHead(csvfile, resultList, delim):
     conf = ConfigParser.ConfigParser()
     conf.read("mongoToFields.cfg")
-    keyList = []
-
     f = conf.get("fields", "_id")
+    keyList = []
     csvfile.write(f + delim)
     for (key, val) in conf.items('fields'):
         keyList.append(key)
@@ -85,17 +129,42 @@ def printCSV(csvfile, resultList):
             continue
         if val == "entitiesusrmentions" and resultList[3] <= 1:
             csvfile.write("entitiesusrmentionsidstr" + delim + "entitiesusrmentionssname" + delim + "entitiesusrmentionsname" + delim)
+            continue
         csvfile.write(val + delim)
+    return keyList
 
+# ========================================================================================
+def fileGenerator(path, month, rule):
+    counter = 0
+    while True:
+        counter += 1
+        f = open(path + month + rule + '_' + str(counter) + '.csv', 'w')
+        yield f
+
+# ========================================================================================
+
+def printCSV(resultList, path, month, rule):
+    delim = ","
+    # print "Number of tweets processed: ", len(resultList[0])
+    fileGen = fileGenerator(path, month, rule)
+    csvfile = fileGen.next()
+    keyList = printHead(csvfile, resultList, delim)
     ruleFile = open("rules.json")
-    ruleJson = json.loads(ruleFile.read())
+    ruleFile.seek(0, 0)
+    ruleLines = ruleFile.readlines()
+    # ruleJson = json.loads(ruleFile.read())
     # For each tweet in the list, print the variables in the correct order (or "" if not present)
     for result in resultList[0]:
+        if os.path.getsize(csvfile.name) / 1048576 > 100:
+            csvfile.close()
+            csvfile = fileGen.next()
+            keyList = printHead(csvfile, resultList, delim)
         csvfile.write("\n")
         for key in keyList:
             if key in result:
                 if key == "_id":
                     csvfile.write("tw" + result[key] + delim)
+                    continue
                 if key == "pt":
                     date = result[key]
                     csvfile.write(str(date) + delim)
@@ -111,25 +180,22 @@ def printCSV(csvfile, resultList):
                         continue
                 if key == "mrv":
                     if resultList[1] > 0:
-                        # translatedRules = []
-                        # for j in range(0, resultList[1]):
-                        #     try:
-                        #         for (key, val) in ruleJson:
-                        #             if val == result[key][j]:
-                        #                 translatedRules.append(key)
-                        #         # translatedRules.append(conf.get("fields", str(result[key][j])))
-                        #         translatedRules.append(ruleJson)
-                        #     except IndexError:
-                        #         pass
-                        # for j in translatedRules:
-                        #     csvfile.write(j + ';')
-                        csvfile.write("" + delim)
+                        translatedRules = []
+                        for j in range(0, resultList[1]):
+                            try:
+                                rule = ':'.join(ruleLines[int(result[key][j])].split(':')[0:-1])
+                                translatedRules.append(rule)
+                            except IndexError:
+                                pass
+                        for j in translatedRules:
+                            csvfile.write(j + ';')
+                        csvfile.write(delim)
                         for j in range(0, resultList[1]):
                         # for j in result['mrv']:
                             try:
                                 csvfile.write(result[key][j] + delim)
                             except IndexError:
-                                csvfile.write('.' + delim)
+                                csvfile.write('' + delim)
                         continue
                 if key == "mrt":
                     if resultList[4] > 0:
@@ -145,7 +211,7 @@ def printCSV(csvfile, resultList):
                         for j in range(0, resultList[2]):
                         # for j in result['eumh']:
                             try:
-                                csvfile.write("\"" + result[key][j] + "\"" + delim)
+                                csvfile.write("\"" + result[key][j].encode('utf-8', 'ignore') + "\"" + delim)
                             except IndexError:
                                 csvfile.write('' + delim)
                         continue
@@ -176,22 +242,32 @@ def printCSV(csvfile, resultList):
                 #Override to avoid errors for weird characters
                 temp = entry.splitlines()
                 entry = "".join(temp)
-                csvfile.write("\"" + entry.encode('ascii','ignore') + "\"" + delim)
+                csvfile.write("\"" + entry.encode('utf-8','ignore') + "\"" + delim)
             else:
                 csvfile.write('' + delim)
+    csvfile.close()
+
 # ========================================================================================
 
+monthToNames = {'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'}
+
 if __name__ == "__main__":
-    start_time = sys.argv[1]
-    end_time = sys.argv[2]
-    if start_time == end_time:
-        window = [start_time]
-        csvfile = open(start_time + '_' + '.csv', 'w')
-    else:
-        window = [start_time, end_time]
-        csvfile = open(start_time + '_' + end_time + '.csv', 'w')
-    rules = sys.argv[3:]
-    outputSet = queryDB(window, rules)
-    print outputSet[3]
-    printCSV(csvfile, outputSet)
-    csvfile.close()
+    month = sys.argv[1]
+    year = sys.argv[2]
+    conf = ConfigParser.ConfigParser()
+    conf.read("config.cfg")
+    dest = conf.get("twitter", "prod_dest_path")
+    path = dest.format(year + monthToNames[month])
+    # if start_time == end_time:
+    #     window = [start_time]
+    #     csvfile = open(start_time + '_' + '.csv', 'w')
+    # else:
+    #     window = [start_time, end_time]
+    #     csvfile = open(start_time + '_' + end_time + '.csv', 'w')
+    # rules = sys.argv[3:]
+    rules = range(1, 521)
+    for i in rules:
+        print i
+        outputSet = queryDB(conf, month + year[2:], i)
+        print len(outputSet[0])
+        printCSV(outputSet, path, month, str(i))
