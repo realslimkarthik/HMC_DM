@@ -248,7 +248,7 @@ if __name__ == "__main__":
         current_year = sys.argv[4]
         collName = current_month[0:3] + current_year[2:]
         logging.basicConfig(filename='prodUpload' + collName +'.log', level=logging.DEBUG)
-        src_path = conf.get("twitter", "prod_src_path").format(current_month + '-' + current_year + '-' + 'Master')
+        src_path = conf.get("twitter", "prod_src_path").format(current_month + '-' + current_year)
         fileList = os.listdir(src_path)
         current_month = current_month[0:2]
         if op == "transform":
