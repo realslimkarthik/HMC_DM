@@ -64,10 +64,13 @@ def CSVfromTwitterJSON(jsonfilename, collName, DorP, errorfile=None, overwrite=F
                         extract(tweet, tweetObj, mykeys)
                         #Add the output dictionary to the list
                         populateMongo(tweetObj, collName, DorP)
-                        # tweetList.append(tweetObj)
+                        try:
+                            print tweetObj['geocoordinates']
+                        except KeyError:
+                            # print "NA"
+                            continue
         #Print the number of tweets processed
         jsonfile.close()
-        # printCSV(csvfile, tweetList, mykeys)
         print "Finished populating collection ", collName
 
 # ========================================================================================
@@ -82,6 +85,11 @@ def removeKey(key):
 # ========================================================================================
 #Recursive function to process the input dictionary
 def extract(DictIn, Dictout, allkeys, nestedKey=""):
+    if nestedKey == "object":
+        try:
+            Dictout["objlocdname"] = DictIn["location"]["displayName"]
+        except KeyError:
+            pass
     #If DictIn is a dictionary
     if nestedKey == "twitter_entities_user_mentions":
         Dictout["entitiesusrmentions"] = []
@@ -95,10 +103,14 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
             inObj = {}
     elif nestedKey == "generator":
         Dictout["generatordname"] = DictIn["displayName"]
-    elif nestedKey == "object_location":
-        Dictout["objlocdname"] = DictIn["geo"]["displayName"]
-        Dictout["objlocgeotype"] = DictIn["geo"]["type"]
-        Dictout["objlocgeocoordinates"] = DictIn["geo"]["coordinates"]
+    elif nestedKey == "geo":
+        Dictout["geocoordinates"] = DictIn['coordinates']
+        Dictout["geotype"] = DictIn["type"]
+    elif nestedKey == "location":
+        Dictout["locdname"] = DictIn["displayName"]
+        Dictout["locname"] = DictIn["name"]
+        Dictout["loccountrycode"] = DictIn["country_code"]
+        Dictout["locgeocoordinates"] = DictIn["geo"]["coordinates"]
 
     elif isinstance(DictIn, dict):
         #Process each entry
@@ -169,6 +181,7 @@ def populateMongo(inputTweet, collName, DorP):
     collection = db[collName]
     r = open("rules.json")
     ruleConf = json.loads(r.read())
+    # ruleConf = r.readlines()
     mongoConf = ConfigParser.ConfigParser()
     mongoConf.read("fieldsToMongo.cfg")
     if 'entitieshtagstext' not in inputTweet:
@@ -178,8 +191,9 @@ def populateMongo(inputTweet, collName, DorP):
         inputTweet['entitieshtagstext'] = inputTweet['entitieshtagstext'].split(';')
 
     # Renaming id field
-    inputTweet['_id'] = int(inputTweet['Idpost'].split(':')[2])
-    logging.info('Started posting collection with id: ' + inputTweet['_id'] + ' into collection ' + collName)
+    # inputTweet['_id'] = int(inputTweet['Idpost'].split(':')[2])
+    inputTweet['_id'] = inputTweet['Idpost'].split(':')[2]
+    logging.info('Started posting collection with id: ' + str(inputTweet['_id']) + ' into collection ' + collName)
     inputTweet.pop('Idpost', None)
     # packing the matchingrulesvalue field into an array
     inputTweet['matchingrulesvalue'] = inputTweet['matchingrulesvalue'].split(';')
@@ -195,6 +209,7 @@ def populateMongo(inputTweet, collName, DorP):
     inputTweet['ruleIndex'] = []
     for j in inputTweet['matchingrulesvalue']:
         try:
+            # inputTweet['ruleIndex'].append(ruleConf[j.strip()])
             inputTweet['ruleIndex'].append(ruleConf[j.strip()])
         except KeyError:
             logging.warning("Invalid rule fetched via GNIP with _id=" + inputTweet['_id'] + " with rule=" + j.strip())
@@ -206,30 +221,23 @@ def populateMongo(inputTweet, collName, DorP):
     
     for (key, val) in inputTweet.iteritems():
         newKey = mongoConf.get('fields', key)
-        mongoRecord[newKey] = val    
+        mongoRecord[newKey] = val
 
     try:
         collection.insert(mongoRecord)
     except errors.DuplicateKeyError:
-        updateMongo(collection, mongoRecord)
-        logging.debug("Duplicate tweet _id=" + inputTweet['_id'])
-        print "Duplicate tweet _id=" + inputTweet['_id']
+        collection.save(mongoRecord)
+        logging.debug("Updated tweet _id=" + str(inputTweet['_id']))
+        print "Updated tweet _id=" + str(inputTweet['_id'])
 
 # ========================================================================================
 
-def daysInMonth(month):
-    return 31 if month in exDays else (28 if month == 'feb' else 30)
-
-
-blacklist = ["generator", "provider", "verified", "indices", "id$", "sizes", "display_url", "media_url$", "^url$", "url_https$", "inReplyTo", "twitter_filter_level", "^rel$"]
-#path = "H:\Data\RawData\GNIP\TwitterHistoricalPowertrack\\"
-
 if __name__ == "__main__":
 
-    inputFile = "dummy_sample.json"
-    outputFile = "dummy_sample_dropped.csv"
-    # inputFile = "Sample of tw2014-09-02.json"
-    # outputFile = "Sample of tw2014-09-02.csv"
+    # inputFile = "dummy_sample.json"
+    # outputFile = "dummy_sample_dropped.csv"
+    inputFile = "Sample of tw2014-09-02.json"
+    outputFile = "Sample of tw2014-09-02.csv"
     choice = sys.argv[1]
     conf = ConfigParser.ConfigParser()
     conf.read("config.cfg")
@@ -237,11 +245,10 @@ if __name__ == "__main__":
     if choice == "dev":
         op = sys.argv[2]
         if op == "transform":
+            logging.basicConfig(filename='prodUpload' + "dev" +'.log', level=logging.DEBUG)
             outF = open(outputFile, 'w')
-            CSVfromTwitterJSON(inputFile, outF, "August_test", "mongo_dev")
+            CSVfromTwitterJSON(inputFile, "August_test", "mongo")
             outF.close()
-        elif op == "count":
-            flattenJSON(inputFile)
     elif choice =="prod":
         op = sys.argv[2]
         current_month = sys.argv[3]
@@ -253,8 +260,8 @@ if __name__ == "__main__":
         current_month = current_month[0:2]
         if op == "transform":
             for j in fileList:
-                if len(j.split('_')) == 3:
-                    fileName = j.split('_')[-1].split('.')[0]
+                if len(j.split('-')) == 3:
+                    fileName = j.split('-')[-1].split('.')[0]
                     logging.info("Started uploading " + j)
                     if int(fileName) < 6:
                         CSVfromTwitterJSON(src_path + j, collName + "_1", "mongo")
