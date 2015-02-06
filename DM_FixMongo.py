@@ -24,7 +24,10 @@ def fixMongo(collection, updatedRecord):
     #             record[key] = updatedRecord[key]
     #     else:
     #         record[key]
-    updatedRecord['_id'] = updatedRecord['_id'].split(':')[2]
+    try:
+        updatedRecord['_id'] = updatedRecord['_id'].split(':')[2]
+    except KeyError:
+        return
     collection.save(updatedRecord)
     logging.info("Updated record with _id=" + updatedRecord["_id"])
     print updatedRecord["_id"]
