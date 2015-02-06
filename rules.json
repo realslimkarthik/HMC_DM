@@ -560,7 +560,7 @@
 "Tobacco (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)":"559",
 "antitobacco (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)":"560",
 "ciggarrete OR ciggarretes":"561",
-""e- cig"":"562",
+"\"e- cig\"":"562",
 "ciggies":"563",
 "lindsay lohan (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)":"564",
 "blu cig":"565",
@@ -570,7 +570,7 @@
 "483762120681873408":"569",
 "cig OR cigs":"570",
 "cigarette OR cigarettes":"571",
-"(pack OR packs OR packed) "a lip"":"572",
+"(pack OR packs OR packed) \"a lip\"":"572",
 "ciggarete OR ciggaretes":"573",
 "jake gyllenhaal (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)":"574",
 "smoking selfie":"575",
@@ -585,5 +585,5 @@
 "Smoking (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)":"584",
 "lily allen (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)":"585",
 "ashley olsen (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)":"586",
-"Grizzly snuff":"587",
+"Grizzly snuff":"587"
 }
