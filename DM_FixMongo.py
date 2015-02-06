@@ -86,16 +86,16 @@ if __name__ == "__main__":
                     logging.info("Started fixing " + j)
                     if int(fileName) < 6:
                         JSONtoMongo(src_path + j, collName + "_1")
-                    # elif int(fileName) < 11:
-                    #     JSONtoMongo(src_path + j, collName + "_2")
-                    # elif int(fileName) < 16:
-                    #     JSONtoMongo(src_path + j, collName + "_3")
-                    # elif int(fileName) < 21:
-                    #     JSONtoMongo(src_path + j, collName + "_4")
-                    # elif int(fileName) < 26:
-                    #     JSONtoMongo(src_path + j, collName + "_5")
-                    # elif int(fileName) < 32:
-                    #     JSONtoMongo(src_path + j, collName + "_6")
+                    elif int(fileName) < 11:
+                        JSONtoMongo(src_path + j, collName + "_2")
+                    elif int(fileName) < 16:
+                        JSONtoMongo(src_path + j, collName + "_3")
+                    elif int(fileName) < 21:
+                        JSONtoMongo(src_path + j, collName + "_4")
+                    elif int(fileName) < 26:
+                        JSONtoMongo(src_path + j, collName + "_5")
+                    elif int(fileName) < 32:
+                        JSONtoMongo(src_path + j, collName + "_6")
     elif choice == "fixRules":
         # fileName = 'prodUploadJul14.log'
         extraRules = set()
