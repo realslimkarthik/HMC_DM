@@ -60,3 +60,23 @@ if __name__ == "__main__":
                         CSVfromTwitterJSON(src_path + j, collName + "_5", "mongo")
                     elif int(fileName) < 32:
                         CSVfromTwitterJSON(src_path + j, collName + "_6", "mongo")
+    elif choice == "fixRules":
+        # fileName = 'prodUploadJul14.log'
+        extraRules = set()
+        f = open('prodUploadJul14.log')
+        f.seek(0, 0)
+        for i in f.readlines():
+            # if i.split(':')[0] == "WARNING":
+            line = i.split('=')
+            if len(line) > 1:
+                extraRules.add(line[-1])
+        f.close()
+        f = open('rules.json', 'a')
+        f.write('\n')
+        count = 521
+        for i in extraRules:
+            f.write("\"" + i.strip() + "\":" + "\"" + str(count) + "\"" + ',' + '\n')
+            count += 1
+        f.write('}')
+        f.close()
+        print len(extraRules)
