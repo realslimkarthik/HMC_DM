@@ -107,10 +107,14 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
         Dictout["geocoordinates"] = DictIn['coordinates']
         Dictout["geotype"] = DictIn["type"]
     elif nestedKey == "location":
-        Dictout["locdname"] = DictIn["displayName"]
-        Dictout["locname"] = DictIn["name"]
-        Dictout["loccountrycode"] = DictIn["country_code"]
-        Dictout["locgeocoordinates"] = DictIn["geo"]["coordinates"]
+        try:
+            Dictout["locdname"] = DictIn["displayName"]
+            Dictout["locname"] = DictIn["name"]
+            Dictout["loccountrycode"] = DictIn["country_code"]
+            if DictIn["geo"] is not None:
+                Dictout["locgeocoordinates"] = DictIn["geo"]["coordinates"]
+        except KeyError, TypeError:
+            pass
 
     elif isinstance(DictIn, dict):
         #Process each entry
@@ -181,6 +185,7 @@ def populateMongo(inputTweet, collName, DorP):
     collection = db[collName]
     r = open("rules.json")
     ruleConf = json.loads(r.read())
+    r.close()
     # ruleConf = r.readlines()
     mongoConf = ConfigParser.ConfigParser()
     mongoConf.read("fieldsToMongo.cfg")
@@ -235,9 +240,8 @@ def populateMongo(inputTweet, collName, DorP):
 if __name__ == "__main__":
 
     # inputFile = "dummy_sample.json"
-    # outputFile = "dummy_sample_dropped.csv"
-    inputFile = "Sample of tw2014-09-02.json"
-    outputFile = "Sample of tw2014-09-02.csv"
+    # inputFile = "Sample of tw2014-09-02.json"
+    inputFile = "Sep30Rem.json"
     choice = sys.argv[1]
     conf = ConfigParser.ConfigParser()
     conf.read("config.cfg")
@@ -246,9 +250,7 @@ if __name__ == "__main__":
         op = sys.argv[2]
         if op == "transform":
             logging.basicConfig(filename='prodUpload' + "dev" +'.log', level=logging.DEBUG)
-            outF = open(outputFile, 'w')
             CSVfromTwitterJSON(inputFile, "August_test", "mongo")
-            outF.close()
     elif choice =="prod":
         op = sys.argv[2]
         current_month = sys.argv[3]
@@ -263,15 +265,16 @@ if __name__ == "__main__":
                 if len(j.split('-')) == 3:
                     fileName = j.split('-')[-1].split('.')[0]
                     logging.info("Started uploading " + j)
-                    if int(fileName) < 6:
-                        CSVfromTwitterJSON(src_path + j, collName + "_1", "mongo")
-                    elif int(fileName) < 11:
-                        CSVfromTwitterJSON(src_path + j, collName + "_2", "mongo")
-                    elif int(fileName) < 16:
-                        CSVfromTwitterJSON(src_path + j, collName + "_3", "mongo")
-                    elif int(fileName) < 21:
-                        CSVfromTwitterJSON(src_path + j, collName + "_4", "mongo")
-                    elif int(fileName) < 26:
-                        CSVfromTwitterJSON(src_path + j, collName + "_5", "mongo")
-                    elif int(fileName) < 32:
-                        CSVfromTwitterJSON(src_path + j, collName + "_6", "mongo")
+                    # if int(fileName) < 6:
+                    #     CSVfromTwitterJSON(src_path + j, collName + "_1", "mongo")
+                    # elif int(fileName) < 11:
+                    #     CSVfromTwitterJSON(src_path + j, collName + "_2", "mongo")
+                    # elif int(fileName) < 16:
+                    #     CSVfromTwitterJSON(src_path + j, collName + "_3", "mongo")
+                    if int(fileName) > 16:
+                        if int(fileName) < 21:
+                            CSVfromTwitterJSON(src_path + j, collName + "_4", "mongo")
+                        elif int(fileName) < 26:
+                            CSVfromTwitterJSON(src_path + j, collName + "_5", "mongo")
+                        elif int(fileName) < 32:
+                            CSVfromTwitterJSON(src_path + j, collName + "_6", "mongo")
