@@ -53,8 +53,23 @@ def JSONtoMongo(fileName, collName):
         mykeys = []
         dmt.extract(lineJson, trimmedJson, mykeys)
         updatedRecord = {}
+        try:
+            trimmedJson['matchingrulesvalue'] = trimmedJson['matchingrulesvalue'].split(';')
+        except KeyError:
+            continue
+        trimmedJson['ruleIndex'] = []
+        r = open("rules.json")
+        ruleConf = json.loads(r.read())
+        r.close()
+        for j in trimmedJson['matchingrulesvalue']:
+            try:
+                trimmedJson['ruleIndex'].append(ruleConf[j.strip()])
+            except KeyError:
+                logging.warning("Invalid rule fetched via GNIP with _id=" + trimmedJson['Idpost'] + " with rule=" + j.strip())
+                print "Invalid rule fetched via GNIP with _id=" + trimmedJson['Idpost'] + " with rule=" + j.strip()
+                continue
+        trimmedJson.pop('matchingrulesvalue', None)
         for (key, val) in trimmedJson.iteritems():
-            # if fieldConf.has_option('fields', key):
             updatedRecord[fieldConf.get('fields', key)] = val
         fixMongo(collection, updatedRecord)
 
@@ -81,7 +96,6 @@ if __name__ == "__main__":
         logging.basicConfig(filename='prodFix' + collName +'.log', level=logging.DEBUG)
         src_path = conf.get("twitter", "prod_src_path").format(current_month + '-' + current_year)
         fileList = os.listdir(src_path)
-        current_month = current_month[0:2]
         if op == "transform":
             for j in fileList:
                 if len(j.split('-')) == 3:
