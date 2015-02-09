@@ -14,7 +14,7 @@ if __name__ == "__main__":
     conf.read('config.cfg')
     for (key, val) in months.iteritems():
         src_path = conf.get('twitter', 'prod_src_path').format(key + '-' + '2014')
-        dest_path = conf.get('twitter', 'prod_dest_path').format('2014' + val)
+        dest_path = conf.get('twitter', 'prod_dest_path').format('2014' + val, 'COUNTS')
         ruleCount = {}
         tagCount = {}
         fileList = os.listdir(src_path)
