@@ -33,11 +33,9 @@ def fixMongo(collection, updatedRecord):
     print updatedRecord["_id"]
 
 # ========================================================================================
-def JSONtoMongo(fileName, collName):
+def JSONtoMongo(fileName, collName, mongoConf):
     fieldConf = ConfigParser.ConfigParser()
-    fieldConf.read("fieldstoMongo.cfg")
-    mongoConf = ConfigParser.ConfigParser()
-    mongoConf.read("config.cfg")
+    fieldConf.read(conf_path.format("fieldstoMongo.cfg"))
     host = mongoConf.get("mongo", "host")
     port = int(mongoConf.get("mongo", "port"))
     client = MongoClient(host, port)
@@ -58,12 +56,12 @@ def JSONtoMongo(fileName, collName):
         except KeyError:
             continue
         trimmedJson['ruleIndex'] = []
-        r = open("rules.json")
+        r = open(conf_path.format("rules.json"))
         ruleConf = json.loads(r.read())
         r.close()
         for j in trimmedJson['matchingrulesvalue']:
             try:
-                trimmedJson['ruleIndex'].append(ruleConf[j.strip()])
+                trimmedJson['ruleIndex'].append(int(ruleConf[j.strip()]))
             except KeyError:
                 logging.warning("Invalid rule fetched via GNIP with _id=" + trimmedJson['Idpost'] + " with rule=" + j.strip())
                 print "Invalid rule fetched via GNIP with _id=" + trimmedJson['Idpost'] + " with rule=" + j.strip()
@@ -101,17 +99,17 @@ if __name__ == "__main__":
                     fileName = j.split('-')[-1].split('.')[0]
                     logging.info("Started fixing " + j)
                     if int(fileName) < 6:
-                        JSONtoMongo(src_path + j, collName + "_1")
+                        JSONtoMongo(src_path + j, collName + "_1", conf)
                     elif int(fileName) < 11:
-                        JSONtoMongo(src_path + j, collName + "_2")
+                        JSONtoMongo(src_path + j, collName + "_2", conf)
                     elif int(fileName) < 16:
-                        JSONtoMongo(src_path + j, collName + "_3")
+                        JSONtoMongo(src_path + j, collName + "_3", conf)
                     elif int(fileName) < 21:
-                        JSONtoMongo(src_path + j, collName + "_4")
+                        JSONtoMongo(src_path + j, collName + "_4", conf)
                     elif int(fileName) < 26:
-                        JSONtoMongo(src_path + j, collName + "_5")
+                        JSONtoMongo(src_path + j, collName + "_5", conf)
                     elif int(fileName) < 32:
-                        JSONtoMongo(src_path + j, collName + "_6")
+                        JSONtoMongo(src_path + j, collName + "_6", conf)
     elif choice == "fixRules":
         # fileName = 'prodUploadJul14.log'
         extraRules = set()
