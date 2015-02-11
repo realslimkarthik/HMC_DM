@@ -76,7 +76,7 @@ def CSVfromTwitterJSON(jsonfilename, collName, DorP, errorfile=None, overwrite=F
 # ========================================================================================
 def removeKey(key):
     conf = ConfigParser.ConfigParser()
-    conf.read("fields.cfg")
+    conf.read(conf_path.format("fields.cfg"))
     if conf.has_option("fields", key):
         return conf.get("fields", key)
     else:
@@ -179,7 +179,7 @@ def populateMongo(inputTweet, collName, DorP):
     host = conf.get(DorP, "host")
     port = int(conf.get(DorP, "port"))
     fieldConf = ConfigParser.ConfigParser()
-    fieldConf.read("fields.cfg")
+    fieldConf.read(conf_path.format("fields.cfg"))
     client = MongoClient(host, port)
     db = client.twitter
     collection = db[collName]
@@ -188,7 +188,7 @@ def populateMongo(inputTweet, collName, DorP):
     r.close()
     # ruleConf = r.readlines()
     mongoConf = ConfigParser.ConfigParser()
-    mongoConf.read("fieldsToMongo.cfg")
+    mongoConf.read(conf_path.format("fieldsToMongo.cfg"))
     if 'entitieshtagstext' not in inputTweet:
         inputTweet['entitieshtagstext'] = []
     else:
@@ -238,25 +238,23 @@ def populateMongo(inputTweet, collName, DorP):
 # ========================================================================================
 
 if __name__ == "__main__":
-
-    # inputFile = "dummy_sample.json"
-    # inputFile = "Sample of tw2014-09-02.json"
-    inputFile = "Sep30Rem.json"
     choice = sys.argv[1]
     conf = ConfigParser.ConfigParser()
-    conf.read("config.cfg")
+    conf.read("config\config.cfg")
+    conf_path = conf.get("conf", "conf_path")
     
     if choice == "dev":
+        logs = conf.get("conf", "dev_logs_path")
         op = sys.argv[2]
         if op == "transform":
-            logging.basicConfig(filename='prodUpload' + "dev" +'.log', level=logging.DEBUG)
+            logging.basicConfig(filename=logs.format('prodUpload' + "dev" +'.log'), level=logging.DEBUG)
             CSVfromTwitterJSON(inputFile, "August_test", "mongo")
     elif choice =="prod":
         op = sys.argv[2]
         current_month = sys.argv[3]
         current_year = sys.argv[4]
         collName = current_month[0:3] + current_year[2:]
-        logging.basicConfig(filename='prodUpload' + collName +'.log', level=logging.DEBUG)
+        logging.basicConfig(filename=logs.format('(prodUpload' + collName +'.log'), level=logging.DEBUG)
         src_path = conf.get("twitter", "prod_src_path").format(current_month + '-' + current_year)
         fileList = os.listdir(src_path)
         current_month = current_month[0:2]
@@ -265,16 +263,15 @@ if __name__ == "__main__":
                 if len(j.split('-')) == 3:
                     fileName = j.split('-')[-1].split('.')[0]
                     logging.info("Started uploading " + j)
-                    # if int(fileName) < 6:
-                    #     CSVfromTwitterJSON(src_path + j, collName + "_1", "mongo")
-                    # elif int(fileName) < 11:
-                    #     CSVfromTwitterJSON(src_path + j, collName + "_2", "mongo")
-                    # elif int(fileName) < 16:
-                    #     CSVfromTwitterJSON(src_path + j, collName + "_3", "mongo")
-                    if int(fileName) > 16:
-                        if int(fileName) < 21:
-                            CSVfromTwitterJSON(src_path + j, collName + "_4", "mongo")
-                        elif int(fileName) < 26:
-                            CSVfromTwitterJSON(src_path + j, collName + "_5", "mongo")
-                        elif int(fileName) < 32:
-                            CSVfromTwitterJSON(src_path + j, collName + "_6", "mongo")
+                    if int(fileName) < 6:
+                        CSVfromTwitterJSON(src_path + j, collName + "_1", "mongo")
+                    elif int(fileName) < 11:
+                        CSVfromTwitterJSON(src_path + j, collName + "_2", "mongo")
+                    elif int(fileName) < 16:
+                        CSVfromTwitterJSON(src_path + j, collName + "_3", "mongo")
+                    if int(fileName) < 21:
+                        CSVfromTwitterJSON(src_path + j, collName + "_4", "mongo")
+                    elif int(fileName) < 26:
+                        CSVfromTwitterJSON(src_path + j, collName + "_5", "mongo")
+                    elif int(fileName) < 32:
+                        CSVfromTwitterJSON(src_path + j, collName + "_6", "mongo")

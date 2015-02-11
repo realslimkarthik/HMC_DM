@@ -139,13 +139,11 @@ def printCSV(resultList, path, month, rule):
     counter = resultList[5]
     csvfile = open(path + month + rules + '_' + str(counter) + '.csv', 'wb')
     conf = ConfigParser.ConfigParser()
-    conf.read("mongoToFields.cfg")
+    conf.read(conf_path.format("mongoToFields.cfg"))
     (writer, keyList) = printHead(csvfile, resultList, delim, conf)
     ruleFile = open("rules.json")
     ruleFile.seek(0, 0)
     ruleLines = ruleFile.readlines()
-    conf = ConfigParser.ConfigParser()
-    conf.read("mongoToFields.cfg")
 
     for result in resultList[0]:
         if os.path.getsize(csvfile.name) / 1048576 > 100:
@@ -248,9 +246,10 @@ if __name__ == "__main__":
     month = sys.argv[1]
     year = sys.argv[2]
     conf = ConfigParser.ConfigParser()
-    conf.read("config.cfg")
+    conf.read("config\config.cfg")
     dest = conf.get("twitter", "prod_dest_path")
     path = dest.format(year + monthToNames[month], 'CSVRULES')
+    conf_path = conf.get("get", "conf_path")
     # if start_time == end_time:
     #     window = [start_time]
     #     csvfile = open(start_time + '_' + '.csv', 'w')

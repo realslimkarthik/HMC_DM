@@ -78,22 +78,21 @@ def JSONtoMongo(fileName, collName):
 if __name__ == "__main__":
     choice = sys.argv[1]
     conf = ConfigParser.ConfigParser()
-    conf.read("config.cfg")
+    conf.read("config\config.cfg")
+    conf_path = conf.get("conf", "conf_path")
 
     if choice == "dev":
         inputJson = "H:\\Data\\RawData\\GNIP\\TwitterHistoricalPowertrack\\August-2014-Master\\tw2014-08-01.json"
         dailyJson = parseJson(inputJson)
         x = dailyJson.next()
         print x
-        # print dailyJson[0]
     elif choice =="prod":
         op = sys.argv[2]
-        conf = ConfigParser.ConfigParser()
-        conf.read("config.cfg")
+        log_path = conf.get("conf", "prod_log_path")
         current_month = sys.argv[3]
         current_year = sys.argv[4]
         collName = current_month[0:3] + current_year[2:]
-        logging.basicConfig(filename='prodFix' + collName +'.log', level=logging.DEBUG)
+        logging.basicConfig(filename=log_path.format('prodFix' + collName +'.log'), level=logging.DEBUG)
         src_path = conf.get("twitter", "prod_src_path").format(current_month + '-' + current_year)
         fileList = os.listdir(src_path)
         if op == "transform":
@@ -116,7 +115,8 @@ if __name__ == "__main__":
     elif choice == "fixRules":
         # fileName = 'prodUploadJul14.log'
         extraRules = set()
-        f = open('prodUploadJul14.log')
+        fileName = sys.argv[2]
+        f = open(fileName)
         f.seek(0, 0)
         for i in f.readlines():
             # if i.split(':')[0] == "WARNING":
@@ -124,7 +124,7 @@ if __name__ == "__main__":
             if len(line) > 1:
                 extraRules.add(line[-1])
         f.close()
-        f = open('rules.json', 'a')
+        f = open(conf_path.format('rules.json'), 'a')
         f.write('\n')
         count = 521
         for i in extraRules:
