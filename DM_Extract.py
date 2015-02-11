@@ -6,6 +6,30 @@ import ConfigParser
 from pymongo import MongoClient
 from datetime import datetime
 import time
+import csv, codecs, cStringIO
+
+reload(sys)
+sys.setdefaultencoding("utf-8")
+class CSVUnicodeWriter:
+    def __init__(self, f, dialect=csv.excel, encoding="utf-8-sig", **kwds):
+        self.queue = cStringIO.StringIO()
+        self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
+        self.stream = f
+        self.encoder = codecs.getincrementalencoder(encoding)()
+    def writerow(self, row):
+        '''writerow(unicode) -> None
+        This function takes a Unicode string and encodes it to the output.
+        '''
+        self.writer.writerow([s.encode("utf-8", "ignore") for s in row])
+        data = self.queue.getvalue()
+        data = data.decode("utf-8")
+        data = self.encoder.encode(data)
+        self.stream.write(data)
+        self.queue.truncate(0)
+
+    def writerows(self, rows):
+        for row in rows:
+            self.writerow(row)
 
 #     coll_names = set()
 #     dataSet = []
@@ -24,7 +48,6 @@ def queryDB(mongoConf, month, year, filterRule, path):
     longestUMen = 0
     longestRTag = 0
     coll_names = set()
-    # coll_names.add("Oct14_1")
     collName = month + year[2:]
     dataSet = []
     for j in range(1, 7):
@@ -35,6 +58,7 @@ def queryDB(mongoConf, month, year, filterRule, path):
             data = coll.find({'mrv': {'$in': [filterRule]}}, timeout=False)
         except pymongo.errors.CursorNotFound:
             continue
+        count = 1
         for k in data:
             if 'eumh' in k:
                 if len(k['eumh']) > longestHtag:
@@ -51,7 +75,7 @@ def queryDB(mongoConf, month, year, filterRule, path):
             print k['_id']
             if sys.getsizeof(dataSet) > 106954752:
                 print "\nWriting to File...\n"
-                outputSet = (dataSet, longestRule, longestHtag, longestUMen, longestRTag)
+                outputSet = (dataSet, longestRule, longestHtag, longestUMen, longestRTag, count)
                 printCSV(outputSet, path, month, filterRule)
                 outputSet = ()
                 dataSet = []
@@ -59,61 +83,52 @@ def queryDB(mongoConf, month, year, filterRule, path):
                 longestRule = 0
                 longestUMen = 0
                 longestRTag = 0
+                count += 1
         data.close()
 
     print "\nWriting to File...\n"
-    outputSet = (dataSet, longestRule, longestHtag, longestUMen, longestRTag)
+    outputSet = (dataSet, longestRule, longestHtag, longestUMen, longestRTag, count)
     printCSV(outputSet, path, month, filterRule)
 
-    # return (dataSet, longestRule, longestHtag, longestUMen, longestRTag)
 
 # ========================================================================================
-def printHead(csvfile, resultList, delim):
-    conf = ConfigParser.ConfigParser()
-    conf.read("mongoToFields.cfg")
-    f = conf.get("fields", "_id")
+def printHead(csvfile, resultList, delim, conf):
+    # f = conf.get("fields", "_id")
+    # csvfile.write(f + delim)
     keyList = []
-    csvfile.write(f + delim)
     for (key, val) in conf.items('fields'):
         keyList.append(key)
-        if val == "Idpost":
-            continue
         if val == "postedTime":
-            csvfile.write("postedTime" + delim + "Year" + delim + "Month" + delim + "Day" + delim + "Time" + delim)
+            csvfile.write(val + delim + "Year" + delim + "Month" + delim + "Day" + delim + "Time" + delim)
             continue
-        if val == "matchingrulesvalue" and resultList[1] > 1:
-            csvfile.write("matchingrulesvalues" + delim)
-            for i in range(1, resultList[1] + 1):
-                csvfile.write("matchingrulesvalue" + str(i) + delim)
-            continue
-        elif val == "matchingrulesvalue" and resultList[1] <= 1:
-            csvfile.write("matchingrulesvalues" + delim + "matchingrulesvalue" + delim)
-            continue
+        if val == "matchingrulesvalue":
+            if resultList[1] > 1:
+                csvfile.write("matchingrulesvalues" + delim)
+                for i in range(1, resultList[1] + 1):
+                    csvfile.write(val + str(i) + delim)
+                continue
+            else:
+                csvfile.write("matchingrulesvalues" + delim + val + delim)
+                continue
         if val == "matchingrulestag" and resultList[4] > 1:
             for i in range(1, resultList[4] + 1):
-                csvfile.write("matchingrulestag" + str(i) + delim)
+                csvfile.write(val + str(i) + delim)
             continue
         if val == "entitieshtagstext" and resultList[2] > 1:
             for i in range(1, resultList[2] + 1):
                 csvfile.write("entitieshtagstext" + str(i) + delim)
             continue
-        if val == "entitiesusrmentions" and resultList[3] > 1:
-            for i in range(1, resultList[3] + 1):
-                csvfile.write("entitiesusrmentionsidstr" + str(i) + delim + "entitiesusrmentionssname" + str(i) + delim + "entitiesusrmentionsname" + str(i) + delim)
-            continue
-        if val == "entitiesusrmentions" and resultList[3] <= 1:
-            csvfile.write("entitiesusrmentionsidstr" + delim + "entitiesusrmentionssname" + delim + "entitiesusrmentionsname" + delim)
+        if val == "entitiesusrmentions":
+            if resultList[3] >= 1:
+                for i in range(1, resultList[3] + 1):
+                    csvfile.write("entitiesusrmentionsidstr" + str(i) + delim + "entitiesusrmentionssname" + str(i) + delim + "entitiesusrmentionsname" + str(i) + delim)
+            else:
+                csvfile.write("entitiesusrmentionsidstr" + delim + "entitiesusrmentionssname" + delim + "entitiesusrmentionsname" + delim)
             continue
         csvfile.write(val + delim)
-    return keyList
-
-# ========================================================================================
-def fileGenerator(path, month, rule):
-    counter = 0
-    while True:
-        counter += 1
-        f = open(path + month + rule + '_' + str(counter) + '.csv', 'w')
-        yield f
+    csvfile.write('\n')
+    writer = CSVUnicodeWriter(csvfile, quoting=csv.QUOTE_ALL)
+    return (writer, keyList)
 
 # ========================================================================================
 
@@ -121,103 +136,108 @@ def printCSV(resultList, path, month, rule):
     delim = ","
     fileGen = fileGenerator(path, month, rule)
     csvfile = next(fileGen)
-    keyList = printHead(csvfile, resultList, delim)
+    counter = resultList[5]
+    csvfile = open(path + month + rules + '_' + str(counter) + '.csv', 'wb')
+    conf = ConfigParser.ConfigParser()
+    conf.read("mongoToFields.cfg")
+    (writer, keyList) = printHead(csvfile, resultList, delim, conf)
     ruleFile = open("rules.json")
     ruleFile.seek(0, 0)
     ruleLines = ruleFile.readlines()
+    conf = ConfigParser.ConfigParser()
+    conf.read("mongoToFields.cfg")
 
     for result in resultList[0]:
-        # if os.path.getsize(csvfile.name) / 1048576 > 100:
-        #     csvfile.close()
-        #     csvfile = next(fileGen)
-        #     keyList = printHead(csvfile, resultList, delim)
-        csvfile.write("\n")
+        if os.path.getsize(csvfile.name) / 1048576 > 100:
+            csvfile.close()
+            csvfile = next(fileGen)
+            keyList = printHead(csvfile, resultList, delim)
+        row = []
         for key in keyList:
             if key in result:
                 if key == "_id":
-                    csvfile.write("tw" + result[key] + delim)
+                    row.append("tw" + result[key])
                     continue
                 if key == "pt":
                     date = result[key]
-                    csvfile.write(str(date) + delim)
-                    
-                    csvfile.write(date.strftime("%Y") + delim)
-                    csvfile.write(date.strftime("%b") + delim)
-                    csvfile.write(date.strftime("%d") + delim)
-                    csvfile.write(date.strftime("%H:%M:%S") + delim)
+                    row.append(str(date))
+                    row.append(date.strftime("%Y"))
+                    row.append(date.strftime("%b"))
+                    row.append(date.strftime("%d"))
+                    row.append(date.strftime("%H:%M:%S"))
                     continue
                 if key  == "auo":
                     if result[key] is None:
-                        csvfile.write('.' + delim)
+                        row.append('.')
                         continue
                 if key == "mrv":
                     if resultList[1] > 0:
                         translatedRules = []
+                        rules = ""
                         for j in range(0, resultList[1]):
                             try:
                                 rule = ':'.join(ruleLines[int(result[key][j])].split(':')[0:-1])
                                 translatedRules.append(rule)
                             except IndexError:
                                 pass
+                        tempKey = conf.get("fields", "mrv") + 's'
+                        rules = ""
                         for j in translatedRules:
-                            csvfile.write(j + ';')
-                        csvfile.write(delim)
+                            rules += j + ';'
+                        row.append(rules)
                         for j in range(0, resultList[1]):
                             try:
-                                csvfile.write(result[key][j] + delim)
+                                row.append(result[key][j])
                             except IndexError:
-                                csvfile.write('' + delim)
+                                row.append("")
                         continue
+                    else:
+                        row.append("")
+                        row.append("")
                 if key == "mrt":
                     if resultList[4] > 0:
                         mrtList = result[key].split(';')
                         for j in range(0, resultList[4]):
                             try:
-                                csvfile.write(mrtList[j] + delim)
+                                row.append(mrtList[j] + ';')
                             except IndexError:
-                                csvfile.write('' + delim)
+                                row.append("")
+                    else:
+                        row.append("")
                     continue
                 if key == "eumh":
-                    if resultList[2] > 1:
+                    if resultList[2] >= 1:
                         for j in range(0, resultList[2]):
-                        # for j in result['eumh']:
                             try:
-                                csvfile.write("\"" + result[key][j].encode('utf-8', 'ignore') + "\"" + delim)
+                                row.append(result[key][j])
                             except IndexError:
-                                csvfile.write(delim)
+                                row.append("")
                         continue
                     elif resultList[2] == 0:
-                        csvfile.write(delim)
+                        row.append("")
+                    continue
                 if key == "eum":
-                    if resultList[3] > 1:
+                    if resultList[3] >= 1:
                         for j in range(0, resultList[3]):
-                        # for j in result['eumh']:
                             try:
-                                csvfile.write((result[key][j]['is'] + delim + result[key][j]['sn'] + delim + result[key][j]['n'] + delim).encode('utf-8').strip())
+                                for (k, v) in result[key][j].iteritems():
+                                    row.append(v.strip())
                             except IndexError:
-                                csvfile.write(delim + delim + delim)
+                                row.append("")
+                                row.append("")
+                                row.append("")
+
                         continue
                     elif resultList[3] == 0:
-                        csvfile.write(delim + delim + delim)
-                        continue
+                        row.append("")
+                        row.append("")
+                        row.append("")
+                    continue
                 entry = result[key]
-                if type(entry) == unicode or type(entry) == str:
-                    #entry = unicode(entry, "utf-8", errors="ignore")
-                    entry = entry.strip()
-                    entrys = entry.split(",")
-                    if len(entrys) > 1:
-                        entry = "".join(entrys)
-                    entrys = entry.split("\"")
-                    if len(entrys) > 1:
-                        entry = "-".join(entrys)
-                else:
-                    entry = unicode(entry)
-                #Override to avoid errors for weird characters
-                temp = entry.splitlines()
-                entry = "".join(temp)
-                csvfile.write("\"" + entry.encode('utf-8','ignore') + "\"" + delim)
+                row.append(unicode(result[key]))
             else:
-                csvfile.write('' + delim)
+                row.append("")
+        writer.writerow(row)
     csvfile.close()
 
 # ========================================================================================
@@ -243,4 +263,4 @@ if __name__ == "__main__":
         print i
         outputSet = queryDB(conf, month, year, str(i), path)
         # print len(outputSet[0])
-        # printCSV(outputSet, path, month, str(i))
+        # printCSV(outputSet, path, month, str(
