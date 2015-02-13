@@ -1,20 +1,23 @@
 # Hard coded months in line number 9. Add/Remove months and maintain the format of 'Month': 'zeroPaddedNumOfMonth'. Eg: 'March': '03'
 # Change the year on lines 16 and 17 to the corresponding 4 digit year of that month.
 
+# Command for running
+# python countTweets <4 digit year>
+# Eg: python countTweets 2014
 
 import ConfigParser
 import os
 import json
+import sys
 
-# months = {'August': '08', 'September': '09', 'October': '10', 'November': '11', 'December': '12'}
 months = map(lambda x: str(x).zfill(2), range(1, 13))
 delim = ','
 
 if __name__ == "__main__":
     year = sys.argv[1]
     conf = ConfigParser.ConfigParser()
-    conf.read('config.cfg')
-    for i in months
+    conf.read('config\config.cfg')
+    for i in months:
         src_path = conf.get('twitter', 'prod_src_path').format(year + i)
         dest_path = conf.get('twitter', 'prod_dest_path').format(year + i, 'COUNTS')
         ruleCount = {}
