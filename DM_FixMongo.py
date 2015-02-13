@@ -73,6 +73,8 @@ def JSONtoMongo(fileName, collName, mongoConf):
 
 # ========================================================================================
 
+monthToNames = {'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'}
+
 if __name__ == "__main__":
     choice = sys.argv[1]
     conf = ConfigParser.ConfigParser()
@@ -85,31 +87,29 @@ if __name__ == "__main__":
         x = dailyJson.next()
         print x
     elif choice =="prod":
-        op = sys.argv[2]
         log_path = conf.get("conf", "prod_log_path")
-        current_month = sys.argv[3]
-        current_year = sys.argv[4]
-        collName = current_month[0:3] + current_year[2:]
+        current_month = sys.argv[2]
+        current_year = sys.argv[3]
+        collName = current_month + current_year[2:]
         logging.basicConfig(filename=log_path.format('prodFix' + collName +'.log'), level=logging.DEBUG)
-        src_path = conf.get("twitter", "prod_src_path").format(current_month + '-' + current_year)
+        src_path = conf.get("twitter", "prod_src_path").format(current_year + monthToNames[current_month])
         fileList = os.listdir(src_path)
-        if op == "transform":
-            for j in fileList:
-                if len(j.split('-')) == 3:
-                    fileName = j.split('-')[-1].split('.')[0]
-                    logging.info("Started fixing " + j)
-                    if int(fileName) < 6:
-                        JSONtoMongo(src_path + j, collName + "_1", conf)
-                    elif int(fileName) < 11:
-                        JSONtoMongo(src_path + j, collName + "_2", conf)
-                    elif int(fileName) < 16:
-                        JSONtoMongo(src_path + j, collName + "_3", conf)
-                    elif int(fileName) < 21:
-                        JSONtoMongo(src_path + j, collName + "_4", conf)
-                    elif int(fileName) < 26:
-                        JSONtoMongo(src_path + j, collName + "_5", conf)
-                    elif int(fileName) < 32:
-                        JSONtoMongo(src_path + j, collName + "_6", conf)
+        for j in fileList:
+            if len(j.split('-')) == 3:
+                fileName = j.split('-')[-1].split('.')[0]
+                logging.info("Started fixing " + j)
+                if int(fileName) < 6:
+                    JSONtoMongo(src_path + j, collName + "_1", conf)
+                elif int(fileName) < 11:
+                    JSONtoMongo(src_path + j, collName + "_2", conf)
+                elif int(fileName) < 16:
+                    JSONtoMongo(src_path + j, collName + "_3", conf)
+                elif int(fileName) < 21:
+                    JSONtoMongo(src_path + j, collName + "_4", conf)
+                elif int(fileName) < 26:
+                    JSONtoMongo(src_path + j, collName + "_5", conf)
+                elif int(fileName) < 32:
+                    JSONtoMongo(src_path + j, collName + "_6", conf)
     elif choice == "fixRules":
         # fileName = 'prodUploadJul14.log'
         fileName = 'H:\Data\code\KARTHIK_OLD\prodUploadAug14.log'
