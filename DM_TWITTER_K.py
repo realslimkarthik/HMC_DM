@@ -19,8 +19,14 @@ def CSVfromTwitterJSON(jsonfilename, collName, DorP, errorfile=None, overwrite=F
         #Will track all variables seen across all tweets in the file
         #Will contain a dictionary for each processed tweet
         tweetList = []
-        conf = ConfigParser.ConfigParser()
-        conf.read("fields.cfg")
+        r = open(conf_path.format("rules.json"))
+        ruleConf = json.loads(r.read())
+        num_lines = sum(1 for i in r)
+        r.close()
+        host = conf.get()
+        host = conf.get(DorP, "host")
+        port = int(conf.get(DorP, "port"))
+        configData = (host, port)
         mykeys = []
 
         for line in jsonfile:
@@ -63,7 +69,7 @@ def CSVfromTwitterJSON(jsonfilename, collName, DorP, errorfile=None, overwrite=F
                         #Send the JSON dictionary, the empty dictionary, and the list of all keys
                         extract(tweet, tweetObj, mykeys)
                         #Add the output dictionary to the list
-                        populateMongo(tweetObj, collName, DorP)
+                        populateMongo(tweetObj, collName, DorP, configData)
                         try:
                             print tweetObj['geocoordinates']
                         except KeyError:
@@ -176,18 +182,26 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
                     Dictout[newKey] = ""
 
 # ========================================================================================
-def populateMongo(inputTweet, collName, DorP):
-    host = conf.get(DorP, "host")
-    port = int(conf.get(DorP, "port"))
-    fieldConf = ConfigParser.ConfigParser()
-    fieldConf.read(conf_path.format("fields.cfg"))
+def addRule(rule):
+    r = open(conf_path.format("rules.json", "a"))
+    num_lines += 1
+    count = 1
+    for i in r:
+        if count == num_lines:
+            i.replace('}', "\"" + rule + "\"" + : "\"" + num_lines + "\"" + '\n')
+        count += 1
+    r.write('}')
+    r.close()
+    num_lines += 1
+    ruleConf = json.loads(r.read())
+
+# ========================================================================================
+def populateMongo(inputTweet, collName, DorP, configData):
+    host = configData[0]
+    port = configData[1]
     client = MongoClient(host, port)
     db = client.twitter
     collection = db[collName]
-    r = open(conf_path.format("rules.json"))
-    ruleConf = json.loads(r.read())
-    r.close()
-    # ruleConf = r.readlines()
     mongoConf = ConfigParser.ConfigParser()
     mongoConf.read(conf_path.format("fieldsToMongo.cfg"))
     if 'entitieshtagstext' not in inputTweet:
@@ -218,9 +232,12 @@ def populateMongo(inputTweet, collName, DorP):
             # inputTweet['ruleIndex'].append(ruleConf[j.strip()])
             inputTweet['ruleIndex'].append(ruleConf[j.strip()])
         except KeyError:
-            logging.warning("Invalid rule fetched via GNIP with _id=" + inputTweet['_id'] + " with rule=" + j.strip())
+            addRule(j.strip())
+            num_lines += 1
+            ruleConf[j.strip()] = num_lines
+            logging.debug("Invalid rule fetched via GNIP with _id=" + inputTweet['_id'] + " with rule=" + j.strip())
             print "Invalid rule fetched via GNIP with _id=" + inputTweet['_id'] + " with rule=" + j.strip()
-            return
+            inputTweet['ruleIndex'].append(ruleConf[j.strip()])
     inputTweet.pop('matchingrulesvalue', None)
     print inputTweet['ruleIndex']
     mongoRecord = {}
