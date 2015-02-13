@@ -6,15 +6,17 @@ import ConfigParser
 import os
 import json
 
-months = {'August': '08', 'September': '09', 'October': '10', 'November': '11', 'December': '12'}
+# months = {'August': '08', 'September': '09', 'October': '10', 'November': '11', 'December': '12'}
+months = map(lambda x: str(x).zfill(2), range(1, 13))
 delim = ','
 
 if __name__ == "__main__":
+    year = sys.argv[1]
     conf = ConfigParser.ConfigParser()
     conf.read('config.cfg')
-    for (key, val) in months.iteritems():
-        src_path = conf.get('twitter', 'prod_src_path').format(key + '-' + '2014')
-        dest_path = conf.get('twitter', 'prod_dest_path').format('2014' + val, 'COUNTS')
+    for i in months
+        src_path = conf.get('twitter', 'prod_src_path').format(year + i)
+        dest_path = conf.get('twitter', 'prod_dest_path').format(year + i, 'COUNTS')
         ruleCount = {}
         tagCount = {}
         fileList = os.listdir(src_path)
