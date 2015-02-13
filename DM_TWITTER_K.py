@@ -19,14 +19,21 @@ def CSVfromTwitterJSON(jsonfilename, collName, DorP, errorfile=None, overwrite=F
         #Will track all variables seen across all tweets in the file
         #Will contain a dictionary for each processed tweet
         tweetList = []
+        
+        # Rule index mapping done via rules.json files
         r = open(conf_path.format("rules.json"))
+        # Dict that stores the rules
         ruleConf = json.loads(r.read())
+        # number of lines in the file to track the index of the additional rules
         num_lines = sum(1 for i in r)
         r.close()
-        host = conf.get()
+        
+        # Host and Port values for MongoDB connection
         host = conf.get(DorP, "host")
         port = int(conf.get(DorP, "port"))
-        configData = (host, port)
+        mongoConf = ConfigParser.ConfigParser()
+        mongoConf.read(conf_path.format("fieldsToMongo.cfg"))
+        configData = (host, port, mongoConf)
         mykeys = []
 
         for line in jsonfile:
@@ -92,12 +99,13 @@ def removeKey(key):
 # ========================================================================================
 #Recursive function to process the input dictionary
 def extract(DictIn, Dictout, allkeys, nestedKey=""):
+
+    # Explicitly adding keys to Dictout
     if nestedKey == "object":
         try:
             Dictout["objlocdname"] = DictIn["location"]["displayName"]
         except KeyError:
             pass
-    #If DictIn is a dictionary
     if nestedKey == "twitter_entities_user_mentions":
         Dictout["entitiesusrmentions"] = []
         mentionSet = set()
@@ -122,7 +130,8 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
                 Dictout["locgeocoordinates"] = DictIn["geo"]["coordinates"]
         except KeyError, TypeError:
             pass
-
+    
+    #If DictIn is a dictionary
     elif isinstance(DictIn, dict):
         #Process each entry
         for key, value in DictIn.iteritems():
@@ -188,7 +197,7 @@ def addRule(rule):
     count = 1
     for i in r:
         if count == num_lines:
-            i.replace('}', "\"" + rule + "\"" + : "\"" + num_lines + "\"" + '\n')
+            i.replace('}', "\"" + rule + "\"" + : "\"" + str(num_lines) + "\"" + '\n')
         count += 1
     r.write('}')
     r.close()
@@ -199,21 +208,21 @@ def addRule(rule):
 def populateMongo(inputTweet, collName, DorP, configData):
     host = configData[0]
     port = configData[1]
+    # Creating a new MongoDB client
     client = MongoClient(host, port)
     db = client.twitter
     collection = db[collName]
-    mongoConf = ConfigParser.ConfigParser()
-    mongoConf.read(conf_path.format("fieldsToMongo.cfg"))
+    mongoConf = configData[2]
+    #packing the entitieshtagstext field into an array
     if 'entitieshtagstext' not in inputTweet:
         inputTweet['entitieshtagstext'] = []
     else:
-        #packing the entitieshtagstext field into an array
         inputTweet['entitieshtagstext'] = inputTweet['entitieshtagstext'].split(';')
 
     # Renaming id field
-    # inputTweet['_id'] = int(inputTweet['Idpost'].split(':')[2])
     inputTweet['_id'] = inputTweet['Idpost'].split(':')[2]
     logging.info('Started posting collection with id: ' + str(inputTweet['_id']) + ' into collection ' + collName)
+    # Remove the former id key
     inputTweet.pop('Idpost', None)
     # packing the matchingrulesvalue field into an array
     inputTweet['matchingrulesvalue'] = inputTweet['matchingrulesvalue'].split(';')
@@ -226,26 +235,33 @@ def populateMongo(inputTweet, collName, DorP, configData):
     dateObj = datetime.fromtimestamp(time.mktime(timeStruct))
     inputTweet['postedTime'] = dateObj
     
+    # Mapping the rules into integers from the ruleConf
     inputTweet['ruleIndex'] = []
     for j in inputTweet['matchingrulesvalue']:
         try:
             # inputTweet['ruleIndex'].append(ruleConf[j.strip()])
-            inputTweet['ruleIndex'].append(ruleConf[j.strip()])
+            inputTweet['ruleIndex'].append(int(ruleConf[j.strip()]))
         except KeyError:
+            # If the rule isn't found in the ruleConf, then add the rule to the rules.json file
             addRule(j.strip())
-            num_lines += 1
-            ruleConf[j.strip()] = num_lines
             logging.debug("Invalid rule fetched via GNIP with _id=" + inputTweet['_id'] + " with rule=" + j.strip())
             print "Invalid rule fetched via GNIP with _id=" + inputTweet['_id'] + " with rule=" + j.strip()
-            inputTweet['ruleIndex'].append(ruleConf[j.strip()])
+            inputTweet['ruleIndex'].append(int(ruleConf[j.strip()]))
+            # Add the new rule that was added in the ruleConf
+    # Remove the former matchingrulesvalue key
     inputTweet.pop('matchingrulesvalue', None)
     print inputTweet['ruleIndex']
+    # Initialize a new Dict to hold the record that needs to be uploaded into the corresponding Mongo Collection
     mongoRecord = {}
     
+    # Iterate through each of the keys in the original Dict
     for (key, val) in inputTweet.iteritems():
+        # Get the new translated key from the mongoConf dict
         newKey = mongoConf.get('fields', key)
+        # create a new with translated field names to upload onto the corresponding Mongo Collection
         mongoRecord[newKey] = val
 
+    # Attempt to insert record into the collection. If it fails, do an update
     try:
         collection.insert(mongoRecord)
     except errors.DuplicateKeyError:
@@ -268,29 +284,34 @@ if __name__ == "__main__":
             logging.basicConfig(filename=logs.format('prodUpload' + "dev" +'.log'), level=logging.DEBUG)
             CSVfromTwitterJSON(inputFile, "August_test", "mongo")
     elif choice =="prod":
-        op = sys.argv[2]
-        current_month = sys.argv[3]
-        current_year = sys.argv[4]
+        current_month = sys.argv[2]
+        current_year = sys.argv[3]
+        # Format the input month and year to form a a part of the Mongo Collection name
         collName = current_month[0:3] + current_year[2:]
+        # Get the path for the logs output
         logs = conf.get("conf", "prod_log_path")
         logging.basicConfig(filename=logs.format('(prodUpload' + collName +'.log'), level=logging.DEBUG)
+        # Get the path for the source Raw_data json files
         src_path = conf.get("twitter", "prod_src_path").format(current_month + '-' + current_year)
+        # Get the list of files in the source directory
         fileList = os.listdir(src_path)
-        current_month = current_month[0:2]
-        if op == "transform":
-            for j in fileList:
-                if len(j.split('-')) == 3:
-                    fileName = j.split('-')[-1].split('.')[0]
-                    logging.info("Started uploading " + j)
-                    if int(fileName) < 6:
-                        CSVfromTwitterJSON(src_path + j, collName + "_1", "mongo")
-                    elif int(fileName) < 11:
-                        CSVfromTwitterJSON(src_path + j, collName + "_2", "mongo")
-                    elif int(fileName) < 16:
-                        CSVfromTwitterJSON(src_path + j, collName + "_3", "mongo")
-                    if int(fileName) < 21:
-                        CSVfromTwitterJSON(src_path + j, collName + "_4", "mongo")
-                    elif int(fileName) < 26:
-                        CSVfromTwitterJSON(src_path + j, collName + "_5", "mongo")
-                    elif int(fileName) < 32:
-                        CSVfromTwitterJSON(src_path + j, collName + "_6", "mongo")
+        # Iterate over every file in the source directory
+        for j in fileList:
+            # If it's a by-day file in the source directory it will have 3 parts around a '-'
+            if len(j.split('-')) == 3:
+                # Extract the date of the corresponding file from it's name
+                fileDate = int(j.split('-')[-1].split('.')[0])
+                logging.info("Started uploading " + j)
+                # Upload to the corresponding Mongo Collection based on the date extracted from the file
+                if fileDate < 6:
+                    CSVfromTwitterJSON(src_path + j, collName + "_1", "mongo")
+                elif fileDate < 11:
+                    CSVfromTwitterJSON(src_path + j, collName + "_2", "mongo")
+                elif fileDate < 16:
+                    CSVfromTwitterJSON(src_path + j, collName + "_3", "mongo")
+                if fileDate < 21:
+                    CSVfromTwitterJSON(src_path + j, collName + "_4", "mongo")
+                elif fileDate < 26:
+                    CSVfromTwitterJSON(src_path + j, collName + "_5", "mongo")
+                elif fileDate < 32:
+                    CSVfromTwitterJSON(src_path + j, collName + "_6", "mongo")
