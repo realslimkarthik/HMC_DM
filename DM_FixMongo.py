@@ -112,8 +112,9 @@ if __name__ == "__main__":
                         JSONtoMongo(src_path + j, collName + "_6", conf)
     elif choice == "fixRules":
         # fileName = 'prodUploadJul14.log'
+        fileName = 'H:\Data\code\KARTHIK_OLD\prodUploadAug14.log'
         extraRules = set()
-        fileName = sys.argv[2]
+        # fileName = sys.argv[2]
         f = open(fileName)
         f.seek(0, 0)
         for i in f.readlines():
@@ -121,10 +122,11 @@ if __name__ == "__main__":
             line = i.split('=')
             if len(line) > 1:
                 extraRules.add(line[-1])
+                print line[-1]
         f.close()
         f = open(conf_path.format('rules.json'), 'a')
         f.write('\n')
-        count = 521
+        count = sum(1 for i in f)
         for i in extraRules:
             f.write("\"" + i.strip() + "\":" + "\"" + str(count) + "\"" + ',' + '\n')
             count += 1
