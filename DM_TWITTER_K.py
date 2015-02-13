@@ -300,7 +300,7 @@ if __name__ == "__main__":
         logs = conf.get("conf", "prod_log_path")
         logging.basicConfig(filename=logs.format('(prodUpload' + collName +'.log'), level=logging.DEBUG)
         # Get the path for the source Raw_data json files
-        src_path = conf.get("twitter", "prod_src_path").format(current_year + current_month)
+        src_path = conf.get("twitter", "prod_src_path").format(current_year + monthToNames[current_month])
         # Get the list of files in the source directory
         fileList = os.listdir(src_path)
         # Iterate over every file in the source directory
