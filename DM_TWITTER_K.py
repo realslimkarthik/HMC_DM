@@ -270,6 +270,9 @@ def populateMongo(inputTweet, collName, DorP, configData):
         print "Updated tweet _id=" + str(inputTweet['_id'])
 
 # ========================================================================================
+# Command to run the script
+# python DM_TWITTER_K.py prod <Capitalized full month name> <Four digit year>
+# Eg - python DM_TWITTER_K.py prod August 2014
 
 if __name__ == "__main__":
     choice = sys.argv[1]
