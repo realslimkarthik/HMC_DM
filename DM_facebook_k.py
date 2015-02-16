@@ -9,79 +9,223 @@ import ConfigParser
 #makeCSVfromJSONbackfillDir("h:\\Data\\RawData\\GNIP\\Facebook\\Backfill\\")
 
 #get IDs from search files for fanpages
-def getIDs(mypath):
-    myfiles = []
-    for (dirpath, dirnames, filenames) in os.walk(mypath):
-        myfiles.extend(os.path.join(dirpath, filename) for filename in filenames)
+# def getIDs(mypath):
+#     myfiles = []
+#     for (dirpath, dirnames, filenames) in os.walk(mypath):
+#         myfiles.extend(os.path.join(dirpath, filename) for filename in filenames)
     
-    summary = open(mypath+"fb_fanpages_summary.txt","w")
-    current = []
-    temp=""
+#     summary = open(mypath+"fb_fanpages_summary.txt","w")
+#     current = []
+#     temp=""
 
-    for filename in myfiles:
-        if (".json" in filename) and ("ids" not in filename) and ("fb_fanpages" in filename):
-            print filename
-            f = open(filename, "r")
-            for line in f:
-                if "page" in line or temp != "":
-                    try:
-                        myline0 = temp+line
-                        myline = string.strip(myline0)
-                        #myline.decode("utf-8", "ignore")
-                        data = json.loads(myline)
-                        x=data['page']['id']
-                        current.append(x)
-                        output = [data['page']['category'], data['page']['name'], x]
-                        output2 = u"\t".join(output)+u"\n"
-                        print output2
-                        summary.write(output2)
-                        temp = ""
-                    except ValueError, e:
-                        if "Unterminated" in e.message:
-                            print line
-                            temp = line
-                        else:
-                            print e
-            f.close()
+#     for filename in myfiles:
+#         if (".json" in filename) and ("ids" not in filename) and ("fb_fanpages" in filename):
+#             print filename
+#             f = open(filename, "r")
+#             for line in f:
+#                 if "page" in line or temp != "":
+#                     try:
+#                         myline0 = temp+line
+#                         myline = string.strip(myline0)
+#                         #myline.decode("utf-8", "ignore")
+#                         data = json.loads(myline)
+#                         x=data['page']['id']
+#                         current.append(x)
+#                         output = [data['page']['category'], data['page']['name'], x]
+#                         output2 = u"\t".join(output)+u"\n"
+#                         print output2
+#                         summary.write(output2)
+#                         temp = ""
+#                     except ValueError, e:
+#                         if "Unterminated" in e.message:
+#                             print line
+#                             temp = line
+#                         else:
+#                             print e
+#             f.close()
 
-    summary.close()
-    dm_rules.jsonCreateFromList(current,mypath+"ids.json")
+#     summary.close()
+#     dm_rules.jsonCreateFromList(current,mypath+"ids.json")
 
 
-def getIDsFromUrlSearch(mypath):
-    myfiles = []
-    for (dirpath, dirnames, filenames) in os.walk(mypath):
-        myfiles.extend(os.path.join(dirpath, filename) for filename in filenames)   
-    summary = open(mypath+"fb_fanpages_summary.txt","w")
+# def getIDsFromUrlSearch(mypath):
+#     myfiles = []
+#     for (dirpath, dirnames, filenames) in os.walk(mypath):
+#         myfiles.extend(os.path.join(dirpath, filename) for filename in filenames)   
+#     summary = open(mypath+"fb_fanpages_summary.txt","w")
 
-    for filename in myfiles:
-        if ("FacebookGraphKW" in filename):
-            print filename
-            f = open(filename, "r")
-            f.readline()
-            f.readline()
-            myline = f.readline()
-            line3 = string.strip(myline)
-            keyword = line3.split(": ")[1]
-#            print keyword
-            f.readline()
-            f.readline()
-            mydata = f.read()
-            try:
-                data = json.loads(mydata)
-                x=data['data']
-                for entry in x:
-                    category = entry['category'].encode('ascii','ignore')
-                    name = entry['name'].encode('ascii','ignore')
-                    myid = entry['id'].encode('ascii','ignore')
-                    output = "\t".join([keyword, category, name, myid])
-                    summary.write(output+"\n")
-            except ValueError, e:
-                    print e
-            f.close()
+#     for filename in myfiles:
+#         if ("FacebookGraphKW" in filename):
+#             print filename
+#             f = open(filename, "r")
+#             f.readline()
+#             f.readline()
+#             myline = f.readline()
+#             line3 = string.strip(myline)
+#             keyword = line3.split(": ")[1]
+# #            print keyword
+#             f.readline()
+#             f.readline()
+#             mydata = f.read()
+#             try:
+#                 data = json.loads(mydata)
+#                 x=data['data']
+#                 for entry in x:
+#                     category = entry['category'].encode('ascii','ignore')
+#                     name = entry['name'].encode('ascii','ignore')
+#                     myid = entry['id'].encode('ascii','ignore')
+#                     output = "\t".join([keyword, category, name, myid])
+#                     summary.write(output+"\n")
+#             except ValueError, e:
+#                     print e
+#             f.close()
 
-    summary.close()
+#     summary.close()
 
+# def makeCSVfromJSONbackfillDir(jsondir):
+#     myfiles = []
+#     for (dirpath, dirnames, filenames) in os.walk(jsondir):
+#         myfiles.extend(os.path.join(dirpath, filename) for filename in filenames)
+#     for f in myfiles:
+#         if ".json" in f and ".csv" not in f:
+#             makeCSVfromJSONbackfill(f)
+
+
+# def makeCSVfromJSONbackfill(jsonfilename):
+#     jsonfile = open(jsonfilename,"r")
+#     csvfile = open(jsonfilename+".csv","w")
+
+#     #Will track all variables seen across all results in the file
+#     mykeys = []
+#     #Will contain a dictionary for each processed result
+#     resultList = []
+
+#     line=jsonfile.read()
+#     myline = string.strip(line)
+#     if myline != "":
+#         #For each tweet in the file, decode the weird characters without complaining
+#         myline = myline.decode("utf-8", "ignore")
+#         #print myline
+#         #Remove new lines from within
+#         mylines = myline.split("\\n")
+#         if len(mylines) > 1:
+#             myline = " ".join(mylines)
+#         #Remove carriage returns from within
+#         mylines = myline.split("\\r")
+#         if len(mylines) > 1:
+#             myline = " ".join(mylines)
+#         #Remove problematic \s
+#         mylines = myline.split("\\\\")
+#         if len(mylines) > 1:
+#             myline = " ".join(mylines)
+#         mylines = myline.split("\\ ")
+#         if len(mylines) > 1:
+#             myline = " ".join(mylines)
+#         #Create a dictionary using the JSON processor
+#         try:
+#             results = json.loads(myline)
+#         except ValueError as e:
+#             print myline
+#             print e
+#         else:
+#             for elt in results['entry']:
+#                 #Create an empty dictionary
+#                 a = {}
+#                 #Send the JSON dictionary, the empty dictionary, and the list of all keys
+#                 extract(elt,a,mykeys)
+#                 #Add the output dictionary to the list
+#                 resultList.append(a)
+#     #Print the number of tweets processed
+#     printCSV(csvfile,resultList,mykeys)
+
+#jsondir is the directory for the entire month
+#makeCSVsByDayFromMonth("h:/data/rawdata/gnip/facebook/2014/08/")
+# def makeCSVsByDayFromMonth(jsondir):
+#     for day in range(31):
+#         num = str(day)
+#         if(day < 10):
+#             num = "0"+num
+#         if not jsondir.endswith("/") and not jsondir.endswith("\\"):
+#             jsondir = jsondir + "/"
+#         mypath = jsondir + num + "/"
+#         if os.path.isdir(mypath):
+#             outpre = jsondir +"fb"+ num + "-"
+#             makeCSVfromJSONfbStreams(mypath, outpre)
+
+# #processBackfill()
+# def processBackfill(backfilldir="h:/data/rawdata/gnip/facebook/backfill/",
+#                     outdir="h:/data/rawdata/gnip/facebook/"):
+#     myfilename = ""
+#     csvfile = None
+#     resultsList = []
+#     mykeys = []
+#     myfiles = []
+#     for (dirpath, dirnames, filenames) in os.walk(backfilldir):
+#         myfiles.extend(os.path.join(dirpath, filename) for filename in filenames)
+#     for f in myfiles:
+#         if ".json" in f and ".csv" not in f:
+#             pieces = f.split("_")
+#             infocom = pieces[1]
+#             year = pieces[3][0:4]
+#             month = pieces[3][4:6]
+#             day = pieces[3][6:8]
+#             filename = outdir+year+"/"+month+"/"+day+"-"+infocom+"B.csv"
+
+#             if filename != myfilename:
+#                 if csvfile != None:
+#                     printCSV(csvfile,resultsList,mykeys)
+#                     csvfile.close()
+#                     resultsList = []
+#                     mykeys = []
+#                 csvfile = open(filename,"w")
+#                 myfilename = filename
+#                 print filename
+#             newResults,newKeys = getDictListKeys(f)
+#             resultsList = resultsList + newResults
+#             mykeys = mykeys + newKeys
+#     printCSV(csvfile,resultsList,mykeys)
+#     csvfile.close()
+
+
+# def getDictListKeys(filename):
+#     mykeys = []
+#     resultList = []
+#     jsonfile = open(filename,"r")
+#     line=jsonfile.read()
+#     myline = string.strip(line)
+#     if myline != "":
+#         #For each tweet in the file, decode the weird characters without complaining
+#         myline = myline.decode("utf-8", "ignore")
+#         #Remove new lines from within
+#         mylines = myline.split("\\n")
+#         if len(mylines) > 1:
+#             myline = " ".join(mylines)
+#         #Remove carriage returns from within
+#         mylines = myline.split("\\r")
+#         if len(mylines) > 1:
+#             myline = " ".join(mylines)
+#         #Remove problematic \s
+#         mylines = myline.split("\\\\")
+#         if len(mylines) > 1:
+#             myline = " ".join(mylines)
+#         mylines = myline.split("\\ ")
+#         if len(mylines) > 1:
+#             myline = " ".join(mylines)
+#         #Create a dictionary using the JSON processor
+#         try:
+#             results = json.loads(myline)
+#         except ValueError as e:
+#             print myline
+#             print e
+#         else:
+#             for elt in results['entry']:
+#                 #Create an empty dictionary
+#                 a = {}
+#                 #Send the JSON dictionary, the empty dictionary, and the list of all keys
+#                 extract(elt,a,mykeys)
+#                 #Add the output dictionary to the list
+#                 resultList.append(a)
+#         return(resultList,mykeys)
 
 #Creates the CSV
 #makeCSVfromJSONfbStreams("h:/data/rawdata/gnip/facebook/2014/08/18/")
@@ -161,61 +305,6 @@ def parseString(myline, outList, current, outKeys):
         outList.append(a)
 
 
-def makeCSVfromJSONbackfillDir(jsondir):
-    myfiles = []
-    for (dirpath, dirnames, filenames) in os.walk(jsondir):
-        myfiles.extend(os.path.join(dirpath, filename) for filename in filenames)
-    for f in myfiles:
-        if ".json" in f and ".csv" not in f:
-            makeCSVfromJSONbackfill(f)
-
-
-def makeCSVfromJSONbackfill(jsonfilename):
-    jsonfile = open(jsonfilename,"r")
-    csvfile = open(jsonfilename+".csv","w")
-
-    #Will track all variables seen across all results in the file
-    mykeys = []
-    #Will contain a dictionary for each processed result
-    resultList = []
-
-    line=jsonfile.read()
-    myline = string.strip(line)
-    if myline != "":
-        #For each tweet in the file, decode the weird characters without complaining
-        myline = myline.decode("utf-8", "ignore")
-        #print myline
-        #Remove new lines from within
-        mylines = myline.split("\\n")
-        if len(mylines) > 1:
-            myline = " ".join(mylines)
-        #Remove carriage returns from within
-        mylines = myline.split("\\r")
-        if len(mylines) > 1:
-            myline = " ".join(mylines)
-        #Remove problematic \s
-        mylines = myline.split("\\\\")
-        if len(mylines) > 1:
-            myline = " ".join(mylines)
-        mylines = myline.split("\\ ")
-        if len(mylines) > 1:
-            myline = " ".join(mylines)
-        #Create a dictionary using the JSON processor
-        try:
-            results = json.loads(myline)
-        except ValueError as e:
-            print myline
-            print e
-        else:
-            for elt in results['entry']:
-                #Create an empty dictionary
-                a = {}
-                #Send the JSON dictionary, the empty dictionary, and the list of all keys
-                extract(elt,a,mykeys)
-                #Add the output dictionary to the list
-                resultList.append(a)
-    #Print the number of tweets processed
-    printCSV(csvfile,resultList,mykeys)
 
 
 def printCSV(csvfile,resultList,mykeys):
@@ -300,94 +389,6 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
         else:
             Dictout[nestedKey] = unicode(Dictout[nestedKey])+"; "+unicode(DictIn)
 
-#jsondir is the directory for the entire month
-#makeCSVsByDayFromMonth("h:/data/rawdata/gnip/facebook/2014/08/")
-def makeCSVsByDayFromMonth(jsondir):
-    for day in range(31):
-        num = str(day)
-        if(day < 10):
-            num = "0"+num
-        if not jsondir.endswith("/") and not jsondir.endswith("\\"):
-            jsondir = jsondir + "/"
-        mypath = jsondir + num + "/"
-        if os.path.isdir(mypath):
-            outpre = jsondir +"fb"+ num + "-"
-            makeCSVfromJSONfbStreams(mypath, outpre)
-
-#processBackfill()
-def processBackfill(backfilldir="h:/data/rawdata/gnip/facebook/backfill/",
-                    outdir="h:/data/rawdata/gnip/facebook/"):
-    myfilename = ""
-    csvfile = None
-    resultsList = []
-    mykeys = []
-    myfiles = []
-    for (dirpath, dirnames, filenames) in os.walk(backfilldir):
-        myfiles.extend(os.path.join(dirpath, filename) for filename in filenames)
-    for f in myfiles:
-        if ".json" in f and ".csv" not in f:
-            pieces = f.split("_")
-            infocom = pieces[1]
-            year = pieces[3][0:4]
-            month = pieces[3][4:6]
-            day = pieces[3][6:8]
-            filename = outdir+year+"/"+month+"/"+day+"-"+infocom+"B.csv"
-
-            if filename != myfilename:
-                if csvfile != None:
-                    printCSV(csvfile,resultsList,mykeys)
-                    csvfile.close()
-                    resultsList = []
-                    mykeys = []
-                csvfile = open(filename,"w")
-                myfilename = filename
-                print filename
-            newResults,newKeys = getDictListKeys(f)
-            resultsList = resultsList + newResults
-            mykeys = mykeys + newKeys
-    printCSV(csvfile,resultsList,mykeys)
-    csvfile.close()
-
-
-def getDictListKeys(filename):
-    mykeys = []
-    resultList = []
-    jsonfile = open(filename,"r")
-    line=jsonfile.read()
-    myline = string.strip(line)
-    if myline != "":
-        #For each tweet in the file, decode the weird characters without complaining
-        myline = myline.decode("utf-8", "ignore")
-        #Remove new lines from within
-        mylines = myline.split("\\n")
-        if len(mylines) > 1:
-            myline = " ".join(mylines)
-        #Remove carriage returns from within
-        mylines = myline.split("\\r")
-        if len(mylines) > 1:
-            myline = " ".join(mylines)
-        #Remove problematic \s
-        mylines = myline.split("\\\\")
-        if len(mylines) > 1:
-            myline = " ".join(mylines)
-        mylines = myline.split("\\ ")
-        if len(mylines) > 1:
-            myline = " ".join(mylines)
-        #Create a dictionary using the JSON processor
-        try:
-            results = json.loads(myline)
-        except ValueError as e:
-            print myline
-            print e
-        else:
-            for elt in results['entry']:
-                #Create an empty dictionary
-                a = {}
-                #Send the JSON dictionary, the empty dictionary, and the list of all keys
-                extract(elt,a,mykeys)
-                #Add the output dictionary to the list
-                resultList.append(a)
-        return(resultList,mykeys)
 
 def aggregateByDay(year, conf):
     src_parts_path = conf.get("facebook", "prod_src_parts_path")
