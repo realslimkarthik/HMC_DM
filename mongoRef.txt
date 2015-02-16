@@ -1,4 +1,13 @@
 Commonly used MongoDB queries:
 
 *Query for getting data after a date: db.Aug14_1.find({'pT': {$gte: new Date('Sep 1, 2014')}})
+
 *Query for checking if a value exists in an array: db.Oct14_1.find({'mrv': {'$in': ['22']}})
+
+*Query to change mrv values into ints from strings:
+db.Sep14_1.find().forEach(function(doc) {
+    a = [];
+    doc.mrv.forEach(function(e) {
+        a.push(parseInt(e));
+    });
+}).update({"$set": {"mrv": a}})
