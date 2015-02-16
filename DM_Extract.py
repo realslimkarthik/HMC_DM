@@ -63,7 +63,7 @@ def queryDB(mongoConf, month, year, filterRule, path):
         coll = db[i]
         try:
             # Query to find all records of a particular rule
-            data = coll.find({'mrv': {'$in': [filterRule]}}, timeout=False)
+            data = coll.find({'mrv': {'$in': [int(filterRule)]}}, timeout=False)
         except pymongo.errors.CursorNotFound:
             continue
         # Maintain count to track the file number of the corresponding rule file
@@ -167,7 +167,7 @@ def printCSV(resultList, path, month, rule):
     # Retrieve the count from the resultList parameter
     counter = resultList[5]
     # Create a new CSV file with the specified name in the specified path and open it as a binary file
-    csvfile = open(path + month + rules + '_' + str(counter) + '.csv', 'wb')
+    csvfile = open(path + month + rule + '_' + str(counter) + '.csv', 'wb')
     conf = ConfigParser.ConfigParser()
     conf.read(conf_path.format("mongoToFields.cfg"))
     # Retrieve the CSVUnicodeWriter and the list of all the field names after the header of the CSV file has been printed
@@ -224,7 +224,7 @@ def printCSV(resultList, path, month, rule):
                         row.append(rules)
                         for j in range(0, resultList[1]):
                             try:
-                                row.append(result[key][j])
+                                row.append(str(result[key][j]))
                             except IndexError:
                                 row.append("")
                         continue
@@ -297,7 +297,7 @@ if __name__ == "__main__":
     conf = ConfigParser.ConfigParser()
     conf.read("config\config.cfg")
     # Get unformatted path to the Config files
-    conf_path = conf.get("get", "conf_path")
+    conf_path = conf.get("conf", "conf_path")
     # Get the destination path
     dest = conf.get("twitter", "prod_dest_path")
     # Generate full path for the corresponding year and month
