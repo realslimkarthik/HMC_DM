@@ -322,6 +322,6 @@ if __name__ == "__main__":
     
     # for each rule
     for i in rules:
-        print i
         # Run queryDB for the corresponding month, year and rule
         queryDB(conf, month, year, str(i), path)
+        print i
