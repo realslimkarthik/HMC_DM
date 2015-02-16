@@ -5,6 +5,8 @@ import os
 import ConfigParser
 import logging
 import DM_TWITTER_K as dmt
+from datetime import datetime
+import time
 
 # ========================================================================================
 def parseJson(jsonFile):
@@ -67,6 +69,12 @@ def JSONtoMongo(fileName, collName, mongoConf):
                 print "Invalid rule fetched via GNIP with _id=" + trimmedJson['Idpost'] + " with rule=" + j.strip()
                 continue
         trimmedJson.pop('matchingrulesvalue', None)
+        dateFrag = trimmedJson['postedTime'].split('T')
+        dateFrag[1] = dateFrag[1].split('.')[0]
+        dateStr = ''.join(' ' + d for d in dateFrag).strip()
+        timeStruct = time.strptime(dateStr, "%Y-%m-%d %H:%M:%S")
+        dateObj = datetime.fromtimestamp(time.mktime(timeStruct))
+        trimmedJson['postedTime'] = dateObj
         for (key, val) in trimmedJson.iteritems():
             updatedRecord[fieldConf.get('fields', key)] = val
         fixMongo(collection, updatedRecord)
