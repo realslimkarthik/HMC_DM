@@ -5,9 +5,16 @@ Commonly used MongoDB queries:
 *Query for checking if a value exists in an array: db.Oct14_1.find({'mrv': {'$in': ['22']}})
 
 *Query to change mrv values into ints from strings:
-db.Sep14_1.find().forEach(function(doc) {
+db.Sep14_3.find().forEach(function(doc) {
+    id = doc._id;
     a = [];
     doc.mrv.forEach(function(e) {
         a.push(parseInt(e));
     });
-}).update({"$set": {"mrv": a}})
+    db.Sep14_1.update(
+        {"_id": id},
+        {"$set": {"mrv": a}
+    });
+    print(id);
+    print(a);
+})
