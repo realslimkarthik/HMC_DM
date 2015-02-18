@@ -40,7 +40,7 @@ class CSVUnicodeWriter:
 
 # ========================================================================================
 # Function to query Mongo Collection and retrieve all records matching a particular rule
-def queryDB(mongoConf, month, year, filterRule, path):
+def queryDB(mongoConf, month, year, filterRule, path, ruleLines):
     host = mongoConf.get("mongo", "host")
     port = int(mongoConf.get("mongo", "port"))
     # Create a new MongoDB client
@@ -59,6 +59,7 @@ def queryDB(mongoConf, month, year, filterRule, path):
     for j in range(1, 7):
         coll_names.add(collName + '_' + str(j))
     # For each of the collections
+    count = 1
     for i in coll_names:
         coll = db[i]
         try:
@@ -67,7 +68,6 @@ def queryDB(mongoConf, month, year, filterRule, path):
         except pymongo.errors.CursorNotFound:
             continue
         # Maintain count to track the file number of the corresponding rule file
-        count = 1
         # For each record returned by the query
         for k in data:
             # Track the longest of each of the array fields
@@ -91,7 +91,7 @@ def queryDB(mongoConf, month, year, filterRule, path):
                 # Package all the control information into a tuple
                 outputSet = (dataSet, longestRule, longestHtag, longestUMen, longestRTag, count)
                 # Send all the control information to the PrintCSV function to convert the Dict into a CSV
-                printCSV(outputSet, path, month, filterRule)
+                printCSV(outputSet, path, month, filterRule, ruleLines)
                 # Reset all the values and increment the count to denote that the next file must be started when writing next
                 outputSet = ()
                 dataSet = []
@@ -106,7 +106,7 @@ def queryDB(mongoConf, month, year, filterRule, path):
     # Once iteration over all the records is done, send all control info to PrintCSV to generate CSV file
     print "\nWriting to File...\n"
     outputSet = (dataSet, longestRule, longestHtag, longestUMen, longestRTag, count)
-    printCSV(outputSet, path, month, filterRule)
+    printCSV(outputSet, path, month, filterRule, ruleLines)
 
 
 # ========================================================================================
@@ -161,7 +161,7 @@ def printHead(csvfile, resultList, delim, conf):
 
 # ========================================================================================
 
-def printCSV(resultList, path, month, rule):
+def printCSV(resultList, path, month, rule, ruleLines):
     # Mention the delimiter
     delim = ","
     # Retrieve the count from the resultList parameter
@@ -206,6 +206,34 @@ def printCSV(resultList, path, month, rule):
                     if result[key] is None:
                         row.append('.')
                         continue
+                # if key == "mrv":
+                #     translatedRules = []
+                #     rules = ""
+                #     for j in range(0, resultList[1]):
+                #         try:
+                #             rule = ':'.join(ruleLines[int(result[key][j])].split(':')[0:-1])
+                #             translatedRules.append(rule)
+                #         except IndexError:
+                #             pass
+                #     row.append(';'.join(translatedRules))
+                #     result[key] += [""] * (resultList[1] - len(result[key]))
+                #     row.extend(result[key])
+                #     continue
+                # # Unroll the matchingrulestag array into multiple fields
+                # if key == "mrt":
+                #     result[key] += [""] * (resultList[4] - len(result[key]))
+                #     row.extend(result[key])
+                #     continue
+                # # Unroll the entitieshtagstext array into multiple fields
+                # if key == "eumh":
+                #     result[key] += [""] * (resultList[2] - len(result[key]))
+                #     row.extend(result[key])
+                #     continue
+                # # Unroll the entitiesusrmentions array and its constituent fields into multiple fields
+                # if key == "eum":
+                #     result[key] += ["", "", ""] * (resultList[3] - len(result[key]))
+                #     row.extend(result[key])
+                #     continue
                 # Unroll the matchingrulesvalue array into multiple fields
                 if key == "mrv":
                     if resultList[1] > 0:
@@ -217,11 +245,9 @@ def printCSV(resultList, path, month, rule):
                                 translatedRules.append(rule)
                             except IndexError:
                                 pass
-                        tempKey = conf.get("fields", "mrv") + 's'
-                        rules = ""
                         for j in translatedRules:
                             rules += j + ';'
-                        row.append(rules)
+                        row.append(';'.join(translatedRules))
                         for j in range(0, resultList[1]):
                             try:
                                 row.append(str(result[key][j]))
@@ -315,13 +341,12 @@ if __name__ == "__main__":
     
     # Get the total number of rules and the list of all the rules
     r = open(conf_path.format("rules.json"))
-    ruleLength = sum(1 for i in r)
     ruleLines = r.readlines()
     r.close()
-    rules = range(1, ruleLength + 1)
+    rules = range(1, len(ruleLines))
     
     # for each rule
     for i in rules:
         # Run queryDB for the corresponding month, year and rule
-        queryDB(conf, month, year, str(i), path)
+        queryDB(conf, month, year, str(i), path, ruleLines)
         print i
