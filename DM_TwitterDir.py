@@ -105,7 +105,7 @@ def CSVfromTwitterJSON(jsonfilename, dest_path, mode=0, errorfile=None):
     if mode == 0:
         fields = ConfigParser.ConfigParser()
         fields.read(conf_path.format("fields.cfg"))
-        csvfile = open(dest_path + jsonfilename.split('.')[0] + '.csv', 'wb')
+        csvfile = open(jsonfilename.split('.')[0] + '.csv', 'wb')
         writer = DME.printHead(csvfile, resultList, delim, fields)
         keyList = [val for (key, val) in fields.items('fields')]
         printCSV(csvfile, resultList, writer[0], keyList, delim)
@@ -388,7 +388,7 @@ if __name__ == "__main__":
             if len(j.split('_')) == 3:
                 # Extract the date of the corresponding file from it's name
                 logging.info("Started uploading " + j)
-                tempResultList = CSVfromTwitterJSON(src_path + j, dest_path)
+                tempResultList = CSVfromTwitterJSON(src_path + j, dest_path, 1)
                 tweetList.append(tempResultList[0])
                 if outputSet is None:
                     outputSet = tempResultList
