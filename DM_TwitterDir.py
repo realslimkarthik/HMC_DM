@@ -41,7 +41,7 @@ class CSVUnicodeWriter:
 
 # ========================================================================================
 # Populates the CSV. Gets CSV's file handle from caller
-def CSVfromTwitterJSON(jsonfilename, dest_path, mode=0, errorfile=None):
+def CSVfromTwitterJSON(jsonfilename, mode=0, errorfile=None):
     delim = ','
     jsonfile = open(jsonfilename, 'r')
     #Will track all variables seen across all tweets in the file
@@ -124,7 +124,7 @@ def printCSV(csvfile, resultList, writer, keyList, delim):
                     continue
                 if key == "postedTime":
                     # Edit the postedTime into the postedTime, Year, Month, Day and Time fields
-                    dateFrag = inputTweet['postedTime'].split('T')
+                    dateFrag = result['postedTime'].split('T')
                     dateFrag[1] = dateFrag[1].split('.')[0]
                     dateStr = ''.join(' ' + d for d in dateFrag).strip()
                     timeStruct = time.strptime(dateStr, "%Y-%m-%d %H:%M:%S")
@@ -147,7 +147,7 @@ def printCSV(csvfile, resultList, writer, keyList, delim):
                         rules = ""
                         for j in range(0, resultList[1]):
                             try:
-                                rule = ':'.join(ruleLines[int(result[key][j])].split(':')[0:-1])
+                                rule = ':'.join(result[key][j])
                                 translatedRules.append(rule)
                             except IndexError:
                                 pass
@@ -205,8 +205,6 @@ def printCSV(csvfile, resultList, writer, keyList, delim):
                         row.append("")
                         row.append("")
                     continue
-                # Add the field to the row in unicode format
-                row.append(unicode(result[key]))
                 # Add the field to the row in unicode format
                 row.append(unicode(result[key]))
             else:
@@ -371,6 +369,7 @@ if __name__ == "__main__":
     dest_path = conf.get("twitter", "prod_spl_dest_path").format(current_year + monthToNames[current_month], proj_name)
     # Get the list of files in the source directory
     fileList = os.listdir(src_path)
+    delim = ','
 
     if choice == "byday":
         # Iterate over every file in the source directory
@@ -382,26 +381,48 @@ if __name__ == "__main__":
                 CSVfromTwitterJSON(src_path + j, dest_path)
     elif choice == "full":
         tweetList = []
-        outputSet = None
+        longestRule = 0
+        longestHtag = 0
+        longestRTag = 0
+        longestUMen = 0
+        flag = True
         for j in fileList:
             # If it's a by-day file in the source directory it will have 3 parts around the '-'s
+            tempResultList = None
             if len(j.split('_')) == 3:
                 # Extract the date of the corresponding file from it's name
                 logging.info("Started uploading " + j)
                 tempResultList = CSVfromTwitterJSON(src_path + j, dest_path, 1)
                 tweetList.append(tempResultList[0])
-                if outputSet is None:
-                    outputSet = tempResultList
+                if flag:
+                    longestRule = tempResultList[1]
+                    longestHtag = tempResultList[2]
+                    longestRTag = tempResultList[3]
+                    longestUMen = tempResultList[4]
+                    flag = False
                 else:
-                    outputSet[1] = tempResultList[1] if tempResultList[1] > outputSet[1] else outputSet[1]
-                    outputSet[2] = tempResultList[2] if tempResultList[2] > outputSet[2] else outputSet[2]
-                    outputSet[3] = tempResultList[3] if tempResultList[3] > outputSet[3] else outputSet[3]
-                    outputSet[4] = tempResultList[4] if tempResultList[4] > outputSet[4] else outputSet[4]
+                    longestRule = tempResultList[1] if tempResultList[1] > longestRule else longestRule
+                    longestHtag = tempResultList[2] if tempResultList[2] > longestHtag else longestHtag
+                    longestRTag = tempResultList[3] if tempResultList[3] > longestRTag else longestRTag
+                    longestUMen = tempResultList[4] if tempResultList[4] > longestUMen else longestUMen
         csvfile = open(dest_path + current_year + monthToNames[current_month] + proj_name + '.csv', 'wb')
         fields = ConfigParser.ConfigParser()
         fields.read(conf_path.format("fields.cfg"))
+        outputSet = (0, longestRule, longestHtag, longestRTag, longestUMen)
         writer = DME.printHead(csvfile, outputSet, delim, fields)
         keyList = [val for (key, val) in fields.items('fields')]
-        resultList = (tweetList, outputSet[1], outputSet[2], outputSet[3], outputSet[4])
+        resultList = (tweetList, longestRule, longestHtag, longestRTag, longestUMen)
         printCSV(csvfile, resultList, writer[0], keyList, delim)
+        csvfile.close()
+    elif choice == "dev":
+        
+        outputSet = CSVfromTwitterJSON('temp.json', 1)
+        csvfile = open('temp.csv', 'wb')
+        fields = ConfigParser.ConfigParser()
+        fields.read(conf_path.format("fields.cfg"))
+
+        writer = DME.printHead(csvfile, outputSet, delim, fields)
+        keyList = [val for (key, val) in fields.items('fields')]
+        # resultList = (tweetList, longestRule, longestHtag, longestRTag, longestUMen)
+        printCSV(csvfile, outputSet, writer[0], keyList, delim)
         csvfile.close()
