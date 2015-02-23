@@ -385,22 +385,22 @@ if __name__ == "__main__":
             if len(j.split('_')) == 3:
                 # Extract the date of the corresponding file from it's name
                 logging.info("Started uploading " + j)
-                tempResultList = CSVfromTwitterJSON(src_path + j, dest_path, 1)
+                tempResultList = CSVfromTwitterJSON(src_path + j, 1)
                 try:
-					tweetList.append(tempResultList[0])
-					if flag:
-						longestRule = tempResultList[1]
-						longestHtag = tempResultList[2]
-						longestRTag = tempResultList[3]
-						longestUMen = tempResultList[4]
-						flag = False
-					else:
-						longestRule = tempResultList[1] if tempResultList[1] > longestRule else longestRule
-						longestHtag = tempResultList[2] if tempResultList[2] > longestHtag else longestHtag
-						longestRTag = tempResultList[3] if tempResultList[3] > longestRTag else longestRTag
-						longestUMen = tempResultList[4] if tempResultList[4] > longestUMen else longestUMen
-				except TypeError:
-					continue
+                    tweetList.append(tempResultList[0])
+                    if flag:
+                        longestRule = tempResultList[1]
+                        longestHtag = tempResultList[2]
+                        longestRTag = tempResultList[3]
+                        longestUMen = tempResultList[4]
+                        flag = False
+                    else:
+                        longestRule = tempResultList[1] if tempResultList[1] > longestRule else longestRule
+                        longestHtag = tempResultList[2] if tempResultList[2] > longestHtag else longestHtag
+                        longestRTag = tempResultList[3] if tempResultList[3] > longestRTag else longestRTag
+                        longestUMen = tempResultList[4] if tempResultList[4] > longestUMen else longestUMen
+                except TypeError:
+                    continue
         csvfile = open(dest_path + current_year + monthToNames[current_month] + proj_name + '.csv', 'wb')
         fields = ConfigParser.ConfigParser()
         fields.read(conf_path.format("fields.cfg"))
@@ -411,8 +411,36 @@ if __name__ == "__main__":
         printCSV(csvfile, resultList, writer[0], keyList, delim)
         csvfile.close()
     elif choice == "dev":
-        
-        outputSet = CSVfromTwitterJSON('temp.json', 1)
+        tweetList = []
+        longestRule = 0
+        longestHtag = 0
+        longestRTag = 0
+        longestUMen = 0
+        flag = True
+        fileList = os.listdir("C:\\Users\\kharih2\\Work\\DM_Karthik\\HMC_DM")
+        for j in fileList:
+            # If it's a by-day file in the source directory it will have 3 parts around the '-'s
+            tempResultList = None
+            if len(j.split('_')) == 3 or 'json' in j:
+                # Extract the date of the corresponding file from it's name
+                logging.info("Started uploading " + j)
+                tempResultList = CSVfromTwitterJSON(j, 1)
+                try:
+                    tweetList.append(tempResultList[0])
+                    if flag:
+                        longestRule = tempResultList[1]
+                        longestHtag = tempResultList[2]
+                        longestRTag = tempResultList[3]
+                        longestUMen = tempResultList[4]
+                        flag = False
+                    else:
+                        longestRule = tempResultList[1] if tempResultList[1] > longestRule else longestRule
+                        longestHtag = tempResultList[2] if tempResultList[2] > longestHtag else longestHtag
+                        longestRTag = tempResultList[3] if tempResultList[3] > longestRTag else longestRTag
+                        longestUMen = tempResultList[4] if tempResultList[4] > longestUMen else longestUMen
+                except TypeError:
+                    continue
+        # outputSet = CSVfromTwitterJSON('temp.json', 1)
         csvfile = open('temp.csv', 'wb')
         fields = ConfigParser.ConfigParser()
         fields.read(conf_path.format("fields.cfg"))
