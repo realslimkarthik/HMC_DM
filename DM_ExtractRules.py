@@ -243,9 +243,7 @@ def printCSV(resultList, path, month, rule, ruleLines):
                 # Unroll the entitieshtagstext array into multiple fields
                 if key == "eumh":
                     htag = result[key]
-                    print resultList[2] - len(result[key])
                     htag += [""] * (resultList[2] - len(result[key]))
-                    print htag
                     row.extend(htag)
                     continue
                 row.append(unicode(result[key]))
