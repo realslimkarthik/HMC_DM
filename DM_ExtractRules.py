@@ -76,7 +76,7 @@ def queryDB(mongoConf, month, year, filterRule, path, ruleLines):
                 if lenHtag > longestHtag:
                     longestHtag = lenHtag
             if 'eum' in k:
-                lenUM = len(k['eumh'])
+                lenUM = len(k['eum'])
                 if lenUM > longestUMen:
                     longestUMen = lenUM
             if 'mrt' in k:
@@ -242,83 +242,19 @@ def printCSV(resultList, path, month, rule, ruleLines):
                     continue
                 # Unroll the entitieshtagstext array into multiple fields
                 if key == "eumh":
-                    htag = []
-                    htag = result[key].split(';')
-                    print resultList[2] - len(htag)
-                    htag += [""] * (resultList[2] - len(htag))
+                    htag = result[key]
+                    print resultList[2] - len(result[key])
+                    htag += [""] * (resultList[2] - len(result[key]))
+                    print htag
                     row.extend(htag)
                     continue
-                # Unroll the matchingrulesvalue array into multiple fields
-                # if key == "mrv":
-                #     if resultList[1] > 0:
-                #         translatedRules = []
-                #         rules = ""
-                #         for j in range(0, resultList[1]):
-                #             try:
-                #                 rule = ':'.join(ruleLines[int(result[key][j])].split(':')[0:-1])
-                #                 translatedRules.append(rule)
-                #             except IndexError:
-                #                 pass
-                #         for j in translatedRules:
-                #             rules += j + ';'
-                #         row.append(';'.join(translatedRules))
-                #         for j in range(0, resultList[1]):
-                #             try:
-                #                 row.append(str(result[key][j]))
-                #             except IndexError:
-                #                 row.append("")
-                #         continue
-                #     else:
-                #         row.append("")
-                #         row.append("")
-                # # Unroll the matchingrulestag array into multiple fields
-                # if key == "mrt":
-                #     if resultList[4] > 0:
-                #         mrtList = result[key].split(';')
-                #         for j in range(0, resultList[4]):
-                #             try:
-                #                 row.append(mrtList[j] + ';')
-                #             except IndexError:
-                #                 row.append("")
-                #     else:
-                #         row.append("")
-                #     continue
-                # # Unroll the entitieshtagstext array into multiple fields
-                # if key == "eumh":
-                #     if resultList[2] >= 1:
-                #         for j in range(0, resultList[2]):
-                #             try:
-                #                 row.append(result[key][j])
-                #             except IndexError:
-                #                 row.append("")
-                #         continue
-                #     elif resultList[2] == 0:
-                #         row.append("")
-                #     continue
-                # # Unroll the entitiesusrmentions array and its constituent fields into multiple fields
-                # if key == "eum":
-                #     if resultList[3] >= 1:
-                #         for j in range(0, resultList[3]):
-                #             try:
-                #                 for (k, v) in result[key][j].iteritems():
-                #                     row.append(v.strip())
-                #             except IndexError:
-                #                 row.append("")
-                #                 row.append("")
-                #                 row.append("")
-
-                #         continue
-                #     elif resultList[3] == 0:
-                #         row.append("")
-                #         row.append("")
-                #         row.append("")
-                #     continue
-                # # Add the field to the row in unicode format
-                # row.append(unicode(result[key]))
                 row.append(unicode(result[key]))
             else:
                 # If the key doesn't exist, append an empty string into the row
-                row.append("")
+                if key == 'eumh':
+                    row.extend([""] * resultList[2])
+                else:
+                    row.append("")
         # Writer writes the row list
         writer.writerow(row)
     # Close the CSV file
