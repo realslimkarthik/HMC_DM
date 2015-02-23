@@ -39,6 +39,13 @@ db.Nov14_3.find().forEach(function(doc) {
     }
 })
 
-db.Oct14_6.find().forEach(function(doc) {
-    db.Oct14_6.update({'_id':doc._id},{'$set':{'pt':new Date(doc.pt)}});
+db.Oct14_3.find().forEach(function(doc) {
+    db.Oct14_3.update({'_id':doc._id},{'$set':{'pt':new Date(doc.pt)}});
+})
+
+db.Oct14_4.find().forEach(function(doc) {
+    if (typeof doc['eumh'] == 'string') {
+        print('changed!');
+        db.Oct14_4.update({'_id': doc._id}, {'$set': {'eumh': doc['eumh'].split(';')}});
+    }
 })
