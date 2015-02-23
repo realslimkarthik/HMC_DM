@@ -145,15 +145,8 @@ def printCSV(csvfile, resultList, writer, keyList, delim):
                     if resultList[1] > 0:
                         translatedRules = []
                         rules = ""
-                        for j in range(0, resultList[1]):
-                            try:
-                                rule = ':'.join(result[key][j])
-                                translatedRules.append(rule)
-                            except IndexError:
-                                pass
-                        for j in translatedRules:
-                            rules += j + ';'
-                        row.append(';'.join(translatedRules))
+                        row.append(';'.join(result[key]))
+                        print result[key]
                         for j in range(0, resultList[1]):
                             try:
                                 row.append(str(result[key][j]))
