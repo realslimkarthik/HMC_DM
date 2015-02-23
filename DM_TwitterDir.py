@@ -81,7 +81,7 @@ def CSVfromTwitterJSON(jsonfilename, dest_path, mode=0, errorfile=None):
                 if errorfile != None:
                     write(jsonfilename+"\n"+myline+"\n"+e+"\n\n")
                 else:
-                    print myline
+                    # print myline
                     print e
             else:
                 #Find the summary count
