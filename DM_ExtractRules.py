@@ -72,12 +72,13 @@ def queryDB(mongoConf, month, year, filterRule, path, ruleLines):
         for k in data:
             # Track the longest of each of the array fields
             if 'eumh' in k:
-                lenHtag = len(k['eumh'].split(';'))
+                lenHtag = len(k['eumh'])
                 if lenHtag > longestHtag:
                     longestHtag = lenHtag
             if 'eum' in k:
-                if len(k['eum']) > longestUMen:
-                    longestUMen = len(k['eum'])
+                lenUM = len(k['eumh'])
+                if lenUM > longestUMen:
+                    longestUMen = lenUM
             if 'mrt' in k:
                 lenRTag = len(k['mrt'].split(';'))
                 if lenRTag > longestRTag:
@@ -229,14 +230,6 @@ def printCSV(resultList, path, month, rule, ruleLines):
                     rules += [""] * (resultList[1] - len(result[key]))
                     row.extend(rules)
                     continue
-                # Unroll the entitieshtagstext array into multiple fields
-                if key == "eumh":
-                    htag = []
-                    htag = result[key].split(';')
-                    print resultList[2] - len(htag)
-                    htag += [""] * (resultList[2] - len(htag))
-                    row.extend(htag)
-                    continue
                 # Unroll the entitiesusrmentions array and its constituent fields into multiple fields
                 if key == "eum":
                     usrMentions = []
@@ -246,6 +239,14 @@ def printCSV(resultList, path, month, rule, ruleLines):
                     # usrMentions = [j for j in result[key]]
                     usrMentions += ["", "", ""] * (resultList[3] - len(result[key]))
                     row.extend(usrMentions)
+                    continue
+                # Unroll the entitieshtagstext array into multiple fields
+                if key == "eumh":
+                    htag = []
+                    htag = result[key].split(';')
+                    print resultList[2] - len(htag)
+                    htag += [""] * (resultList[2] - len(htag))
+                    row.extend(htag)
                     continue
                 # Unroll the matchingrulesvalue array into multiple fields
                 # if key == "mrv":
