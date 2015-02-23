@@ -386,18 +386,21 @@ if __name__ == "__main__":
                 # Extract the date of the corresponding file from it's name
                 logging.info("Started uploading " + j)
                 tempResultList = CSVfromTwitterJSON(src_path + j, dest_path, 1)
-                tweetList.append(tempResultList[0])
-                if flag:
-                    longestRule = tempResultList[1]
-                    longestHtag = tempResultList[2]
-                    longestRTag = tempResultList[3]
-                    longestUMen = tempResultList[4]
-                    flag = False
-                else:
-                    longestRule = tempResultList[1] if tempResultList[1] > longestRule else longestRule
-                    longestHtag = tempResultList[2] if tempResultList[2] > longestHtag else longestHtag
-                    longestRTag = tempResultList[3] if tempResultList[3] > longestRTag else longestRTag
-                    longestUMen = tempResultList[4] if tempResultList[4] > longestUMen else longestUMen
+                try:
+					tweetList.append(tempResultList[0])
+					if flag:
+						longestRule = tempResultList[1]
+						longestHtag = tempResultList[2]
+						longestRTag = tempResultList[3]
+						longestUMen = tempResultList[4]
+						flag = False
+					else:
+						longestRule = tempResultList[1] if tempResultList[1] > longestRule else longestRule
+						longestHtag = tempResultList[2] if tempResultList[2] > longestHtag else longestHtag
+						longestRTag = tempResultList[3] if tempResultList[3] > longestRTag else longestRTag
+						longestUMen = tempResultList[4] if tempResultList[4] > longestUMen else longestUMen
+				except TypeError:
+					continue
         csvfile = open(dest_path + current_year + monthToNames[current_month] + proj_name + '.csv', 'wb')
         fields = ConfigParser.ConfigParser()
         fields.read(conf_path.format("fields.cfg"))
