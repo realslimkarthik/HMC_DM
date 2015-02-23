@@ -215,9 +215,7 @@ def populateMongo(inputTweet, collName, DorP, ruleConf, configData):
     mongoConf = configData[2]
     #packing the entitieshtagstext field into an array
     if 'entitieshtagstext' not in inputTweet:
-        inputTweet['entitieshtagstext'] = []
-    else:
-        inputTweet['entitieshtagstext'] = inputTweet['entitieshtagstext'].split(';')
+        inputTweet['entitieshtagstext'] = ''
 
     # Renaming id field
     inputTweet['_id'] = inputTweet['Idpost'].split(':')[2]
