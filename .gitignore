@@ -107,3 +107,4 @@ dummy_sample.json
 .idea/.name
 *.iml
 *.xml
+*.bat
