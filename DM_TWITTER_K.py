@@ -298,7 +298,7 @@ if __name__ == "__main__":
         print collName
         # Get the path for the logs output
         logs = conf.get("conf", "prod_log_path")
-        logging.basicConfig(filename=logs.format('(prodUpload' + collName +'.log'), level=logging.DEBUG)
+        logging.basicConfig(filename=logs.format('prodUpload' + collName +'.log'), level=logging.DEBUG)
         # Get the path for the source Raw_data json files
         src_path = conf.get("twitter", "prod_src_path").format(current_year + monthToNames[current_month])
         # Get the list of files in the source directory
@@ -313,13 +313,13 @@ if __name__ == "__main__":
                 # Upload to the corresponding Mongo Collection based on the date extracted from the file
                 if fileDate < 6:
                     CSVfromTwitterJSON(src_path + j, collName + "_1", "mongo")
-                elif fileDate < 11:
+                elif fileDate > 5 and  fileDate < 11:
                     CSVfromTwitterJSON(src_path + j, collName + "_2", "mongo")
-                elif fileDate < 16:
+                elif fileDate > 10 and fileDate < 16:
                     CSVfromTwitterJSON(src_path + j, collName + "_3", "mongo")
-                if fileDate < 21:
+                elif fileDate > 15 and fileDate < 21:
                     CSVfromTwitterJSON(src_path + j, collName + "_4", "mongo")
-                elif fileDate < 26:
+                elif fileDate > 20 and fileDate < 26:
                     CSVfromTwitterJSON(src_path + j, collName + "_5", "mongo")
-                elif fileDate < 32:
+                elif fileDate > 25 and fileDate < 32:
                     CSVfromTwitterJSON(src_path + j, collName + "_6", "mongo")
