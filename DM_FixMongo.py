@@ -104,19 +104,20 @@ if __name__ == "__main__":
         fileList = os.listdir(src_path)
         for j in fileList:
             if len(j.split('-')) == 3:
-                fileName = j.split('-')[-1].split('.')[0]
+                fileName = int(j.split('-')[-1].split('.')[0])
                 logging.info("Started fixing " + j)
-                if int(fileName) < 6:
-                    JSONtoMongo(src_path + j, collName + "_1", conf)
-                elif int(fileName) < 11:
-                    JSONtoMongo(src_path + j, collName + "_2", conf)
-                elif int(fileName) < 16:
-                    JSONtoMongo(src_path + j, collName + "_3", conf)
-                elif int(fileName) < 21:
+                # if int(fileName) < 6:
+                #     JSONtoMongo(src_path + j, collName + "_1", conf)
+                # elif int(fileName) < 11:
+                #     JSONtoMongo(src_path + j, collName + "_2", conf)
+                # elif int(fileName) < 16:
+                #     JSONtoMongo(src_path + j, collName + "_3", conf)
+                # elif int(fileName) < 21:
+                if fileName < 21:
                     JSONtoMongo(src_path + j, collName + "_4", conf)
-                elif int(fileName) < 26:
+                elif fileName < 26:
                     JSONtoMongo(src_path + j, collName + "_5", conf)
-                elif int(fileName) < 32:
+                elif fileName < 32:
                     JSONtoMongo(src_path + j, collName + "_6", conf)
     elif choice == "fixRules":
         # fileName = 'prodUploadJul14.log'
@@ -126,15 +127,18 @@ if __name__ == "__main__":
         f = open(fileName)
         f.seek(0, 0)
         for i in f.readlines():
-            # if i.split(':')[0] == "WARNING":
-            line = i.split('=')
-            if len(line) > 1:
-                extraRules.add(line[-1])
-                print line[-1]
+            if i.find("WARNING") != -1:
+                line = i.split('=')
+                if len(line) > 1:
+                    extraRules.add(line[-1])
+                    print line[-1]
         f.close()
-        f = open(conf_path.format('rules.json'), 'a')
-        f.write('\n')
+        f = open('H:\\Data\\code\\HMC_DM\\config\\rules.json', 'r')
         count = sum(1 for i in f)
+        f.close()
+        # f = open(conf_path.format('rules.json'), 'a')
+        f = open('H:\\Data\\code\\HMC_DM\\config\\rules.json', 'a')
+        f.write('\n')
         for i in extraRules:
             f.write("\"" + i.strip() + "\":" + "\"" + str(count) + "\"" + ',' + '\n')
             count += 1
