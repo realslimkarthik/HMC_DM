@@ -157,6 +157,7 @@ def printCSV(csvfile,resultList,mykeys):
 def extractComments(DictIn, Dictout, allkeys, fields, nestedKey=""):
     #If DictIn is a dictionary
     if nestedKey == "comments_data":
+        # Write code to explicitly pull out the keys that are being problematic
         for i in DictIn:
             print i.keys()
     if isinstance(DictIn, dict):
@@ -270,6 +271,8 @@ def aggregateByDay(year, conf):
                 curr_file.close()
                 curr_file = None
 
+
+# TO DO: write code to automate this for a bunch of months so that we can leave it running over the weekend
 
 if __name__ == "__main__":
     op = sys.argv[1]
