@@ -4,6 +4,7 @@ import dm_rules
 import json
 import sys
 import ConfigParser
+from CSVUnicodeWriter import CSVUnicodeWriter
 
 #Creates the CSV
 #makeCSVfromJSONfbStreams("h:/data/rawdata/gnip/facebook/2014/08/18/")
@@ -19,7 +20,7 @@ def makeCSVfromJSONfbStreams(jsondir, op, outfileprefix=""):
             myfiles.append(jsondir + i)
     currentInfo = ""
     currentComments = ""
-    fieldsFile = open("fb_comments_fields.txt")
+    fieldsFile = open(conf_path.format("fb_comments_fields.txt"))
     fields = [line.strip() for line in fieldsFile.readlines()]
     fieldsFile.close()
     for filename in myfiles:
@@ -56,17 +57,14 @@ def makeCSVfromJSONfbStreams(jsondir, op, outfileprefix=""):
                     elif "comments" in f.name:
                         parseString(myline, outComments, currentComments, keysComments, op, fields)
         if op == "info":
-            outputInfo = open(outfileprefix + filename.split('\\')[-1].split('.')[0] + "info.csv", "w")
+            outputInfo = open(outfileprefix + filename.split('\\')[-1].split('.')[0] + "info.csv", "wb")
             printCSV(outputInfo, outInfo, keysInfo)
             outputInfo.close()
         elif op == "comments":
-            outputComments = open(outfileprefix + filename.split('\\')[-1].split('.')[0] + "comments.csv", "w")
+            outputComments = open(outfileprefix + filename.split('\\')[-1].split('.')[0] + "comments.csv", "wb")
             keysComments.append('type')
-            printCSV(outputComments, outComments, keysComments)
+            printCSV(outputComments, outComments, keysComments, fields)
             outputComments.close()
-            f.close()
-    parseString("",outInfo, currentInfo, keysInfo)
-    parseString("",outComments, currentComments, keysComments)
 
 
 
@@ -89,81 +87,50 @@ def parseString(myline, outList, current, outKeys, op, fields=[]):
         outList.append(dataDict)
 
 
-
-
-def printCSV(csvfile,resultList,mykeys):
+def printCSV(csvfile, resultList, mykeys, fields):
     delim = ','
+    writer = CSVUnicodeWriter(csvfile)
+    map_writer = CSVUnicodeWriter(f)
     print len(resultList)
-
-    # createds = [s for s in mykeys if "created_time" in s]
-    # updateds = [s for s in mykeys if "updated_time" in s]
-    # csvfile.write("cdate"+delim)
-    # csvfile.write("udate"+delim)
-
-    for key in mykeys:
+    for key in fields:
         csvfile.write(key + delim)
 
+    csvfile.write('\n')
     for result in resultList:
-        csvfile.write("\n")
-        for key in mykeys:
+        ids = result['id'].split('_')
+        row = []
+        map_row = []
+        if result['from_id'] in fanpages:
+            map_row.append(result['from_id'])
+            map_row.append(result['id'])
+            map_writer.writerow(map_row)
+        for key in fields:
             if key in result:
-                entry = result[key]
-                if type(entry) == unicode:
-                    #entry = unicode(entry, "utf-8", errors="ignore")
-                    entrys = entry.split(",")
-                    if len(entrys) > 1:
-                        entry = "".join(entrys)
-                else:
-                    entry = unicode(entry)
                 #Override to avoid errors for weird characters
-                csvfile.write(entry.encode('ascii','ignore') + delim)
+                entry = unicode(result[key])
+                row.append(entry)
             else:
-                if key == "like_count":
-                    like_count = 0
-                    csvfile.write(str(like_count))
-                csvfile.write(delim)
-    
-    #For each entry in the list, print the variables in the correct order (or "" if not present)
-    # for result in resultList:
-    #     csvfile.write("\n")
-    #     mydate = ""
-    #     for c in createds:
-    #         if c in result:
-    #             mydate = result[c]
-    #     csvfile.write(mydate.encode('ascii','ignore')+delim)
-    #     mydate = ""
-    #     for c in updateds:
-    #         if c in result:
-    #             mydate = result[c]
-    #     csvfile.write(mydate.encode('ascii','ignore')+delim)
-    #     for item in mykeys:
-    #         if item in result:
-    #             entry = result[item]
-    #             if type(entry) == unicode:
-    #                 #entry = unicode(entry, "utf-8", errors="ignore")
-    #                 entrys = entry.split(",")
-    #                 if len(entrys) > 1:
-    #                     entry = "".join(entrys)
-    #             else:
-    #                 entry = unicode(entry)
-    #             #Override to avoid errors for weird characters
-    #             csvfile.write(entry.encode('ascii','ignore')+delim)
-    #         else:
-    #             csvfile.write(delim)
-
+                if key == "id1":
+                    row.append(ids[0])
+                elif key == "id2":
+                    try:
+                        row.append(ids[1])
+                    except IndexError:
+                        row.append("")
+                elif key == "threadid":
+                    row.append(ids[0])
+                elif key == "like_count":
+                    row.append('0')
+                else:
+                    row.append('')
+        writer.writerow(row)
 
 
 #Recursive function to process the input dictionary
 def extractComments(DictIn, Dictout, allkeys, fields, nestedKey=""):
     #If DictIn is a dictionary
-    if nestedKey == "comments_data":
-        # Write code to explicitly pull out the keys that are being problematic
-        for i in DictIn:
-            print i.keys()
     if isinstance(DictIn, dict):
         #Process each entry
-        #print DictIn
-        #print len(DictIn.items())
         for key, value in DictIn.iteritems():
             #If nested, prepend the previous variables
             if nestedKey != "":
@@ -187,6 +154,7 @@ def extractComments(DictIn, Dictout, allkeys, fields, nestedKey=""):
                         Dictout[mykey] = value
                     else:
                         Dictout[mykey] = unicode(Dictout[mykey]) + "; " + unicode(value)
+
     #If DictIn is a list, call extractComments on each member of the list
     elif isinstance(DictIn, list):
         for value in DictIn:
@@ -280,10 +248,17 @@ if __name__ == "__main__":
     year = sys.argv[3]
     conf = ConfigParser.ConfigParser()
     conf.read("config\config.cfg")
+    conf_path = conf.get("conf", "conf_path")
     # aggregateByDay(year, conf)
     src = conf.get("facebook", "prod_src_path").format(year, month)
     dest = conf.get("facebook", "prod_dest_path").format(year, month)
+    f = open(conf_path.format('facebook_fanpages.txt'))
+    fanpages = [i.strip() for i in f.readlines()]
+    f.close()
     if op == "info":
         makeCSVfromJSONfbStreams(src, op, dest)
     elif op == "comments":
+        f = open(dest + 'fanpage_to_user_id.csv', 'wb')
+        f.write('Fanpage, Comment_Id\n')
         makeCSVfromJSONfbStreams(src, op, dest)
+        f.close()
