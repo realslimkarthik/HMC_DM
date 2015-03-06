@@ -58,12 +58,12 @@ def makeCSVfromJSONfbStreams(jsondir, op, outfileprefix=""):
                         parseString(myline, outComments, currentComments, keysComments, op, fields)
         if op == "info":
             outputInfo = open(outfileprefix + filename.split('\\')[-1].split('.')[0] + "info.csv", "wb")
-            printCSV(outputInfo, outInfo, keysInfo)
+            printCSVInfo(outputInfo, outInfo, keysInfo)
             outputInfo.close()
         elif op == "comments":
             outputComments = open(outfileprefix + filename.split('\\')[-1].split('.')[0] + "comments.csv", "wb")
             keysComments.append('type')
-            printCSV(outputComments, outComments, keysComments, fields)
+            printCSVComments(outputComments, outComments, keysComments, fields)
             outputComments.close()
 
 
@@ -86,7 +86,32 @@ def parseString(myline, outList, current, outKeys, op, fields=[]):
         outList.append(dataDict)
 
 
-def printCSV(csvfile, resultList, mykeys, fields):
+def printCSVInfo(csvfile, resultList, mykeys):
+    delim = ','
+    print len(resultList)
+    
+    for key in mykeys:
+        csvfile.write(key + delim)
+
+    for result in resultList:
+        csvfile.write("\n")
+        for item in mykeys:
+            if item in result:
+                entry = result[item]
+                if type(entry) == unicode:
+                    #entry = unicode(entry, "utf-8", errors="ignore")
+                    entrys = entry.split(",")
+                    if len(entrys) > 1:
+                        entry = "".join(entrys)
+                else:
+                    entry = unicode(entry)
+                #Override to avoid errors for weird characters
+                csvfile.write(entry.encode('ascii','ignore')+delim)
+            else:
+                csvfile.write(delim)
+
+
+def printCSVComments(csvfile, resultList, mykeys, fields):
     delim = ','
     writer = CSVUnicodeWriter(csvfile)
     map_writer = CSVUnicodeWriter(f)
@@ -251,7 +276,6 @@ if __name__ == "__main__":
     # aggregateByDay(year, conf)
     src = conf.get("facebook", "prod_src_path").format(year, month)
     dest = conf.get("facebook", "prod_dest_path").format(year, month)
-    fanpages = []
     if op == "info":
         makeCSVfromJSONfbStreams(src, op, dest)
     elif op == "comments":
