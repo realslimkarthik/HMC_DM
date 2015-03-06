@@ -158,7 +158,7 @@ def printHead(csvfile, resultList, delim, conf):
     # Write a new line character to denote the end of header line
     csvfile.write('\n')
     # Create a Unicode based CSV writer with the opened csvfile and quoting all the values in all the fields
-    writer = CSVUnicodeWriter(csvfile, quoting=csv.QUOTE_ALL)
+    writer = CSVUnicodeWriter(csvfile)
     # Return a writer, keyList tuple
     return (writer, keyList)
 
@@ -175,17 +175,9 @@ def printCSV(resultList, path, month, rule, ruleLines):
     conf.read(conf_path.format("mongoToFields.cfg"))
     # Retrieve the CSVUnicodeWriter and the list of all the field names after the header of the CSV file has been printed
     (writer, keyList) = printHead(csvfile, resultList, delim, conf)
-    # ruleFile = open("rules.json")
-    # ruleFile.seek(0, 0)
-    # ruleLines = ruleFile.readlines()
 
     # Iterate over each record
     for result in resultList[0]:
-        # if os.path.getsize(csvfile.name) / 1048576 > 100:
-        #     csvfile.close()
-        #     csvfile = next(fileGen)
-        #     keyList = printHead(csvfile, resultList, delim)
-        # Initialize an empty list to store values that are to be written into a row of the CSV file
         row = []
         # For each key in keyList
         for key in keyList:
@@ -236,7 +228,6 @@ def printCSV(resultList, path, month, rule, ruleLines):
                     for j in result[key]:
                         for (k, v) in j.iteritems():
                             usrMentions.append(v)
-                    # usrMentions = [j for j in result[key]]
                     usrMentions += ["", "", ""] * (resultList[3] - len(result[key]))
                     row.extend(usrMentions)
                     continue
