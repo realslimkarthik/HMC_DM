@@ -1,7 +1,7 @@
 id
-id1 = id.split('_')[0]
-id2 = id.split('_')[1]
-threadid = id.split('_')[0]
+id1
+id2
+threadid
 created_time
 updated_time
 picture
@@ -14,8 +14,8 @@ description
 likes_data_id
 can_remove
 comments_data_from_id
-comments_data_from_like_count
 comments_data_user_likes
-comments_message
+comments_data_like_count
+comments_data_message
 shares_count
 caption
