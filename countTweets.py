@@ -11,14 +11,14 @@ import json
 import sys
 
 def countTweets(src_path, dest_path):
-    ruleCount = {}
-    tagCount = {}
     fileList = os.listdir(src_path)
     for j in fileList:
         if len(j.split('_')) == 3:
             print j
             f = open(src_path + j)
             f.seek(0, 0)
+            ruleCount = {}
+            tagCount = {}
             for k in f.readlines():
                 try:
                     lineJson = json.loads(k)
