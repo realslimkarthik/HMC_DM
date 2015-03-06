@@ -67,7 +67,6 @@ def makeCSVfromJSONfbStreams(jsondir, op, outfileprefix=""):
             outputComments.close()
 
 
-
 def parseString(myline, outList, current, outKeys, op, fields=[]):
     if current != "":
         myline = "".join([current,myline])
@@ -252,12 +251,13 @@ if __name__ == "__main__":
     # aggregateByDay(year, conf)
     src = conf.get("facebook", "prod_src_path").format(year, month)
     dest = conf.get("facebook", "prod_dest_path").format(year, month)
-    f = open(conf_path.format('facebook_fanpages.txt'))
-    fanpages = [i.strip() for i in f.readlines()]
-    f.close()
+    fanpages = []
     if op == "info":
         makeCSVfromJSONfbStreams(src, op, dest)
     elif op == "comments":
+        f = open(conf_path.format('facebook_fanpages.txt'))
+        fanpages = [i.strip() for i in f.readlines()]
+        f.close()
         f = open(dest + 'fanpage_to_user_id.csv', 'wb')
         f.write('Fanpage, Comment_Id\n')
         makeCSVfromJSONfbStreams(src, op, dest)
