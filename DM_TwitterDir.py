@@ -9,7 +9,7 @@ from pymongo import MongoClient, errors
 from datetime import datetime
 import time
 import logging
-import DM_Extract as DME
+import DM_ExtractRules as DME
 import csv, codecs, cStringIO
 
 
@@ -41,7 +41,7 @@ class CSVUnicodeWriter:
 
 # ========================================================================================
 # Populates the CSV. Gets CSV's file handle from caller
-def CSVfromTwitterJSON(jsonfilename, mode=0, errorfile=None):
+def CSVfromTwitterJSON(jsonfilename, mode=0, junk=False, errorfile=None):
     delim = ','
     jsonfile = open(jsonfilename, 'r')
     #Will track all variables seen across all tweets in the file
@@ -91,12 +91,16 @@ def CSVfromTwitterJSON(jsonfilename, mode=0, errorfile=None):
                     #Create an empty dictionary
                     tweetObj = {}
                     #Send the JSON dictionary, the empty dictionary, and the list of all keys
-                    extract(tweet, tweetObj, mykeys, longest)
+                    if junk == False:
+                        extract(tweet, tweetObj, mykeys, longest)
+                    else:
+                        extractJunk(tweet, tweetObj, mykeys, longest)
                     tweetList.append(tweetObj)
                     #Add the output dictionary to the list
-                    print tweetObj['matchingrulesvalue']
                     try:
-                        print tweetObj['geocoordinates']
+                        # print tweetObj['matchingrulesvalue']
+                        # print tweetObj['geocoordinates']
+                        print tweetObj['entitieshtagstext']
                     except KeyError:
                         # print "NA"
                         continue
@@ -105,9 +109,15 @@ def CSVfromTwitterJSON(jsonfilename, mode=0, errorfile=None):
     if mode == 0:
         fields = ConfigParser.ConfigParser()
         fields.read(conf_path.format("fields.cfg"))
-        csvfile = open(jsonfilename.split('.')[0] + '.csv', 'wb')
-        writer = DME.printHead(csvfile, resultList, delim, fields)
-        keyList = [val for (key, val) in fields.items('fields')]
+        if junk == False:
+            filename = jsonfilename.split('.')[0] + '.csv'
+            keyList = fields.items('fields')
+        else:
+            filename = jsonfilename.split('.')[0] + '_junk.csv'
+            keyList = [(0, key) for key in mykeys]
+
+        csvfile = open(filename, 'wb')
+        writer = DME.printHead(csvfile, resultList, delim, keyList)
         printCSV(csvfile, resultList, writer[0], keyList, delim)
         csvfile.close()
     elif mode == 1:
@@ -116,7 +126,7 @@ def CSVfromTwitterJSON(jsonfilename, mode=0, errorfile=None):
 def printCSV(csvfile, resultList, writer, keyList, delim):
     for result in resultList[0]:
         row = []
-        for key in keyList:
+        for (val, key) in keyList:
             if key in result:
                 if key == "Idpost":
                     # Edit the tweet id and append the new id to the row list
@@ -146,7 +156,6 @@ def printCSV(csvfile, resultList, writer, keyList, delim):
                         translatedRules = []
                         rules = ""
                         row.append(';'.join(result[key]))
-                        print result[key]
                         for j in range(0, resultList[1]):
                             try:
                                 row.append(str(result[key][j]))
@@ -155,14 +164,14 @@ def printCSV(csvfile, resultList, writer, keyList, delim):
                         continue
                     else:
                         row.append("")
-                        row.append("")
+                        continue
                 # Unroll the matchingrulestag array into multiple fields
                 if key == "matchingrulestag":
                     if resultList[4] > 0:
-                        mrtList = result[key].split(';')
+                        # mrtList = result[key].split(';')
                         for j in range(0, resultList[4]):
                             try:
-                                row.append(mrtList[j] + ';')
+                                row.append(result[key][j])
                             except IndexError:
                                 row.append("")
                     else:
@@ -170,6 +179,7 @@ def printCSV(csvfile, resultList, writer, keyList, delim):
                     continue
                 # Unroll the entitieshtagstext array into multiple fields
                 if key == "entitieshtagstext":
+                    print result[key]
                     if resultList[2] >= 1:
                         for j in range(0, resultList[2]):
                             try:
@@ -201,6 +211,8 @@ def printCSV(csvfile, resultList, writer, keyList, delim):
                 # Add the field to the row in unicode format
                 row.append(unicode(result[key]))
             else:
+                if key == "entitiesusrmentionsidstr" or key == "entitiesusrmentionssname" or key == "entitiesusrmentionsname":
+                    continue
                 # If the key doesn't exist, append an empty string into the row
                 row.append("")
     # Writer writes the row list
@@ -227,26 +239,27 @@ def extract(DictIn, Dictout, allkeys, longest, nestedKey=""):
             Dictout["objlocdname"] = DictIn["location"]["displayName"]
         except KeyError:
             pass
-    if nestedKey == "twitter_entities_user_mentions":
+    if nestedKey == "twitter_entities":
         Dictout["entitiesusrmentions"] = []
         mentionSet = set()
         inObj = {}
-        for i in DictIn:
+        for i in DictIn["user_mentions"]:
             inObj['is'] = i['id_str']
             inObj['n'] = i['name']
             inObj['sn'] = i['screen_name']
             Dictout["entitiesusrmentions"].append(inObj)
             inObj = {}
         longest['lu'] = len(DictIn) if len(DictIn) > longest['lu'] else longest['lu']
-    elif nestedKey == "twitter_entities_hashtags":
         longestHtag = 0
-        for i in DictIn:
+        print DictIn["hashtags"]
+        Dictout['entitieshtagstext'] = []
+        for i in DictIn["hashtags"]:
             try:
                 Dictout['entitieshtagstext'].append(i['text'])
                 longestHtag += 1
             except KeyError:
                 break
-        longest['lh'] = longestHtag if longestHtag > longest['lh'] else longest['lh']
+        longest['lh'] = len(DictIn['hashtags']) if len(DictIn['hashtags']) > longest['lh'] else longest['lh']
 
     elif nestedKey == "generator":
         Dictout["generatordname"] = DictIn["displayName"]
@@ -323,23 +336,71 @@ def extract(DictIn, Dictout, allkeys, longest, nestedKey=""):
     #If DictIn is a string, check if it is a new variable and then add to dictionary
     else:
         if isinstance(DictIn, unicode) or isinstance(DictIn, str):
-            newKey = removeKey(DictIn)
-            if newKey == "":
-                return
             if isinstance(DictIn, unicode) or isinstance(DictIn, str):
                 DictIn = DictIn.strip()
             if DictIn != "":
-                if not newKey in allkeys:
-                    allkeys.append(newKey)
-                if not newKey in Dictout:
-                    Dictout[newKey] = DictIn
+                if not nestedKey in allkeys:
+                    allkeys.append(nestedKey)
+                if not nestedKey in Dictout:
+                    Dictout[nestedKey] = DictIn
                 else:
-                    Dictout[newKey] = unicode(Dictout[newKey])+"; "+unicode(DictIn)
+                    Dictout[nestedKey] = unicode(Dictout[nestedKey])+"; "+unicode(DictIn)
             else:
-                if not newKey in allkeys:
-                    allkeys.append(newKey)
-                if not newKey in Dictout:
-                    Dictout[newKey] = ""
+                if not nestedKey in allkeys:
+                    allkeys.append(nestedKey)
+                if not nestedKey in Dictout:
+                    Dictout[nestedKey] = ""
+
+# ========================================================================================
+
+#Recursive function to showcase the variables that are being omitted the input dictionary
+def extractJunk(DictIn, Dictout, allkeys, nestedKey=""):
+    #If DictIn is a dictionary
+    if isinstance(DictIn, dict):
+        #Process each entry
+        for key, value in DictIn.iteritems():
+            #If nested, prepend the previous variables
+            if nestedKey != "":
+                mykey = nestedKey + "_" + str(key)
+            else:
+                mykey = key
+            if isinstance(value, dict): # If value itself is dictionary
+                extract(value, Dictout, allkeys, nestedKey=mykey)
+            elif isinstance(value, list): # If value itself is list
+                extract(value, Dictout, allkeys, nestedKey=mykey)
+            else: #Value is just a string
+                newKey = removeKey(mykey)
+                if newKey != "":
+                    return
+                if isinstance(value, unicode) or isinstance(value, str):
+                    value = value.strip()
+                if value != "":
+                    #If this is a new variable, add it to the list
+                    if not mykey in allkeys:
+                        allkeys.append(mykey)
+                    #Add it to the output dictionary
+                    if not mykey in Dictout:
+                        Dictout[mykey] = value
+                    else:
+                        Dictout[mykey] = unicode(Dictout[mykey])+"; "+unicode(value)
+    #If DictIn is a list, call extract on each member of the list
+    elif isinstance(DictIn, list):
+        for value in DictIn:
+            extract(value,Dictout,allkeys,nestedKey=nestedKey)
+    #If DictIn is a string, check if it is a new variable and then add to dictionary
+    else:
+        if isinstance(DictIn, unicode) or isinstance(DictIn, str):
+            DictIn = DictIn.strip()
+        newKey = removeKey(DictIn)
+        if newKey != "":
+            return
+        if DictIn != "":
+            if not nestedKey in allkeys:
+                allkeys.append(nestedKey)
+            if not nestedKey in Dictout:
+                Dictout[nestedKey] = DictIn
+            else:
+                Dictout[nestedKey] = unicode(Dictout[nestedKey])+"; "+unicode(DictIn)
 
 # ========================================================================================
 
@@ -371,7 +432,7 @@ if __name__ == "__main__":
             if len(j.split('_')) == 3:
                 # Extract the date of the corresponding file from it's name
                 logging.info("Started uploading " + j)
-                CSVfromTwitterJSON(src_path + j, dest_path)
+                CSVfromTwitterJSON(src_path + j)
     elif choice == "full":
         tweetList = []
         longestRule = 0
@@ -402,13 +463,14 @@ if __name__ == "__main__":
                 except TypeError:
                     continue
         csvfile = open(dest_path + current_year + monthToNames[current_month] + proj_name + '.csv', 'wb')
-        fields = ConfigParser.ConfigParser()
-        fields.read(conf_path.format("fields.cfg"))
+        fieldsConf = ConfigParser.ConfigParser()
+        fieldsConf.read(conf_path.format("fields.cfg"))
+        fields = fieldsConf.items('fields')
         outputSet = (0, longestRule, longestHtag, longestRTag, longestUMen)
         writer = DME.printHead(csvfile, outputSet, delim, fields)
-        keyList = [val for (key, val) in fields.items('fields')]
+        # keyList = [val for (key, val) in fields]
         resultList = (tweetList, longestRule, longestHtag, longestRTag, longestUMen)
-        printCSV(csvfile, resultList, writer[0], keyList, delim)
+        printCSV(csvfile, resultList, writer[0], fields, delim)
         csvfile.close()
     elif choice == "dev":
         tweetList = []
@@ -450,3 +512,7 @@ if __name__ == "__main__":
         # resultList = (tweetList, longestRule, longestHtag, longestRTag, longestUMen)
         printCSV(csvfile, outputSet, writer[0], keyList, delim)
         csvfile.close()
+    elif choice == "junk":
+        inputFile = "C:\\Users\\kharih2\\Work\\DM_Karthik\\HMC_Data\\TwitterPowerTrack\\tw2014_01_01_part.json"
+        CSVfromTwitterJSON(inputFile)
+        CSVfromTwitterJSON(inputFile, 0, True)
