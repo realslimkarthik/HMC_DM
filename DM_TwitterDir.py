@@ -234,11 +234,6 @@ def removeKey(key):
 def extract(DictIn, Dictout, allkeys, longest, nestedKey=""):
 
     # Explicitly adding keys to Dictout
-    if nestedKey == "object":
-        try:
-            Dictout["objlocdname"] = DictIn["location"]["displayName"]
-        except KeyError:
-            pass
     if nestedKey == "twitter_entities":
         Dictout["entitiesusrmentions"] = []
         mentionSet = set()
@@ -251,7 +246,6 @@ def extract(DictIn, Dictout, allkeys, longest, nestedKey=""):
             inObj = {}
         longest['lu'] = len(DictIn) if len(DictIn) > longest['lu'] else longest['lu']
         longestHtag = 0
-        print DictIn["hashtags"]
         Dictout['entitieshtagstext'] = []
         for i in DictIn["hashtags"]:
             try:
@@ -261,8 +255,6 @@ def extract(DictIn, Dictout, allkeys, longest, nestedKey=""):
                 break
         longest['lh'] = len(DictIn['hashtags']) if len(DictIn['hashtags']) > longest['lh'] else longest['lh']
 
-    elif nestedKey == "generator":
-        Dictout["generatordname"] = DictIn["displayName"]
     elif nestedKey == "geo":
         Dictout["geocoordinates"] = DictIn['coordinates']
         Dictout["geotype"] = DictIn["type"]
@@ -311,7 +303,7 @@ def extract(DictIn, Dictout, allkeys, longest, nestedKey=""):
             else: #Value is just a string
                 newKey = removeKey(mykey)
                 if newKey == "":
-                    return
+                    continue
                 if isinstance(value, unicode) or isinstance(value, str):
                     value = value.strip()
                 if value != "":
