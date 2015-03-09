@@ -114,11 +114,11 @@ def queryDB(mongoConf, month, year, filterRule, path, ruleLines):
 
 # ========================================================================================
 # Function to print the Header of the CSV file
-def printHead(csvfile, resultList, delim, conf):
+def printHead(csvfile, resultList, delim, fields):
     # Initialize the keyList to an empty list to hold all the keys to iterate over while printing data
     keyList = []
     # Iterating over all the column headings to be printed
-    for (key, val) in conf.items('fields'):
+    for (key, val) in fields:
         # Adding heading to keyList
         keyList.append(key)
         # Break postedTime into multiple fields as shown below
@@ -150,8 +150,11 @@ def printHead(csvfile, resultList, delim, conf):
             if resultList[3] >= 1:
                 for i in range(1, resultList[3] + 1):
                     csvfile.write("entitiesusrmentionsidstr" + str(i) + delim + "entitiesusrmentionssname" + str(i) + delim + "entitiesusrmentionsname" + str(i) + delim)
+                continue
             else:
                 csvfile.write("entitiesusrmentionsidstr" + delim + "entitiesusrmentionssname" + delim + "entitiesusrmentionsname" + delim)
+            continue
+        if val == "entitiesusrmentionsidstr" or val == "entitiesusrmentionssname" or val == "entitiesusrmentionsname":
             continue
         # Else write the field name into the file
         csvfile.write(val + delim)
@@ -174,7 +177,7 @@ def printCSV(resultList, path, month, rule, ruleLines):
     conf = ConfigParser.ConfigParser()
     conf.read(conf_path.format("mongoToFields.cfg"))
     # Retrieve the CSVUnicodeWriter and the list of all the field names after the header of the CSV file has been printed
-    (writer, keyList) = printHead(csvfile, resultList, delim, conf)
+    (writer, keyList) = printHead(csvfile, resultList, delim, conf.items('fields'))
 
     # Iterate over each record
     for result in resultList[0]:
