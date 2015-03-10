@@ -94,7 +94,7 @@ def CSVfromTwitterJSON(jsonfilename, mode=0, junk=False, errorfile=None):
                     if junk == False:
                         extract(tweet, tweetObj, mykeys, longest)
                     else:
-                        extractJunk(tweet, tweetObj, mykeys, longest)
+                        extractJunk(tweet, tweetObj, mykeys)
                     tweetList.append(tweetObj)
                     #Add the output dictionary to the list
                     try:
@@ -353,17 +353,17 @@ def extractJunk(DictIn, Dictout, allkeys, nestedKey=""):
         for key, value in DictIn.iteritems():
             #If nested, prepend the previous variables
             if nestedKey != "":
-                mykey = nestedKey + "_" + str(key)
+                mykey = nestedKey + "_" + key
             else:
                 mykey = key
             if isinstance(value, dict): # If value itself is dictionary
-                extract(value, Dictout, allkeys, nestedKey=mykey)
+                extractJunk(value, Dictout, allkeys, nestedKey=mykey)
             elif isinstance(value, list): # If value itself is list
-                extract(value, Dictout, allkeys, nestedKey=mykey)
+                extractJunk(value, Dictout, allkeys, nestedKey=mykey)
             else: #Value is just a string
                 newKey = removeKey(mykey)
                 if newKey != "":
-                    return
+                    continue
                 if isinstance(value, unicode) or isinstance(value, str):
                     value = value.strip()
                 if value != "":
@@ -375,17 +375,14 @@ def extractJunk(DictIn, Dictout, allkeys, nestedKey=""):
                         Dictout[mykey] = value
                     else:
                         Dictout[mykey] = unicode(Dictout[mykey])+"; "+unicode(value)
-    #If DictIn is a list, call extract on each member of the list
+    #If DictIn is a list, call extractJunk on each member of the list
     elif isinstance(DictIn, list):
         for value in DictIn:
-            extract(value,Dictout,allkeys,nestedKey=nestedKey)
+            extractJunk(value, Dictout, allkeys, nestedKey=nestedKey)
     #If DictIn is a string, check if it is a new variable and then add to dictionary
     else:
         if isinstance(DictIn, unicode) or isinstance(DictIn, str):
             DictIn = DictIn.strip()
-        newKey = removeKey(DictIn)
-        if newKey != "":
-            return
         if DictIn != "":
             if not nestedKey in allkeys:
                 allkeys.append(nestedKey)
@@ -401,7 +398,8 @@ monthToNames = {'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05',
 if __name__ == "__main__":
     choice = sys.argv[1]
     conf = ConfigParser.ConfigParser()
-    conf.read("config\config.cfg")
+    # conf.read("config\config.cfg")
+    conf.read("config/config.cfg")
     conf_path = conf.get("conf", "conf_path")
     current_month = sys.argv[2]
     current_year = sys.argv[3]
@@ -414,7 +412,10 @@ if __name__ == "__main__":
     src_path = conf.get("twitter", "prod_spl_src_path").format(current_year + monthToNames[current_month], proj_name)
     dest_path = conf.get("twitter", "prod_spl_dest_path").format(current_year + monthToNames[current_month], proj_name)
     # Get the list of files in the source directory
-    fileList = os.listdir(src_path)
+    try:
+        fileList = os.listdir(src_path)
+    except OSError:
+        pass
     delim = ','
 
     if choice == "byday":
@@ -505,6 +506,6 @@ if __name__ == "__main__":
         printCSV(csvfile, outputSet, writer[0], keyList, delim)
         csvfile.close()
     elif choice == "junk":
-        inputFile = "C:\\Users\\kharih2\\Work\\DM_Karthik\\HMC_Data\\TwitterPowerTrack\\tw2014_01_01_part.json"
+        inputFile = "tw2014_01_01_part.json"
         CSVfromTwitterJSON(inputFile)
         CSVfromTwitterJSON(inputFile, 0, True)
