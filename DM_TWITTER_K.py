@@ -64,7 +64,6 @@ def CSVfromTwitterJSON(jsonfilename, collName, DorP, errorfile=None, overwrite=F
                     if errorfile != None:
                         write(jsonfilename+"\n"+myline+"\n"+e+"\n\n")
                     else:
-                        print myline
                         print e
                 else:
                     #Find the summary count
@@ -100,12 +99,7 @@ def removeKey(key):
 #Recursive function to process the input dictionary
 def extract(DictIn, Dictout, allkeys, nestedKey=""):
 
-    # Explicitly adding keys to Dictout
-    if nestedKey == "object":
-        try:
-            Dictout["objlocdname"] = DictIn["location"]["displayName"]
-        except KeyError:
-            pass
+    # # Explicitly adding keys to Dictout
     if nestedKey == "twitter_entities_user_mentions":
         Dictout["entitiesusrmentions"] = []
         mentionSet = set()
@@ -116,20 +110,10 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
             inObj['sn'] = i['screen_name']
             Dictout["entitiesusrmentions"].append(inObj)
             inObj = {}
-    elif nestedKey == "generator":
-        Dictout["generatordname"] = DictIn["displayName"]
-    elif nestedKey == "geo":
-        Dictout["geocoordinates"] = DictIn['coordinates']
-        Dictout["geotype"] = DictIn["type"]
-    elif nestedKey == "location":
-        try:
-            Dictout["locdname"] = DictIn["displayName"]
-            Dictout["locname"] = DictIn["name"]
-            Dictout["loccountrycode"] = DictIn["country_code"]
-            if DictIn["geo"] is not None:
-                Dictout["locgeocoordinates"] = DictIn["geo"]["coordinates"]
-        except KeyError, TypeError:
-            pass
+    elif "coordinates" in nestedKey:
+        newKey = removeKey(nestedKey)
+        if newKey != "":
+            Dictout[newKey] = DictIn
     
     #If DictIn is a dictionary
     elif isinstance(DictIn, dict):
@@ -147,7 +131,7 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
             else: #Value is just a string
                 newKey = removeKey(mykey)
                 if newKey == "":
-                    return
+                    continue
                 if isinstance(value, unicode) or isinstance(value, str):
                     value = value.strip()
                 if value != "":
@@ -189,20 +173,6 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
                     allkeys.append(newKey)
                 if not newKey in Dictout:
                     Dictout[newKey] = ""
-
-# ========================================================================================
-# def addRule(rule):
-#     r = open(conf_path.format("rules.json", "a"))
-#     num_lines += 1
-#     count = 1
-#     for i in r:
-#         if count == num_lines:
-#             i.replace('}', "\"" + rule + "\"" + ':' + "\"" + str(num_lines) + "\"" + '\n')
-#         count += 1
-#     r.write('}')
-#     r.close()
-#     num_lines += 1
-#     ruleConf = json.loads(r.read())
 
 # ========================================================================================
 def populateMongo(inputTweet, collName, DorP, ruleConf, configData):
@@ -288,6 +258,7 @@ if __name__ == "__main__":
         logs = conf.get("conf", "dev_log_path")
         op = sys.argv[2]
         if op == "transform":
+            inputFile = 'tw2014_01_01_part.json'
             logging.basicConfig(filename=logs.format('prodUpload' + "dev" +'.log'), level=logging.DEBUG)
             CSVfromTwitterJSON(inputFile, "August_test", "mongo")
     elif choice =="prod":
@@ -306,7 +277,7 @@ if __name__ == "__main__":
         # Iterate over every file in the source directory
         for j in fileList:
             # If it's a by-day file in the source directory it will have 3 parts around the '-'s
-            if len(j.split('_')) == 3:
+            if len(j.split('_')) == 3 and '.json' in j:
                 # Extract the date of the corresponding file from it's name
                 fileDate = int(j.split('_')[-1].split('.')[0])
                 logging.info("Started uploading " + j)
