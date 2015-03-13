@@ -99,7 +99,7 @@ def removeKey(key):
 #Recursive function to process the input dictionary
 def extract(DictIn, Dictout, allkeys, nestedKey=""):
 
-    # # Explicitly adding keys to Dictout
+    # Explicitly adding keys to Dictout
     if nestedKey == "twitter_entities_user_mentions":
         Dictout["entitiesusrmentions"] = []
         mentionSet = set()
@@ -115,7 +115,7 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
         if newKey != "":
             Dictout[newKey] = DictIn
     
-    #If DictIn is a dictionary
+    # If DictIn is a dictionary
     elif isinstance(DictIn, dict):
         #Process each entry
         for key, value in DictIn.iteritems():
@@ -156,7 +156,7 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
     #If DictIn is a string, check if it is a new variable and then add to dictionary
     else:
         if isinstance(DictIn, unicode) or isinstance(DictIn, str):
-            newKey = removeKey(DictIn)
+            newKey = removeKey(nestedKey)
             if newKey == "":
                 return
             if isinstance(DictIn, unicode) or isinstance(DictIn, str):
