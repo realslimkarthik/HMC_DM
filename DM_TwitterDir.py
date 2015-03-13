@@ -234,50 +234,33 @@ def removeKey(key):
 def extract(DictIn, Dictout, allkeys, longest, nestedKey=""):
 
     # Explicitly adding keys to Dictout
-    if nestedKey == "twitter_entities":
+    if nestedKey == "twitter_entities_user_mentions":
         Dictout["entitiesusrmentions"] = []
         mentionSet = set()
         inObj = {}
-        for i in DictIn["user_mentions"]:
+        for i in DictIn:
             inObj['is'] = i['id_str']
             inObj['n'] = i['name']
             inObj['sn'] = i['screen_name']
             Dictout["entitiesusrmentions"].append(inObj)
             inObj = {}
         longest['lu'] = len(DictIn) if len(DictIn) > longest['lu'] else longest['lu']
+    elif nestedKey == "twitter_entities_hashtags":
         longestHtag = 0
         Dictout['entitieshtagstext'] = []
-        for i in DictIn["hashtags"]:
+        for i in DictIn:
             try:
                 Dictout['entitieshtagstext'].append(i['text'])
                 longestHtag += 1
             except KeyError:
                 break
-        longest['lh'] = len(DictIn['hashtags']) if len(DictIn['hashtags']) > longest['lh'] else longest['lh']
-
-    elif nestedKey == "geo":
-        Dictout["geocoordinates"] = DictIn['coordinates']
-        Dictout["geotype"] = DictIn["type"]
-    elif nestedKey == "location":
-        try:
-            Dictout["locdname"] = DictIn["displayName"]
-            Dictout["locname"] = DictIn["name"]
-            Dictout["loccountrycode"] = DictIn["country_code"]
-            if DictIn["geo"] is not None:
-                Dictout["locgeocoordinates"] = DictIn["geo"]["coordinates"]
-        except KeyError, TypeError:
-            pass
-    elif nestedKey == "gnip":
-        try:
-            Dictout['languagevalue'] = DictIn['language']['value']
-            Dictout['kloutscore'] = DictIn['klout_score']
-        except KeyError:
-            pass
+        longest['lh'] = len(DictIn) if len(DictIn) > longest['lh'] else longest['lh']
+    elif nestedKey == "gnip_matching_rules":
         longestTag = 0
         longestRule = 0
         Tags = []
         Rules = []
-        for i in DictIn['matching_rules']:
+        for i in DictIn:
             if i['tag'] is not None:
                 longestTag += 1
                 Tags.append(i['tag'])
@@ -287,6 +270,10 @@ def extract(DictIn, Dictout, allkeys, longest, nestedKey=""):
         Dictout['matchingrulesvalue'] = Rules
         longest['lr'] = longestRule if longestRule > longest['lr'] else longest['lr']
         longest['lt'] = longestTag if longestTag > longest['lt'] else longest['lt']
+    elif "coordinates" in  nestedKey:
+        newKey = removeKey(nestedKey)
+        if newKey != "":
+            Dictout[newKey] = DictIn
     #If DictIn is a dictionary
     elif isinstance(DictIn, dict):
         #Process each entry
@@ -328,25 +315,31 @@ def extract(DictIn, Dictout, allkeys, longest, nestedKey=""):
     #If DictIn is a string, check if it is a new variable and then add to dictionary
     else:
         if isinstance(DictIn, unicode) or isinstance(DictIn, str):
+            newKey = removeKey(nestedKey)
+            if newKey == "":
+                return
             if isinstance(DictIn, unicode) or isinstance(DictIn, str):
                 DictIn = DictIn.strip()
             if DictIn != "":
-                if not nestedKey in allkeys:
-                    allkeys.append(nestedKey)
-                if not nestedKey in Dictout:
-                    Dictout[nestedKey] = DictIn
+                if not newKey in allkeys:
+                    allkeys.append(newKey)
+                if not newKey in Dictout:
+                    Dictout[newKey] = DictIn
                 else:
-                    Dictout[nestedKey] = unicode(Dictout[nestedKey])+"; "+unicode(DictIn)
+                    Dictout[newKey] = unicode(Dictout[newKey])+"; "+unicode(DictIn)
             else:
-                if not nestedKey in allkeys:
-                    allkeys.append(nestedKey)
-                if not nestedKey in Dictout:
-                    Dictout[nestedKey] = ""
+                if not newKey in allkeys:
+                    allkeys.append(newKey)
+                if not newKey in Dictout:
+                    Dictout[newKey] = ""
 
 # ========================================================================================
 
 #Recursive function to showcase the variables that are being omitted the input dictionary
 def extractJunk(DictIn, Dictout, allkeys, nestedKey=""):
+    if "id" not in Dictout:
+        Dictout['id'] = DictIn['id']
+        allkeys.append('id')
     #If DictIn is a dictionary
     if isinstance(DictIn, dict):
         #Process each entry
@@ -403,7 +396,10 @@ if __name__ == "__main__":
     conf_path = conf.get("conf", "conf_path")
     current_month = sys.argv[2]
     current_year = sys.argv[3]
-    proj_name = sys.argv[4]
+    try:
+        proj_name = sys.argv[4]
+    except IndexError:
+        pass
     # Format the input month and year to form a a part of the Mongo Collection name
     # Get the path for the logs output
     logs = conf.get("conf", "prod_log_path")
@@ -506,6 +502,7 @@ if __name__ == "__main__":
         printCSV(csvfile, outputSet, writer[0], keyList, delim)
         csvfile.close()
     elif choice == "junk":
+        # inputFile = "H:\\Data\\RawData\\GNIP\\TwitterHistoricalPowertrack\\201401_Master\\tw2014_01_01.json"
         inputFile = "tw2014_01_01_part.json"
         CSVfromTwitterJSON(inputFile)
         CSVfromTwitterJSON(inputFile, 0, True)
