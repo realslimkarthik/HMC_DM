@@ -399,7 +399,7 @@ if __name__ == "__main__":
     try:
         proj_name = sys.argv[4]
     except IndexError:
-        pass
+        proj_name = ""
     # Format the input month and year to form a a part of the Mongo Collection name
     # Get the path for the logs output
     logs = conf.get("conf", "prod_log_path")
