@@ -1,4 +1,3 @@
-@@ -1,352 +0,0 @@
 import sys
 import os
 import ConfigParser
