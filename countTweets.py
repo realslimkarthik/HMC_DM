@@ -34,7 +34,8 @@ def countTweets(src_path, dest_path):
                             tagCount[l['tag']] = 1
                         else:
                             tagCount[l['tag']] += 1
-                        print l['value'] + ' ' + l['tag']
+                        print l['value']
+                        print l['tag']
                 except KeyError:
                     continue
             f.close()
@@ -53,11 +54,25 @@ months = map(lambda x: str(x).zfill(2), range(1, 13))
 delim = ','
 
 if __name__ == "__main__":
-    year = sys.argv[1]
+    op = sys.argv[1]
+    year = sys.argv[2]
+    month = sys.argv[3]
     conf = ConfigParser.ConfigParser()
-    conf.read('config\config.cfg')
-    for i in months:
-        print i
-        src_path = conf.get('twitter', 'prod_src_path').format(year + i)
-        dest_path = conf.get('twitter', 'prod_dest_path').format(year + i, 'COUNTS')
+    conf.read('config\\config.cfg')
+    if op == "year":
+        for i in months:
+            print i
+            src_path = conf.get('twitter', 'prod_src_path').format(year + i)
+            dest_path = conf.get('twitter', 'prod_dest_path').format(year + i, 'COUNTS')
+            countTweets(src_path, dest_path)
+    elif op == "month":
+        src_path = conf.get('twitter', 'prod_src_path').format(year + month)
+        dest_path = conf.get('twitter', 'prod_dest_path').format(year + month, 'COUNTS')
+        countTweets(src_path, dest_path)
+    elif op == "special":
+        proj_name = sys.argv[4]
+        # src_path = conf.get('twitter', 'prod_src_path').format(year + month + '_' + proj_name)
+        # dest_path = conf.get('twitter', 'prod_dest_path').format(year + month + '_' + proj_name, 'COUNTS')
+        src_path = "H:\\Data\\RawData\\GNIP\\Twitterhistoricalpowertrack\\201410_LCC\\second_run\\"
+        dest_path = "H:\\Data\\RawData_csv\\GNIP\\Twitterhistoricalpowertrack\\201410_LCC\\COUNTS\\"
         countTweets(src_path, dest_path)
