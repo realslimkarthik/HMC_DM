@@ -239,7 +239,7 @@ def populateMongo(inputTweet, collName, DorP, ruleConf, configData):
     except errors.DuplicateKeyError:
         collection.save(mongoRecord)
         logging.debug("Updated tweet _id=" + str(inputTweet['_id']) + ' into collection ' + collName)
-        print "Updated tweet _id=" + str(inputTweet['_id'])
+        print "Updated tweet _id=" + str(inputTweet['_id'])  + ' into collection ' + collName
 
 # ========================================================================================
 # Command to run the script
