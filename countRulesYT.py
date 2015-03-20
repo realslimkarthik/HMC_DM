@@ -79,9 +79,9 @@ if __name__ == "__main__":
                     print j
                     overallCounts = countRules(src + j, rules)
                     filename = j.split('.')[0]
-                    with open(dest + filename + "_tags" + ".csv", "w") as tagCsvfile:
+                    with open(dest + filename + "_tags" + ".csv", "wb") as tagCsvfile:
                         writeCounts(overallCounts[0], tagCsvfile, "Tags")
-                    with open(dest + filename + "_rules" + ".csv", "w") as ruleCsvfile:
+                    with open(dest + filename + "_rules" + ".csv", "wb") as ruleCsvfile:
                         writeCounts(overallCounts[1], ruleCsvfile, "Rules")
     elif op == "interval":
         start_month = sys.argv[3]
@@ -99,7 +99,7 @@ if __name__ == "__main__":
                     print j
                     overallCounts = countRules(src + j, rules)
                     filename = j.split('.')[0]
-                    with open(dest + filename + "_tags" + ".csv", "w") as tagCsvfile:
+                    with open(dest + filename + "_tags" + ".csv", "wb") as tagCsvfile:
                         writeCounts(overallCounts[0], tagCsvfile, "Tags")
-                    with open(dest + filename + "_rules" + ".csv", "w") as ruleCsvfile:
+                    with open(dest + filename + "_rules" + ".csv", "wb") as ruleCsvfile:
                         writeCounts(overallCounts[1], ruleCsvfile, "Rules")
