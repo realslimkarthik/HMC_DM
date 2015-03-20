@@ -191,7 +191,6 @@ def populateMongo(inputTweet, collName, DorP, ruleConf, configData):
 
     # Renaming id field
     inputTweet['_id'] = inputTweet['Idpost'].split(':')[2]
-    logging.info('Started posting collection with id: ' + str(inputTweet['_id']) + ' into collection ' + collName)
     # Remove the former id key
     inputTweet.pop('Idpost', None)
     # packing the matchingrulesvalue field into an array
@@ -236,9 +235,10 @@ def populateMongo(inputTweet, collName, DorP, ruleConf, configData):
     # Attempt to insert record into the collection. If it fails, do an update
     try:
         collection.insert(mongoRecord)
+        logging.info('Posted collection with id: ' + str(inputTweet['_id']) + ' into collection ' + collName)
     except errors.DuplicateKeyError:
         collection.save(mongoRecord)
-        logging.debug("Updated tweet _id=" + str(inputTweet['_id']))
+        logging.debug("Updated tweet _id=" + str(inputTweet['_id']) + ' into collection ' + collName)
         print "Updated tweet _id=" + str(inputTweet['_id'])
 
 # ========================================================================================
@@ -286,7 +286,7 @@ if __name__ == "__main__":
                     CSVfromTwitterJSON(src_path + j, collName + "_1", "mongo")
                 elif fileDate > 5 and  fileDate < 11:
                     CSVfromTwitterJSON(src_path + j, collName + "_2", "mongo")
-                elif fileDate > 10 and fileDate < 16:
+                elif fileDate > 13 and fileDate < 16:
                     CSVfromTwitterJSON(src_path + j, collName + "_3", "mongo")
                 elif fileDate > 15 and fileDate < 21:
                     CSVfromTwitterJSON(src_path + j, collName + "_4", "mongo")
