@@ -16,7 +16,7 @@ def countRules(filename, rules):
             line += i
             counts = extractRule(line, rules)
             line = ""
-            if counts[0] != None:
+            if counts[0] is not None:
                 if counts[0] in tagCounts:
                     tagCounts[counts[0]] += 1
                 else:
