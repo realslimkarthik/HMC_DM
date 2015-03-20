@@ -21,10 +21,10 @@ def countRules(filename, rules):
                     tagCounts[counts[0]] += 1
                 else:
                     tagCounts[counts[0]] = 1
-                if counts[0] in ruleCounts:
-                    ruleCounts[counts[0]] += 1
+                if counts[1] in ruleCounts:
+                    ruleCounts[counts[1]] += 1
                 else:
-                    ruleCounts[counts[0]] = 1
+                    ruleCounts[counts[1]] = 1
         else:
             line += i
 
@@ -47,9 +47,9 @@ def extractRule(line, rules):
             rule = None
     return (tag, rule)
 
-def writeCounts(counts, csvfile):
+def writeCounts(counts, csvfile, header):
     writer = CSVUnicodeWriter(csvfile)
-    writer.writerow(["Tag", "Count"])
+    writer.writerow([header, "Count"])
     for (key, val) in counts.iteritems():
         writer.writerow([key, str(val)])
     
@@ -79,16 +79,14 @@ if __name__ == "__main__":
                     print j
                     overallCounts = countRules(src + j, rules)
                     filename = j.split('.')[0]
-                    tagCsvfile = open(dest + filename + "_tags" + ".csv", "w")
-                    writeCounts(overallCounts[0], tagCsvfile)
-                    tagCsvfile.close()
-                    ruleCsvfile = open(dest + filename + "_rules" + ".csv", "w")
-                    writeCounts(overallCounts[1], ruleCsvfile)
-                    ruleCsvfile.close()
+                    with open(dest + filename + "_tags" + ".csv", "w") as tagCsvfile:
+                        writeCounts(overallCounts[0], tagCsvfile, "Tags")
+                    with open(dest + filename + "_rules" + ".csv", "w") as ruleCsvfile:
+                        writeCounts(overallCounts[1], ruleCsvfile, "Rules")
     elif op == "interval":
         start_month = sys.argv[3]
         end_month = sys.argv[4]
-        for i in range(start_month, end_month):
+        for i in range(int(start_month), int(end_month) + 1):
             src = src_path.format(year, str(i).zfill(2))
             dest = dest_path.format(year, str(i).zfill(2)) + 'COUNTS\\'
             try:
@@ -101,9 +99,7 @@ if __name__ == "__main__":
                     print j
                     overallCounts = countRules(src + j, rules)
                     filename = j.split('.')[0]
-                    tagCsvfile = open(dest + filename + "_tags" + ".csv", "w")
-                    writeCounts(overallCounts[0], tagCsvfile)
-                    tagCsvfile.close()
-                    ruleCsvfile = open(dest + filename + "_rules" + ".csv", "w")
-                    writeCounts(overallCounts[1], ruleCsvfile)
-                    ruleCsvfile.close()
+                    with open(dest + filename + "_tags" + ".csv", "w") as tagCsvfile:
+                        writeCounts(overallCounts[0], tagCsvfile, "Tags")
+                    with open(dest + filename + "_rules" + ".csv", "w") as ruleCsvfile:
+                        writeCounts(overallCounts[1], ruleCsvfile, "Rules")
