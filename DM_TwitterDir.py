@@ -100,7 +100,7 @@ def CSVfromTwitterJSON(jsonfilename, mode=0, junk=False, errorfile=None):
                     try:
                         # print tweetObj['matchingrulesvalue']
                         # print tweetObj['geocoordinates']
-                        print tweetObj['entitieshtagstext']
+                        print str(tweetObj['entitieshtagstext']) + ' from ' + jsonfilename
                     except KeyError:
                         # print "NA"
                         continue
@@ -110,13 +110,13 @@ def CSVfromTwitterJSON(jsonfilename, mode=0, junk=False, errorfile=None):
         fields = ConfigParser.ConfigParser()
         fields.read(conf_path.format("fields.cfg"))
         if junk == False:
-            filename = jsonfilename.split('.')[0] + '.csv'
+            filename = jsonfilename.split('\\')[-1].split('.')[0] + '.csv'
             keyList = fields.items('fields')
         else:
             filename = jsonfilename.split('.')[0] + '_junk.csv'
             keyList = [(0, key) for key in mykeys]
 
-        csvfile = open(filename, 'wb')
+        csvfile = open(dest_path + filename, 'wb')
         writer = DME.printHead(csvfile, resultList, delim, keyList)
         printCSV(csvfile, resultList, writer[0], keyList, delim)
         csvfile.close()
@@ -388,6 +388,11 @@ def extractJunk(DictIn, Dictout, allkeys, nestedKey=""):
 
 monthToNames = {'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'}
 
+# Command to run the script
+# python DM_TwitterDir.py [byday/full] <Capitalized 3 digit month name> <Four digit year> <project name as in directory (optional>
+# Eg - python DM_TwitterDir.py byday Oct 2014 LCC
+
+
 if __name__ == "__main__":
     choice = sys.argv[1]
     conf = ConfigParser.ConfigParser()
@@ -460,46 +465,6 @@ if __name__ == "__main__":
         # keyList = [val for (key, val) in fields]
         resultList = (tweetList, longestRule, longestHtag, longestRTag, longestUMen)
         printCSV(csvfile, resultList, writer[0], fields, delim)
-        csvfile.close()
-    elif choice == "dev":
-        tweetList = []
-        longestRule = 0
-        longestHtag = 0
-        longestRTag = 0
-        longestUMen = 0
-        flag = True
-        fileList = os.listdir("C:\\Users\\kharih2\\Work\\DM_Karthik\\HMC_DM")
-        for j in fileList:
-            # If it's a by-day file in the source directory it will have 3 parts around the '-'s
-            tempResultList = None
-            if len(j.split('_')) == 3 or 'json' in j:
-                # Extract the date of the corresponding file from it's name
-                logging.info("Started uploading " + j)
-                tempResultList = CSVfromTwitterJSON(j, 1)
-                try:
-                    tweetList.append(tempResultList[0])
-                    if flag:
-                        longestRule = tempResultList[1]
-                        longestHtag = tempResultList[2]
-                        longestRTag = tempResultList[3]
-                        longestUMen = tempResultList[4]
-                        flag = False
-                    else:
-                        longestRule = tempResultList[1] if tempResultList[1] > longestRule else longestRule
-                        longestHtag = tempResultList[2] if tempResultList[2] > longestHtag else longestHtag
-                        longestRTag = tempResultList[3] if tempResultList[3] > longestRTag else longestRTag
-                        longestUMen = tempResultList[4] if tempResultList[4] > longestUMen else longestUMen
-                except TypeError:
-                    continue
-        # outputSet = CSVfromTwitterJSON('temp.json', 1)
-        csvfile = open('temp.csv', 'wb')
-        fields = ConfigParser.ConfigParser()
-        fields.read(conf_path.format("fields.cfg"))
-
-        writer = DME.printHead(csvfile, outputSet, delim, fields)
-        keyList = [val for (key, val) in fields.items('fields')]
-        # resultList = (tweetList, longestRule, longestHtag, longestRTag, longestUMen)
-        printCSV(csvfile, outputSet, writer[0], keyList, delim)
         csvfile.close()
     elif choice == "junk":
         # inputFile = "H:\\Data\\RawData\\GNIP\\TwitterHistoricalPowertrack\\201401_Master\\tw2014_01_01.json"
