@@ -2,7 +2,8 @@
     "id": 1,
     "published": 1,
     "updated": 1,
-    "activity:object": ["id", "title", "link", "content"],
+    "link": 1,
+    "activity:object": ["title", "content"],
     "author": ["name", "uri"],
     "activity:actor": ["id"],
     "gnip:matching_rule": 1
