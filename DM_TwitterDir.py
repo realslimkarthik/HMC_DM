@@ -41,7 +41,7 @@ class CSVUnicodeWriter:
 
 # ========================================================================================
 # Populates the CSV. Gets CSV's file handle from caller
-def CSVfromTwitterJSON(jsonfilename, mode=0, junk=False, errorfile=None):
+def CSVfromTwitterJSON(jsonfilename, dest_path, mode=0, junk=False, errorfile=None):
     delim = ','
     jsonfile = open(jsonfilename, 'r')
     #Will track all variables seen across all tweets in the file
@@ -426,7 +426,7 @@ if __name__ == "__main__":
             if len(j.split('_')) == 3:
                 # Extract the date of the corresponding file from it's name
                 logging.info("Started uploading " + j)
-                CSVfromTwitterJSON(src_path + j)
+                CSVfromTwitterJSON(src_path + j, dest_path)
     elif choice == "full":
         tweetList = []
         longestRule = 0
