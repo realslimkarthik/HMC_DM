@@ -5,7 +5,17 @@ import os
 from bs4 import BeautifulSoup
 from CSVUnicodeWriter import CSVUnicodeWriter
 
+def getFileType(filename):
+    if "comments" in filename:
+        return "comments"
+    elif "v3" in filename:
+        return "info"
+    else:
+        return None
+
+
 def getData(filename):
+    fileType = getFileType(filename)
     f = open(filename)
     fields_file = open(conf_path.format("youtubeFields.json"))
     fields = json.loads(fields_file.read())
@@ -15,7 +25,7 @@ def getData(filename):
     for i in f.readlines():
         if '</entry>' in i:
             line += i
-            dataLine = extract(line, fields)
+            dataLine = extract(line, fields[fileType])
             if dataLine is not None:
                 data.append(dataLine)
             line = ""
@@ -38,15 +48,17 @@ def extract(line, fields):
                     data[newKey] = item
                 except AttributeError:
                     return None
+        elif isinstance(val, dict):
+            for (k, v) in val.iteritems():
+                newKey = key + '_' + k
+                try:
+                    item = soup.find(key, rel=k)['href']
+                except KeyError:
+                    return None
+                data[newKey] = item
         else:
             try:
-                if key == "link":
-                    try:
-                        item = part_xml['href']
-                    except KeyError:
-                        return None
-                else:
-                    item = part_xml.get_text().strip()
+                item = part_xml.get_text().strip()
                 newKey = key
                 data[newKey] = item
             except AttributeError:
@@ -56,16 +68,20 @@ def extract(line, fields):
 
 
 def printCSV(filename, data):
+    fileType = getFileType(filename)
     fields_file = open(conf_path.format("youtubeFields.json"))
     fields = json.loads(fields_file.read())
     fields_file.close()
     csvfile = open(filename, 'wb')
     writer = CSVUnicodeWriter(csvfile)
     keys = []
-    for (key, val) in fields.iteritems():
+    for (key, val) in fields[fileType].iteritems():
         if isinstance(val, list):
             for j in val:
                 keys.append(key + '_' + j)
+        elif isinstance(val, dict):
+            for (k, v) in val.iteritems():
+                keys.append(key + '_' + k)
         else:
             keys.append(key)
     row = keys
@@ -90,13 +106,11 @@ def iterate(src_path, dest_path, month):
         print e
         return
     for j in fileList:
-        if "xml" in j and "error" not in j:
-            if "v3" in j:
-                print j
-                data = getData(src + j)
-                filename = j.split('.')[0] + '.csv'
-                printCSV(dest + filename, data)
-            # elif "comments" in j:
+        if "xml" in j and "error" not in j and ("v3" in j or "comments" in j):
+            print j
+            data = getData(src + j)
+            filename = j.split('.')[0] + '.csv'
+            printCSV(dest + filename, data)
 
 
 # Command to run the script

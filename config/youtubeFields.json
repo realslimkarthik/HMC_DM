@@ -1,10 +1,32 @@
 {
-    "id": 1,
-    "published": 1,
-    "updated": 1,
-    "link": 1,
-    "activity:object": ["title", "content"],
-    "author": ["name", "uri"],
-    "activity:actor": ["id"],
-    "gnip:matching_rule": 1
+    "info":
+    {
+        "id": 1,
+        "published": 1,
+        "updated": 1,
+        "link": {
+            "alternate": 1
+        },
+        "activity:object": ["title", "content"],
+        "author": ["name", "uri"],
+        "activity:actor": ["id"],
+        "gnip:matching_rule": 1
+    },
+    "comments":
+    {
+        "id": 1,
+        "published": 1,
+        "updated": 1,
+        "content": 1,
+        "link": {
+            "alternate": 1,
+            "related": 1,
+            "self": 1
+        },
+        "author": ["name", "uri"],
+        "yt:channelid": 1,
+        "yt:googleplususerid": 1,
+        "yt:replycount": 1,
+        "yt:videoid": 1
+    }
 }
