@@ -53,6 +53,10 @@ def countTweets(src_path, dest_path):
 months = map(lambda x: str(x).zfill(2), range(1, 13))
 delim = ','
 
+# Command to execute this file
+# python countTweets.py <year|month|special> <4 digit year> <2 digit month>
+# Example: python countTweets.py month 2015 01
+
 if __name__ == "__main__":
     op = sys.argv[1]
     year = sys.argv[2]
