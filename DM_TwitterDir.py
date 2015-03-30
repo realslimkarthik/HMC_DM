@@ -410,8 +410,13 @@ if __name__ == "__main__":
     logs = conf.get("conf", "prod_log_path")
     logging.basicConfig(filename=logs.format('(prodUpload' + current_month + current_year + proj_name +'.log'), level=logging.DEBUG)
     # Get the path for the source Raw_data json files
-    src_path = conf.get("twitter", "prod_spl_src_path").format(current_year + monthToNames[current_month], proj_name)
-    dest_path = conf.get("twitter", "prod_spl_dest_path").format(current_year + monthToNames[current_month], proj_name)
+    if current_month == "-1":
+        month = ""
+    else:
+        month = monthToNames[current_month]
+    src_path = conf.get("twitter", "prod_spl_src_path").format(current_year + month, proj_name)
+    dest_path = conf.get("twitter", "prod_spl_dest_path").format(current_year + month, proj_name)
+    dest_path = "H:\\Data\\RawData_csv\\GNIP\\Twitterhistoricalpowertrack\\2014_CDC\\"
     # Get the list of files in the source directory
     try:
         fileList = os.listdir(src_path)
