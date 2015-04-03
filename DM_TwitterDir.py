@@ -47,7 +47,6 @@ def CSVfromTwitterJSON(jsonfilename, dest_path, mode=0, junk=False, errorfile=No
     #Will track all variables seen across all tweets in the file
     #Will contain a dictionary for each processed tweet
     tweetList = []
-    # Rule index mapping done via rules.json files
     
     mykeys = []
     longest = {'lh': 0, 'lr': 0, 'lu': 0, 'lt': 0}
@@ -471,7 +470,8 @@ if __name__ == "__main__":
         resultList = (tweetList, longestRule, longestHtag, longestRTag, longestUMen)
         printCSV(csvfile, resultList, writer[0], fields, delim)
         csvfile.close()
-    elif choice == "junk":
+    elif choice == "specific":
+        
         # inputFile = "H:\\Data\\RawData\\GNIP\\TwitterHistoricalPowertrack\\201401_Master\\tw2014_01_01.json"
         inputFile = "tw2014_01_01_part.json"
         CSVfromTwitterJSON(inputFile)

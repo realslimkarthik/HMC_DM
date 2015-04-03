@@ -283,7 +283,7 @@ if __name__ == "__main__":
     # rules = sys.argv[3:]
     
     # Get the total number of rules and the list of all the rules
-    r = open(conf_path.format("rules.json"))
+    r = open(conf_path.format("tw_rules.json"))
     ruleLines = r.readlines()
     r.close()
     rules = range(1, len(ruleLines))
