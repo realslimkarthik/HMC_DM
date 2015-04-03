@@ -20,8 +20,8 @@ def CSVfromTwitterJSON(jsonfilename, collName, DorP, errorfile=None, overwrite=F
         #Will contain a dictionary for each processed tweet
         tweetList = []
         
-        # Rule index mapping done via rules.json files
-        r = open(conf_path.format("rules.json"))
+        # Rule index mapping done via tw_rules.json files
+        r = open(conf_path.format("tw_rules.json"))
         # Dict that stores the rules
         ruleConf = json.loads(r.read())
         # number of lines in the file to track the index of the additional rules
@@ -183,6 +183,13 @@ def populateMongo(inputTweet, collName, DorP, ruleConf, configData):
     db = client.twitter
     collection = db[collName]
     mongoConf = configData[2]
+
+    inputTweet['matchingrulestag'] = inputTweet['matchingrulestag'].split(';')
+    tags = set()
+    for j in inputTweet['matchingrulestag']:
+        tags.add(int(ruleConf[1][j.lower().strip()]))
+    inputTweet['matchingrulestag'] = list(tags)
+
     #packing the entitieshtagstext field into an array
     if 'entitieshtagstext' not in inputTweet:
         inputTweet['entitieshtagstext'] = []
@@ -208,16 +215,16 @@ def populateMongo(inputTweet, collName, DorP, ruleConf, configData):
     inputTweet['ruleIndex'] = []
     for j in inputTweet['matchingrulesvalue']:
         try:
-            # inputTweet['ruleIndex'].append(ruleConf[j.strip()])
-            inputTweet['ruleIndex'].append(int(ruleConf[j.strip()]))
+            # inputTweet['ruleIndex'].append(ruleConf[0][j.strip()])
+            inputTweet['ruleIndex'].append(int(ruleConf[0][j.strip()]))
         except KeyError:
-            # If the rule isn't found in the ruleConf, then add the rule to the rules.json file
+            # If the rule isn't found in the ruleConf, then add the rule to the tw_rules.json file
             # addRule(j.strip())
             logging.warning("Invalid rule fetched via GNIP with _id=" + inputTweet['_id'] + " with rule=" + j.strip())
             logging.debug(str(inputTweet))
             print "Invalid rule fetched via GNIP with _id=" + inputTweet['_id'] + " with rule=" + j.strip()
 
-            # inputTweet['ruleIndex'].append(int(ruleConf[j.strip()]))
+            # inputTweet['ruleIndex'].append(int(ruleConf[0][j.strip()]))
             # Add the new rule that was added in the ruleConf
     # Remove the former matchingrulesvalue key
     inputTweet.pop('matchingrulesvalue', None)
@@ -277,9 +284,9 @@ if __name__ == "__main__":
         # Iterate over every file in the source directory
         for j in fileList:
             # If it's a by-day file in the source directory it will have 3 parts around the '-'s
-            if len(j.split('_')) == 3 and '.json' in j:
+            if len(j.split('-')) == 3 and '.json' in j:
                 # Extract the date of the corresponding file from it's name
-                fileDate = int(j.split('_')[-1].split('.')[0])
+                fileDate = int(j.split('-')[-1].split('.')[0])
                 logging.info("Started uploading " + j)
                 # Upload to the corresponding Mongo Collection based on the date extracted from the file
                 if fileDate < 6:
