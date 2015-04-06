@@ -3,6 +3,7 @@ import ConfigParser
 import json
 import os
 from bs4 import BeautifulSoup
+import re
 from CSVUnicodeWriter import CSVUnicodeWriter
 
 
@@ -47,12 +48,34 @@ def extractRule(line, rules):
             rule = None
     return (tag, rule)
 
+
 def writeCounts(counts, csvfile, header):
     writer = CSVUnicodeWriter(csvfile)
     writer.writerow([header, "Count"])
     for (key, val) in counts.iteritems():
         writer.writerow([key, str(val)])
-    
+
+
+def getStatsCounts(fileList, key, src, dest):
+    outputFile = open(dest + key + '_stats.csv', 'wb')
+    writer = CSVUnicodeWriter(outputFile)
+    writer.writerow(["ID", "CommentCount", "ViewCount", "FavoriteCount", "DislikeCount", "LikeCount", "Month", "Day"])
+    for i in fileList:
+        print i
+        f = open(src + i)
+        for j in f.readlines():
+            dataLine = re.split(r'\t+', j.strip())
+            month = key[-2:]
+            day = i.split('.')[0][-2:]
+            dataLine.extend([month, day])
+            try:
+                int(dataLine[1])
+            except ValueError:
+                continue
+            writer.writerow(dataLine)
+        f.close()
+    outputFile.close()
+
 
 if __name__ == "__main__":
     op = sys.argv[1]
@@ -103,3 +126,31 @@ if __name__ == "__main__":
                         writeCounts(overallCounts[0], tagCsvfile, "Tags")
                     with open(dest + filename + "_rules" + ".csv", "wb") as ruleCsvfile:
                         writeCounts(overallCounts[1], ruleCsvfile, "Rules")
+    elif op == "stats":
+        src = conf.get("youtube", "prod_src_stats_path")
+        dest_path = conf.get("youtube", "prod_dest_stats_path")
+        dest = dest_path.format(year)
+
+        try:
+            fileList = os.listdir(src)
+        except IOError, WindowsError:
+            print e
+            sys.exit(1)
+        outputFiles = {}
+        for j in fileList:
+            splitFile = j.split('-')
+            if len(splitFile) != 4:
+                splitFile = j.split('_')
+                if len(splitFile) != 5:
+                    continue
+            month = splitFile[-2]
+            year_on_file = splitFile[-3]
+            if year_on_file != year:
+                continue
+            key = year + month
+            if key not in outputFiles:
+                outputFiles[key] = [j]
+            else:
+                outputFiles[key].append(j)
+        for (key, val) in outputFiles.iteritems():
+            getStatsCounts(val, key, src, dest)
