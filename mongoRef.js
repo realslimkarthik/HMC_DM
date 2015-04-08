@@ -3,8 +3,73 @@
 // Query for getting data after a date:
 db.coll_name.find({'pT': {$gte: new Date('Sep 1, 2014')}})
 
-// Query for checking if a value exists in an array:
-db.coll_name.find({'mrv': {'$in': ['22']}})
+// Query for finding all tweets that have a rule 22 (from:uwctri):
+db.coll_name.find({'mrv': {'$in': [22]}})
+
+// Query for finding all tweets that have a tag 7 (Ecig):
+db.coll_name.find({'mrtI': {'$in': [7]}})
+// fields
+
+// _id     =   Idpost
+// bp      =   bodypost
+// rc      =   retweetCount
+// gd      =   generatordname
+// fl      =   filterlevel
+// ks      =   kloutscore
+// mrt     =   matchingrulestag
+// mrv     =   matchingrulesvalue
+// lv      =   languagevalue
+// fc      =   favoritesCount
+// opt     =   objpostedTime
+// os      =   objsummary
+// ol      =   objlink
+// oi      =   objid
+// oot     =   objobjType
+// bo      =   bodyoriginal
+// apu     =   actorpreferredusername
+// an      =   actorname
+// alh     =   actorlinkshref
+// atz     =   actorTimeZone
+// ai      =   actorimage
+// av      =   actorverified
+// asc     =   actorstatusuesCount
+// as      =   actorsummary
+// al      =   actorlanguages
+// auO     =   actorutcOffset
+// alk     =   actorlink
+// afc     =   actorfollowersCount
+// afa     =   actorfavoritesCount
+// afr     =   actorfriendsCount
+// alc     =   actorlistedCount
+// apt     =   actorPostedTime
+// aid     =   actorid
+// aot     =   actorObjType
+// eum     =   entitiesusrmentions
+// eumh    =   entitieshtagstext
+// euu     =   entitiesurlexpandedurl
+// emu     =   entitiesmdaexpandedurl
+// l       =   lang
+// pt      =   postedTime
+// ogt     =   objgeotype
+// old     =   objlocdname
+// gt      =   geotype
+// gc      =   geocoordinates
+// v       =   verb
+// lk      =   link
+// ld      =   locdname
+// ln      =   locname
+// ltc     =   loctwcountrycode
+// lcc     =   loccountrycode
+// lgc     =   locgeocoordinates
+// gpld    =   gniplocdname
+// gplco   =   gniploccountry
+// gplr    =   gniplocregion
+// gplc    =   gniploccounty
+// gpll    =   gniploclocality
+// gplg    =   gniplocgeocoordinates
+// gu      =   gnipurl
+// geu     =   gnipexpandedurl
+
 
 // Query to change mrv values into ints from strings:
 db.coll_name.find().forEach(function(doc) {
