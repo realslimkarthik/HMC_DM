@@ -70,6 +70,53 @@ db.coll_name.find({'mrtI': {'$in': [7]}})
 // gu      =   gnipurl
 // geu     =   gnipexpandedurl
 
+// Function to initialize all the collection names. Add more as and when needed.
+function initMonths() {
+    Jan14 = ['Jan14_1', 'Jan14_2', 'Jan14_3', 'Jan14_4', 'Jan14_5', 'Jan14_6'];
+    Feb14 = ['Feb14_1', 'Feb14_2', 'Feb14_3', 'Feb14_4', 'Feb14_5', 'Feb14_6'];
+    Mar14 = ['Mar14_1', 'Mar14_2', 'Mar14_3', 'Mar14_4', 'Mar14_5', 'Mar14_6'];
+    Apr14 = ['Apr14_1', 'Apr14_2', 'Apr14_3', 'Apr14_4', 'Apr14_5', 'Apr14_6'];
+    May14 = ['May14_1', 'May14_2', 'May14_3', 'May14_4', 'May14_5', 'May14_6'];
+    Jun14 = ['Jun14_1', 'Jun14_2', 'Jun14_3', 'Jun14_4', 'Jun14_5', 'Jun14_6'];
+    Jul14 = ['Jul14_1', 'Jul14_2', 'Jul14_3', 'Jul14_4', 'Jul14_5', 'Jul14_6'];
+    Aug14 = ['Aug14_1', 'Aug14_2', 'Aug14_3', 'Aug14_4', 'Aug14_5', 'Aug14_6'];
+    Sep14 = ['Sep14_1', 'Sep14_2', 'Sep14_3', 'Sep14_4', 'Sep14_5', 'Sep14_6'];
+    Oct14 = ['Oct14_1', 'Oct14_2', 'Oct14_3', 'Oct14_4', 'Oct14_5', 'Oct14_6'];
+    Nov14 = ['Nov14_1', 'Nov14_2', 'Nov14_3', 'Nov14_4', 'Nov14_5', 'Nov14_6'];
+    Dec14 = ['Dec14_1', 'Dec14_2', 'Dec14_3', 'Dec14_4', 'Dec14_5', 'Dec14_6'];
+    Jan15 = ['Jan15_1', 'Jan15_2', 'Jan15_3', 'Jan15_4', 'Jan15_5', 'Jan15_6'];
+    Feb15 = ['Feb15_1', 'Feb15_2', 'Feb15_3', 'Feb15_4', 'Feb15_5', 'Feb15_6'];
+    Mar15 = ['Mar15_1', 'Mar15_2', 'Mar15_3', 'Mar15_4', 'Mar15_5', 'Mar15_6'];
+    Apr15 = ['Apr15_1', 'Apr15_2', 'Apr15_3', 'Apr15_4', 'Apr15_5', 'Apr15_6'];
+    May15 = ['May15_1', 'May15_2', 'May15_3', 'May15_4', 'May15_5', 'May15_6'];
+}
+
+// Function to count or find tweets in a 
+function monthlyCounts(coll_names, ruleOrTag, rules) {
+    var total = 0;
+    var count = 0;
+    var successful;
+    coll_names.every(function(c) {
+        successful = true;
+        if (ruleOrTag === "rule") {
+            count = db[c].count({'mrv':{$in:rules}});
+        } else if (ruleOrTag === "tag") {
+            count = db[c].count({'mrtI':{$in:rules}});
+        } else {
+            print("Please enter \"rule\" or \"tag\" as the second parameter");
+            successful = false;
+            return false;
+        }
+        print(c + ":");
+        total += count;
+        print(count);
+        print("\n");
+        return successful;
+    });
+    if (successful) {
+        print("Total count: " + total);
+    }
+}
 
 // Query to change mrv values into ints from strings:
 db.coll_name.find().forEach(function(doc) {
