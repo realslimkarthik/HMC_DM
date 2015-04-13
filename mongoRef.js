@@ -91,7 +91,26 @@ function initMonths() {
     May15 = ['May15_1', 'May15_2', 'May15_3', 'May15_4', 'May15_5', 'May15_6'];
 }
 
-// Function to count or find tweets in a 
+// Function to initalize a JS Object which has the collection names under each month's key
+function initYear(year) {
+    y = {};
+    yStr = year.toString();
+    y['Jan' + yStr] = ['Jan'+ yStr + '_1', 'Jan'+ yStr + '_2', 'Jan'+ yStr + '_3', 'Jan'+ yStr + '_4', 'Jan'+ yStr + '_5', 'Jan'+ yStr + '_6'];
+    y['Feb' + yStr] = ['Feb'+ yStr + '_1', 'Feb'+ yStr + '_2', 'Feb'+ yStr + '_3', 'Feb'+ yStr + '_4', 'Feb'+ yStr + '_5', 'Feb'+ yStr + '_6'];
+    y['Mar' + yStr] = ['Mar'+ yStr + '_1', 'Mar'+ yStr + '_2', 'Mar'+ yStr + '_3', 'Mar'+ yStr + '_4', 'Mar'+ yStr + '_5', 'Mar'+ yStr + '_6'];
+    y['Apr' + yStr] = ['Apr'+ yStr + '_1', 'Apr'+ yStr + '_2', 'Apr'+ yStr + '_3', 'Apr'+ yStr + '_4', 'Apr'+ yStr + '_5', 'Apr'+ yStr + '_6'];
+    y['May' + yStr] = ['May'+ yStr + '_1', 'May'+ yStr + '_2', 'May'+ yStr + '_3', 'May'+ yStr + '_4', 'May'+ yStr + '_5', 'May'+ yStr + '_6'];
+    y['Jun' + yStr] = ['Jun'+ yStr + '_1', 'Jun'+ yStr + '_2', 'Jun'+ yStr + '_3', 'Jun'+ yStr + '_4', 'Jun'+ yStr + '_5', 'Jun'+ yStr + '_6'];
+    y['Jul' + yStr] = ['Jul'+ yStr + '_1', 'Jul'+ yStr + '_2', 'Jul'+ yStr + '_3', 'Jul'+ yStr + '_4', 'Jul'+ yStr + '_5', 'Jul'+ yStr + '_6'];
+    y['Aug' + yStr] = ['Aug'+ yStr + '_1', 'Aug'+ yStr + '_2', 'Aug'+ yStr + '_3', 'Aug'+ yStr + '_4', 'Aug'+ yStr + '_5', 'Aug'+ yStr + '_6'];
+    y['Sep' + yStr] = ['Sep'+ yStr + '_1', 'Sep'+ yStr + '_2', 'Sep'+ yStr + '_3', 'Sep'+ yStr + '_4', 'Sep'+ yStr + '_5', 'Sep'+ yStr + '_6'];
+    y['Oct' + yStr] = ['Oct'+ yStr + '_1', 'Oct'+ yStr + '_2', 'Oct'+ yStr + '_3', 'Oct'+ yStr + '_4', 'Oct'+ yStr + '_5', 'Oct'+ yStr + '_6'];
+    y['Nov' + yStr] = ['Nov'+ yStr + '_1', 'Nov'+ yStr + '_2', 'Nov'+ yStr + '_3', 'Nov'+ yStr + '_4', 'Nov'+ yStr + '_5', 'Nov'+ yStr + '_6'];
+    y['Dec' + yStr] = ['Dec'+ yStr + '_1', 'Dec'+ yStr + '_2', 'Dec'+ yStr + '_3', 'Dec'+ yStr + '_4', 'Dec'+ yStr + '_5', 'Dec'+ yStr + '_6'];
+    return y;
+}
+
+// Function to count or find tweets in a month
 function monthlyCounts(coll_names, ruleOrTag, rules) {
     var total = 0;
     var count = 0;
@@ -101,7 +120,7 @@ function monthlyCounts(coll_names, ruleOrTag, rules) {
         if (ruleOrTag === "rule") {
             count = db[c].count({'mrv':{$in:rules}});
         } else if (ruleOrTag === "tag") {
-            count = db[c].count({'mrtI':{$in:rules}});
+            count = db[c].count({'mrt':{$in:rules}});
         } else {
             print("Please enter \"rule\" or \"tag\" as the second parameter");
             successful = false;
@@ -191,5 +210,12 @@ function indexTags(coll_name) {
         });
         db[coll_name].update({'_id': doc._id}, {'$set': {'mrtI': newTags}});
         print(newTags);
+    });
+}
+
+function indexTags(coll_name) {
+    db[coll_name].find().forEach(function(doc) {
+        print(coll_name + doc.mrt.toString());
+        db[coll_name].update({'_id': doc._id}, {'$set':{'mrt': doc.mrtI}});
     });
 }
