@@ -6,7 +6,7 @@ import random
 import re
 import Tkinter as tk
 import ConfigParser
-from pymongo import MongoClient, errors
+from pymongo import MongoClient, errors, ASCENDING
 from datetime import datetime
 import time
 import logging
@@ -20,13 +20,18 @@ def CSVfromTwitterJSON(jsonfilename, collName, DorP, errorfile=None, overwrite=F
         #Will contain a dictionary for each processed tweet
         tweetList = []
         
-        # Rule index mapping done via tw_rules.json files
+        # Rule index mapping done via tw_rules.json file
         r = open(conf_path.format("tw_rules.json"))
         # Dict that stores the rules
         ruleConf = json.loads(r.read())
-        # number of lines in the file to track the index of the additional rules
-        num_lines = sum(1 for i in r)
         r.close()
+
+        # Tag index mapping done via tw_tags.json file
+        r = open(conf_path.format("tw_tags.json"))
+        # Dict that stores the rules
+        tagConf = json.loads(r.read())
+        r.close()
+
         
         # Host and Port values for MongoDB connection
         host = conf.get(DorP, "host")
@@ -75,7 +80,7 @@ def CSVfromTwitterJSON(jsonfilename, collName, DorP, errorfile=None, overwrite=F
                         #Send the JSON dictionary, the empty dictionary, and the list of all keys
                         extract(tweet, tweetObj, mykeys)
                         #Add the output dictionary to the list
-                        populateMongo(tweetObj, collName, DorP, ruleConf, configData)
+                        populateMongo(tweetObj, collName, ruleConf, tagConf, configData)
                         try:
                             print tweetObj['geocoordinates']
                         except KeyError:
@@ -175,7 +180,7 @@ def extract(DictIn, Dictout, allkeys, nestedKey=""):
                     Dictout[newKey] = ""
 
 # ========================================================================================
-def populateMongo(inputTweet, collName, DorP, ruleConf, configData):
+def populateMongo(inputTweet, collName, ruleConf, tagConf, configData):
     host = configData[0]
     port = configData[1]
     # Creating a new MongoDB client
@@ -184,12 +189,8 @@ def populateMongo(inputTweet, collName, DorP, ruleConf, configData):
     collection = db[collName]
     mongoConf = configData[2]
 
-    inputTweet['matchingrulestag'] = inputTweet['matchingrulestag'].split(';')
-    tags = set()
-    for j in inputTweet['matchingrulestag']:
-        tags.add(int(ruleConf[1][j.lower().strip()]))
-    inputTweet['matchingrulestag'] = list(tags)
-
+    collection.ensure_index([("mrv", ASCENDING)])
+    collection.ensure_index([("mrt", ASCENDING)])
     #packing the entitieshtagstext field into an array
     if 'entitieshtagstext' not in inputTweet:
         inputTweet['entitieshtagstext'] = []
@@ -202,6 +203,7 @@ def populateMongo(inputTweet, collName, DorP, ruleConf, configData):
     inputTweet.pop('Idpost', None)
     # packing the matchingrulesvalue field into an array
     inputTweet['matchingrulesvalue'] = inputTweet['matchingrulesvalue'].split(';')
+    inputTweet['matchingrulestag'] = inputTweet['matchingrulestag'].split(';')
 
     # Changing postedTime into ISO format for processing using JavaScript in Mongo
     dateFrag = inputTweet['postedTime'].split('T')
@@ -212,39 +214,53 @@ def populateMongo(inputTweet, collName, DorP, ruleConf, configData):
     inputTweet['postedTime'] = dateObj
     
     # Mapping the rules into integers from the ruleConf
-    inputTweet['ruleIndex'] = []
+    ruleIndex = []
     for j in inputTweet['matchingrulesvalue']:
         try:
-            # inputTweet['ruleIndex'].append(ruleConf[0][j.strip()])
-            inputTweet['ruleIndex'].append(int(ruleConf[0][j.strip()]))
+            ruleIndex.append(int(ruleConf[j.strip()]))
         except KeyError:
-            # If the rule isn't found in the ruleConf, then add the rule to the tw_rules.json file
-            # addRule(j.strip())
             logging.warning("Invalid rule fetched via GNIP with _id=" + inputTweet['_id'] + " with rule=" + j.strip())
             logging.debug(str(inputTweet))
             print "Invalid rule fetched via GNIP with _id=" + inputTweet['_id'] + " with rule=" + j.strip()
 
-            # inputTweet['ruleIndex'].append(int(ruleConf[0][j.strip()]))
-            # Add the new rule that was added in the ruleConf
+    tagIndex = set()
+    for j in inputTweet['matchingrulestag']:
+        try:
+            tagIndex.add(int(tagConf[j.lower().strip()]))
+        except KeyError:
+            logging.warning("Invalid tag fetched via GNIP with _id=" + inputTweet['_id'] + " with tag=" + j.strip())
+            logging.debug(str(inputTweet))
+            print "Invalid tag fetched via GNIP with _id=" + inputTweet['_id'] + " with tag=" + j.strip()
+
     # Remove the former matchingrulesvalue key
-    inputTweet.pop('matchingrulesvalue', None)
-    print inputTweet['ruleIndex']
+    inputTweet['matchingrulesvalue'] = ruleIndex
+    inputTweet['matchingrulestag'] = list(tagIndex)
+    print ruleIndex
+    print list(tagIndex)
     # Initialize a new Dict to hold the record that needs to be uploaded into the corresponding Mongo Collection
-    mongoRecord = {}
+    newRecord = {}
     
     # Iterate through each of the keys in the original Dict
     for (key, val) in inputTweet.iteritems():
         # Get the new translated key from the mongoConf dict
         newKey = mongoConf.get('fields', key)
         # create a new with translated field names to upload onto the corresponding Mongo Collection
-        mongoRecord[newKey] = val
+        newRecord[newKey] = val
 
     # Attempt to insert record into the collection. If it fails, do an update
     try:
-        collection.insert(mongoRecord)
+        collection.insert(newRecord)
         logging.info('Posted collection with id: ' + str(inputTweet['_id']) + ' into collection ' + collName)
     except errors.DuplicateKeyError:
-        collection.save(mongoRecord)
+        oldRecord = collection.find({'_id': newRecord['_id']})
+        for i in oldRecord:
+            mrv = set(newRecord['mrv'] + i['mrv'])
+            mrt = set(newRecord['mrt'] + i['mrt'])
+        newRecord['mrv'] = list(mrv)
+        newRecord['mrt'] = list(mrt)
+
+
+        collection.save(newRecord)
         logging.debug("Updated tweet _id=" + str(inputTweet['_id']) + ' into collection ' + collName)
         print "Updated tweet _id=" + str(inputTweet['_id'])  + ' into collection ' + collName
 
@@ -263,14 +279,17 @@ if __name__ == "__main__":
     
     if choice == "dev":
         logs = conf.get("conf", "dev_log_path")
-        op = sys.argv[2]
-        if op == "transform":
-            inputFile = 'tw2014_01_01_part.json'
-            logging.basicConfig(filename=logs.format('prodUpload' + "dev" +'.log'), level=logging.DEBUG)
-            CSVfromTwitterJSON(inputFile, "August_test", "mongo")
+        inputFile = 'C:\\Users\\kharih2\\Work\\DM_Karthik\\HMC_Data\\TwitterPowerTrack\\September-2014-Master\\Sample of tw2014-09-02.json'
+        logging.basicConfig(filename=logs.format('prodUpload' + "dev" +'.log'), level=logging.DEBUG)
+        CSVfromTwitterJSON(inputFile, "August_test", "mongo")
     elif choice =="prod":
         current_month = sys.argv[2]
         current_year = sys.argv[3]
+        try:
+            proj_name = sys.argv[4]
+        except IndexError:
+            proj_name = ""
+
         # Format the input month and year to form a a part of the Mongo Collection name
         collName = current_month[0:3] + current_year[2:]
         print collName
@@ -278,15 +297,18 @@ if __name__ == "__main__":
         logs = conf.get("conf", "prod_log_path")
         logging.basicConfig(filename=logs.format('prodUpload' + collName +'.log'), level=logging.DEBUG)
         # Get the path for the source Raw_data json files
-        src_path = conf.get("twitter", "prod_src_path").format(current_year + monthToNames[current_month])
+        if proj_name == "":
+            src_path = conf.get("twitter", "prod_src_path").format(current_year + monthToNames[current_month])
+        else:
+            src_path = conf.get("twitter", "prod_spl_src_path").format(current_year + monthToNames[current_month], proj_name)
         # Get the list of files in the source directory
         fileList = os.listdir(src_path)
         # Iterate over every file in the source directory
         for j in fileList:
             # If it's a by-day file in the source directory it will have 3 parts around the '-'s
-            if len(j.split('-')) == 3 and '.json' in j:
+            if len(j.split('_')) == 3 and '.json' in j:
                 # Extract the date of the corresponding file from it's name
-                fileDate = int(j.split('-')[-1].split('.')[0])
+                fileDate = int(j.split('_')[-1].split('.')[0])
                 logging.info("Started uploading " + j)
                 # Upload to the corresponding Mongo Collection based on the date extracted from the file
                 if fileDate < 6:
