@@ -11,6 +11,7 @@ import time
 import logging
 import DM_ExtractRules as DME
 import csv, codecs, cStringIO
+from utility import mkdir_p
 
 
 # Set the default encoding to utf-8
@@ -415,7 +416,7 @@ if __name__ == "__main__":
         month = monthToNames[current_month]
     src_path = conf.get("twitter", "prod_spl_src_path").format(current_year + month, proj_name)
     dest_path = conf.get("twitter", "prod_spl_dest_path").format(current_year + month, proj_name)
-    dest_path = "H:\\Data\\RawData_csv\\GNIP\\Twitterhistoricalpowertrack\\2014_CDC\\"
+    mkdir_p(dest_path)
     # Get the list of files in the source directory
     try:
         fileList = os.listdir(src_path)
@@ -427,7 +428,7 @@ if __name__ == "__main__":
         # Iterate over every file in the source directory
         for j in fileList:
             # If it's a by-day file in the source directory it will have 3 parts around the '-'s
-            if len(j.split('_')) == 3:
+            if len(j.split('_')) == 3 and 'json' in j:
                 # Extract the date of the corresponding file from it's name
                 logging.info("Started uploading " + j)
                 CSVfromTwitterJSON(src_path + j, dest_path)
@@ -471,8 +472,5 @@ if __name__ == "__main__":
         printCSV(csvfile, resultList, writer[0], fields, delim)
         csvfile.close()
     elif choice == "specific":
-        
-        # inputFile = "H:\\Data\\RawData\\GNIP\\TwitterHistoricalPowertrack\\201401_Master\\tw2014_01_01.json"
-        inputFile = "tw2014_01_01_part.json"
-        CSVfromTwitterJSON(inputFile)
-        CSVfromTwitterJSON(inputFile, 0, True)
+        # inputfile = ""
+        CSVfromTwitterJSON(inputfile, dest_path)
