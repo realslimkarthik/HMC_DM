@@ -5,63 +5,58 @@ import json
 import sys
 import ConfigParser
 from CSVUnicodeWriter import CSVUnicodeWriter
+from utility import mkdir_p
+
+def makeCSVfromXMLfbStreams(jsonfile, dest):
+    currentComments = ""
+    with open(conf_path.format("fb_comments_fields.json")) as f:
+        fields = json.loads(f.read())
 
 #Creates the CSV
 #makeCSVfromJSONfbStreams("h:/data/rawdata/gnip/facebook/2014/08/18/")
-def makeCSVfromJSONfbStreams(jsondir, op, outfileprefix=""):
-    if outfileprefix == "":
-        outfileprefix = jsondir
-    myfiles = []
-    # for (dirpath, dirnames, filenames) in os.walk(jsondir):
-    #     myfiles.extend(os.path.join(dirpath, filename) for filename in filenames)
-    fileList = os.listdir(jsondir)
-    for i in fileList:
-        if op in i:
-            myfiles.append(jsondir + i)
+def makeCSVfromJSONfbStreams(jsonfile, op, dest=""):
     currentInfo = ""
     currentComments = ""
     fieldsFile = open(conf_path.format("fb_comments_fields.txt"))
     fields = [line.strip() for line in fieldsFile.readlines()]
     fieldsFile.close()
-    for filename in myfiles:
-        keysInfo = []
-        keysComments = []
-        outInfo = []
-        outComments = []
-        myline = ""
-        if (".json" in filename) and (".csv" not in filename):
-            #print filename
-            f = open(filename, "r")
-            for line in f:
-                myline = string.strip(line)
-                if myline != "":
-                    myline = myline.decode("utf-8", "ignore")
-                    #print myline
-                    #Remove new lines from within
-                    mylines = myline.split("\\n")
-                    if len(mylines) > 1:
-                        myline = " ".join(mylines)
-                    #Remove carriage returns from within
-                    mylines = myline.split("\\r")
-                    if len(mylines) > 1:
-                        myline = " ".join(mylines)
-                    #Remove problematic \s
-                    mylines = myline.split("\\\\")
-                    if len(mylines) > 1:
-                        myline = " ".join(mylines)
-                    mylines = myline.split("\\ ")
-                    if len(mylines) > 1:
-                        myline = " ".join(mylines)
-                    if "info" in f.name:
-                        parseString(myline, outInfo, currentInfo, keysInfo, op)
-                    elif "comments" in f.name:
-                        parseString(myline, outComments, currentComments, keysComments, op, fields)
+
+    keysInfo = []
+    keysComments = []
+    outInfo = []
+    outComments = []
+    myline = ""
+        f = open(jsonfile, "r")
+        for line in f:
+            myline = string.strip(line)
+            if myline != "":
+                myline = myline.decode("utf-8", "ignore")
+                #print myline
+                #Remove new lines from within
+                mylines = myline.split("\\n")
+                if len(mylines) > 1:
+                    myline = " ".join(mylines)
+                #Remove carriage returns from within
+                mylines = myline.split("\\r")
+                if len(mylines) > 1:
+                    myline = " ".join(mylines)
+                #Remove problematic \s
+                mylines = myline.split("\\\\")
+                if len(mylines) > 1:
+                    myline = " ".join(mylines)
+                mylines = myline.split("\\ ")
+                if len(mylines) > 1:
+                    myline = " ".join(mylines)
+                if "info" in f.name:
+                    parseString(myline, outInfo, currentInfo, keysInfo, op)
+                elif "comments" in f.name:
+                    parseString(myline, outComments, currentComments, keysComments, op, fields)
         if op == "info":
-            outputInfo = open(outfileprefix + filename.split('\\')[-1].split('.')[0] + "info.csv", "wb")
+            outputInfo = open(dest + jsonfile.split('\\')[-1].split('.')[0] + "info.csv", "wb")
             printCSVInfo(outputInfo, outInfo, keysInfo)
             outputInfo.close()
         elif op == "comments":
-            outputComments = open(outfileprefix + filename.split('\\')[-1].split('.')[0] + "comments.csv", "wb")
+            outputComments = open(dest + jsonfile.split('\\')[-1].split('.')[0] + "comments.csv", "wb")
             keysComments.append('type')
             printCSVComments(outputComments, outComments, keysComments, fields)
             outputComments.close()
@@ -264,6 +259,19 @@ def aggregateByDay(year, conf):
                 curr_file = None
 
 
+def getFiles(src, infoOrComments):
+    fileList = os.listdir(src)
+    for i in fileList:
+        if 'xml' not in i and 'json' not in i and infoOrComments not in i and 'error' in i:
+            fileList.remove(i)
+            continue
+        if i.split('_') != 3:
+            if i.split('-') != 3:
+                fileList.remove(i)
+
+    return fileList
+
+
 # TO DO: write code to automate this for a bunch of months so that we can leave it running over the weekend
 
 if __name__ == "__main__":
@@ -276,13 +284,21 @@ if __name__ == "__main__":
     # aggregateByDay(year, conf)
     src = conf.get("facebook", "prod_src_path").format(year, month)
     dest = conf.get("facebook", "prod_dest_path").format(year, month)
+    infoFileList = getFiles(src, 'info')
+    commentsFileList = getFiles(src, 'comments')
+    mkdir_p(dest)
     if op == "info":
-        makeCSVfromJSONfbStreams(src, op, dest)
+        for i in infoFileList:
+            makeCSVfromJSONfbStreams(i, op, dest)
     elif op == "comments":
         f = open(conf_path.format('facebook_fanpages.txt'))
-        fanpages = [i.strip() for i in f.readlines()]
-        f.close()
         f = open(dest + 'fanpage_to_user_id.csv', 'wb')
-        f.write('Fanpage, Comment_Id\n')
-        makeCSVfromJSONfbStreams(src, op, dest)
+        for i in commentsFileList:
+            fanpages = [i.strip() for i in f.readlines()]
+            f.close()
+            f.write('Fanpage, Comment_Id\n')
+            if 'xml' in i:
+                makeCSVfromXMLfbStreams(i, dest)
+            elif 'json' in i:
+                makeCSVfromJSONfbStreams(i, op, dest)
         f.close()
