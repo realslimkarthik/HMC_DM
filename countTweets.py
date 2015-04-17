@@ -144,7 +144,7 @@ def countTweetsSearch(src_path, dest_path):
     csv = open(dest_path + 'goldilocks_search.csv', 'wb')
     writer = CSVUnicodeWriter(csv)
     writer.writerow(['Rule', 'Rule Id', 'Tag', 'Count', 'Date', 'Month'])
-    for (key, count) in ruleCount:
+    for (key, count) in ruleCount.iteritems():
         rule, month, date = key.split('_')
         rId = rules[k]
         rTag = rulesToTags[k]
