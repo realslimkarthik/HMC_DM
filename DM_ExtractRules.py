@@ -4,33 +4,8 @@ import ConfigParser
 from pymongo import MongoClient
 from datetime import datetime
 import time
-import csv, codecs, cStringIO
+from utility import mkdir_p, CSVUnicodeWriter
 
-# Set the default encoding to utf-8
-reload(sys)
-sys.setdefaultencoding("utf-8")
-
-# Class given in Python 2.7 documentation for handling of unicode documents
-class CSVUnicodeWriter:
-    def __init__(self, f, dialect=csv.excel, encoding="utf-8-sig", **kwds):
-        self.queue = cStringIO.StringIO()
-        self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
-        self.stream = f
-        self.encoder = codecs.getincrementalencoder(encoding)()
-    def writerow(self, row):
-        '''writerow(unicode) -> None
-        This function takes a Unicode string and encodes it to the output.
-        '''
-        self.writer.writerow([s.encode("utf-8", "ignore") for s in row])
-        data = self.queue.getvalue()
-        data = data.decode("utf-8")
-        data = self.encoder.encode(data)
-        self.stream.write(data)
-        self.queue.truncate(0)
-
-    def writerows(self, rows):
-        for row in rows:
-            self.writerow(row)
 
 #     coll_names = set()
 #     dataSet = []
@@ -40,7 +15,7 @@ class CSVUnicodeWriter:
 
 # ========================================================================================
 # Function to query Mongo Collection and retrieve all records matching a particular rule
-def queryDB(mongoConf, month, year, filterRule, path, ruleLines):
+def queryDB(mongoConf, month, year, filterRule, path, rtLines):
     host = mongoConf.get("mongo", "host")
     port = int(mongoConf.get("mongo", "port"))
     # Create a new MongoDB client
@@ -80,7 +55,7 @@ def queryDB(mongoConf, month, year, filterRule, path, ruleLines):
                 if lenUM > longestUMen:
                     longestUMen = lenUM
             if 'mrt' in k:
-                lenRTag = len(k['mrt'].split(';'))
+                lenRTag = len(k['mrt'])
                 if lenRTag > longestRTag:
                     longestRTag = lenRTag
             if len(k['mrv']) > longestRule:
@@ -89,12 +64,12 @@ def queryDB(mongoConf, month, year, filterRule, path, ruleLines):
             dataSet.append(k)
             print k['_id']
             # If the size of the dataSet list exceeds a certain threshold, write to a file
-            if sys.getsizeof(dataSet) > 106954752:
+            if sys.getsizeof(dataSet) > 104857600:
                 print "\nWriting to File...\n"
                 # Package all the control information into a tuple
                 outputSet = (dataSet, longestRule, longestHtag, longestUMen, longestRTag, count)
                 # Send all the control information to the PrintCSV function to convert the Dict into a CSV
-                printCSV(outputSet, path, month, filterRule, ruleLines)
+                printCSV(outputSet, path, month, filterRule, rtLines)
                 # Reset all the values and increment the count to denote that the next file must be started when writing next
                 outputSet = ()
                 dataSet = []
@@ -109,7 +84,7 @@ def queryDB(mongoConf, month, year, filterRule, path, ruleLines):
     # Once iteration over all the records is done, send all control info to PrintCSV to generate CSV file
     print "\nWriting to File...\n"
     outputSet = (dataSet, longestRule, longestHtag, longestUMen, longestRTag, count)
-    printCSV(outputSet, path, month, filterRule, ruleLines)
+    printCSV(outputSet, path, month, filterRule, rtLines)
 
 
 # ========================================================================================
@@ -167,7 +142,7 @@ def printHead(csvfile, resultList, delim, fields):
 
 # ========================================================================================
 
-def printCSV(resultList, path, month, rule, ruleLines):
+def printCSV(resultList, path, month, rule, rtLines):
     # Mention the delimiter
     delim = ","
     # Retrieve the count from the resultList parameter
@@ -206,9 +181,16 @@ def printCSV(resultList, path, month, rule, ruleLines):
                         continue
                 # Unroll the matchingrulestag array into multiple fields
                 if key == "mrt":
-                    tag = result[key].split(';')
-                    tag += [""] * (resultList[4] - len(tag))
-                    row.extend(tag)
+                    tags = result[key]
+                    translatedTags = []
+                    for t in tags:
+                        try:
+                            tag = (rtLines[0][int(t)].split(':')[0]).strip('"')
+                            translatedTags.append(tag)
+                        except IndexError:
+                            break
+                    translatedTags += [""] * (resultList[4] - len(translatedTags))
+                    row.extend(translatedTags)
                     continue
                 # Unroll the matchingrulesvalue array into multiple fields
                 if key == "mrv":
@@ -216,11 +198,11 @@ def printCSV(resultList, path, month, rule, ruleLines):
                     rules = []
                     for j in range(0, resultList[1]):
                         try:
-                            rule = ':'.join(ruleLines[int(result[key][j])].split(':')[0:-1])
+                            rule = ':'.join(rtLines[1][int(result[key][j])].split(':')[0:-1])
                             translatedRules.append(rule)
                             rules.append(str(result[key][j]))
                         except IndexError:
-                            pass
+                            break
                     row.append(';'.join(translatedRules))
                     rules += [""] * (resultList[1] - len(result[key]))
                     row.extend(rules)
@@ -271,7 +253,7 @@ if __name__ == "__main__":
     dest = conf.get("twitter", "prod_dest_path")
     # Generate full path for the corresponding year and month
     path = dest.format(year + monthToNames[month], 'CSVRULES')
-    
+    mkdir_p(path)
     # Future work
     # If time frame based, generate files based on start and end month and rule
     # if start_time == end_time:
@@ -286,10 +268,13 @@ if __name__ == "__main__":
     r = open(conf_path.format("tw_rules.json"))
     ruleLines = r.readlines()
     r.close()
+    r = open(conf_path.format("tw_tags.json"))
+    tagLines = r.readlines()
+    r.close()
     rules = range(1, len(ruleLines))
-    
+    rtLines = (tagLines, ruleLines)
     # for each rule
     for i in rules:
         # Run queryDB for the corresponding month, year and rule
-        queryDB(conf, month, year, str(i), path, ruleLines)
+        queryDB(conf, month, year, str(i), path, rtLines)
         print i
