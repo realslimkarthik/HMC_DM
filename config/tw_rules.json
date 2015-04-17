@@ -764,5 +764,20 @@
 "305s lang:en": 765,
 "talon contains: SMOK lang: en": 766,
 "\"smoker's choice\"": 767,
-"panatela OR panatelas": 768
+"panatela OR panatelas": 768,
+"(\"Fifth Harmony\" OR fifthharmony) (contains:cig OR tobacco OR (contains:smok -weed))": 769,
+"(\"Becky G\" OR beckyg OR iambeckyg) (contains:cig OR tobacco OR (contains:smok -weed))": 770,
+"(\"King Bach\" OR kingbach) (contains:cig OR tobacco OR (contains:smok -weed))": 771,
+"(\"Harley Morenstein\" OR harleymorenstein OR harleyplays) (contains:cig OR tobacco OR (contains:smok -weed))": 772,
+"(\"Iman Crosson\" OR alphacat) (contains:cig OR tobacco OR (contains:smok -weed))": 773,
+"(\"Jimmy Tatro\" OR jimmytatro) (contains:cig OR tobacco OR (contains:smok -weed))": 774,
+"(\"Timothy Delaghetto\" OR timothydelaghetto OR traphik) (contains:cig OR tobacco OR (contains:smok -weed))": 775,
+"(\"Terrence Jenkins\" OR terrencejenkins OR terrencej) (contains:cig OR tobacco OR (contains:smok -weed))": 776,
+"(\"Grace Helbig\" OR gracehelbig) (contains:cig OR tobacco OR (contains:smok -weed))": 777,
+"(\"K.D. Aubert\" OR kdaubert OR thekdaubert) (contains:cig OR tobacco OR (contains:smok -weed))": 778,
+"(\"Christian Keyes\" OR christiankeyes) (contains:cig OR tobacco OR (contains:smok -weed))": 779,
+"(leftswipe OR swipeleft OR \"left swipe\" OR \"swipe left\") (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)": 780,
+"leftswipedat": 781,
+"(contains:cig OR contains:smok) (contains:selfie OR contains:pic OR profile)": 782,
+"tinder smoking (tobacco OR contains:cig OR contains:smok OR truth)": 783
 }
