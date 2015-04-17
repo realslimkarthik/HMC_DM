@@ -3,28 +3,29 @@ import string
 import dm_rules
 import json
 import sys
+from bs4 import BeautifulSoup
 import ConfigParser
 from CSVUnicodeWriter import CSVUnicodeWriter
 from utility import mkdir_p
 
-def makeCSVfromXMLfbStreams(jsonfile, fields, dest):
+def getDatafromXMLfbStreams(jsonfile, fields):
     data = []
     line = ""
-    for i in f.readlines():
+    jsonFile = open(jsonfile)
+    for i in jsonFile.readlines():
         if '</entry>' in i:
             line += i
-            dataLine = extract(line, fields)
+            dataLine = extractXML(line, fields)
             if dataLine is not None:
                 data.append(dataLine)
             line = ""
         else:
             line += i
-    f.close()
-    print data
+    jsonFile.close()
     return data
 
 
-def extract(line, fields):
+def extractXML(line, fields):
     soup = BeautifulSoup(line)
     data = {}
     for (key, val) in fields.iteritems():
@@ -33,27 +34,52 @@ def extract(line, fields):
             for j in val:
                 try:
                     item = part_xml.find(j).get_text().strip()
+                    if item == "":
+                        try:
+                            item = part_xml.find(j)['href']
+                        except KeyError:
+                            return None
                     newKey = key + '_' + j
                     data[newKey] = item
                 except AttributeError:
                     return None
-        elif isinstance(val, dict):
-            for (k, v) in val.iteritems():
-                newKey = key + '_' + k
-                try:
-                    item = soup.find(key, rel=k)['href']
-                except KeyError:
-                    return None
-                data[newKey] = item
         else:
             try:
                 item = part_xml.get_text().strip()
+                if item == "":
+                    item = part_xml['href']
                 newKey = key
                 data[newKey] = item
             except AttributeError:
                 data = None
                 break
     return data
+
+
+def printCSVXMLComments(csvfile, data, fields):
+    print len(data)
+    writer = CSVUnicodeWriter(csvfile)
+    keys = []
+    for (key, val) in fields.iteritems():
+        if isinstance(val, list):
+            for i in val:
+                keys.append(key + '_' + i)
+        elif isinstance(val, dict):
+            for i in val.iteritems():
+                keys.append(key + '_' + i)
+        else:
+            keys.append(key)
+    writer.writerow(keys)
+
+    for item in data:
+        row = []
+        for key in keys:
+            if key in item:
+                row.append(item[key])
+            else:
+                row.append("")
+        writer.writerow(row)
+
 
 #Creates the CSV
 #makeCSVfromJSONfbStreams("h:/data/rawdata/gnip/facebook/2014/08/18/")
@@ -311,9 +337,9 @@ def getFiles(src, infoOrComments):
     fileList = os.listdir(src)
     outputFiles = []
     for i in fileList:
-        if '.xml' in i or '.json' in i:
+        if '.xml' in i: #or '.json' in i:
                 if infoOrComments in i:
-                    if len(i.split('_')) == 5 or len(i.split('-')):
+                    if len(i.split('_')) == 5 or len(i.split('-')) == 3:
                         if '_e.' not in i:
                             outputFiles.append(i)
                             continue
@@ -346,8 +372,12 @@ if __name__ == "__main__":
         comment_list_file = open(dest + 'fanpage_to_user_id.csv', 'wb')
         comment_list_file.write('Fanpage, Comment_Id\n')
         for i in commentsFileList:
+            print i
             if 'xml' in i:
-                makeCSVfromXMLfbStreams(src + i, fields, dest)
+                data = getDatafromXMLfbStreams(src + i, fields)
+                outputComments = open(dest + i.split('\\')[-1].split('.')[0] + "comments.csv", "wb")
+                printCSVXMLComments(outputComments, data, fields)
+                outputComments.close()
             elif 'json' in i:
                 makeCSVfromJSONfbStreams(src + i, op, dest)
         comment_list_file.close()
