@@ -4,11 +4,8 @@
 "updated": 1,
 "published": 1,
 "title": 1,
-"category": {
-    "label": 1
-},
-"link": {"alternate": 1},
+"link": 1,
 "source": ["updated", "gnip:rule"],
-"activity:object": ["activity:object-type", "title", "content", "thr:in-reply-to"],
+"activity:object": ["activity:object-type", "title", "content", "link", "thr:in-reply-to"],
 "author": ["name", "uri"]
 }
