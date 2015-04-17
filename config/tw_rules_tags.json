@@ -720,7 +720,7 @@
 "blunts": "cigar/cigarillo",
 "captainblack OR captainblacks": "cigar/cigarillo",
 "cigar OR cigars": "cigar/cigarillo",
-"cigarillo OR cigarillos lang: en": "cigar/cigarillo",
+"(cigarillo OR cigarillos) lang: en": "cigar/cigarillo",
 "djarum OR djarums": "cigar/cigarillo",
 "dutches": "cigar/cigarillo",
 "havatampa OR havatampas ": "cigar/cigarillo",
@@ -728,10 +728,10 @@
 "littlecigar OR littlecigars": "cigar/cigarillo",
 "milds": "cigar/cigarillo",
 "optimo OR optimos lang: en": "cigar/cigarillo",
-"rello OR rellos lang: en": "cigar/cigarillo",
-"relo OR relos lang: en": "cigar/cigarillo",
-"rillo OR rillos lang: en": "cigar/cigarillo",
-"rilo OR rilos lang: en": "cigar/cigarillo",
+"(rello OR rellos) lang: en": "cigar/cigarillo",
+"(relo OR relos) lang: en": "cigar/cigarillo",
+"(rillo OR rillos) lang: en": "cigar/cigarillo",
+"(rilo OR rilos) lang: en": "cigar/cigarillo",
 "contains: splif": "marijuana",
 "splitarillo OR splitarillos": "cigar/cigarillo",
 "contains: swish": "cigar/cigarillo",
@@ -779,5 +779,8 @@
 "(leftswipe OR swipeleft OR \"left swipe\" OR \"swipe left\") (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)": "Legacy Campaign",
 "leftswipedat": "Legacy Campaign",
 "(contains:cig OR contains:smok) (contains:selfie OR contains:pic OR profile)": "Legacy Campaign",
-"tinder smoking (tobacco OR contains:cig OR contains:smok OR truth)": "Legacy Campaign"
+"tinder smoking (tobacco OR contains:cig OR contains:smok OR truth)": "Legacy Campaign",
+"(swish contains:smok)": "cigar/cigarillo",
+"swisher OR swishers": "cigar/cigarillo",
+"swisha OR swishas": "cigar/cigarillo"
 }

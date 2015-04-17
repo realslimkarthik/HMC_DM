@@ -720,7 +720,7 @@
 "blunts": 721,
 "captainblack OR captainblacks": 722,
 "cigar OR cigars": 723,
-"cigarillo OR cigarillos lang: en": 724,
+"(cigarillo OR cigarillos) lang: en": 724,
 "djarum OR djarums": 725,
 "dutches": 726,
 "havatampa OR havatampas ": 727,
@@ -728,10 +728,10 @@
 "littlecigar OR littlecigars": 729,
 "milds": 730,
 "optimo OR optimos lang: en": 731,
-"rello OR rellos lang: en": 732,
-"relo OR relos lang: en": 733,
-"rillo OR rillos lang: en": 734,
-"rilo OR rilos lang: en": 735,
+"(rello OR rellos) lang: en": 732,
+"(relo OR relos) lang: en": 733,
+"(rillo OR rillos) lang: en": 734,
+"(rilo OR rilos) lang: en": 735,
 "contains: splif": 736,
 "splitarillo OR splitarillos": 737,
 "contains: swish": 738,
@@ -779,5 +779,8 @@
 "(leftswipe OR swipeleft OR \"left swipe\" OR \"swipe left\") (ad OR ads OR commercial OR commercials OR campaign OR PSA OR PSAs)": 780,
 "leftswipedat": 781,
 "(contains:cig OR contains:smok) (contains:selfie OR contains:pic OR profile)": 782,
-"tinder smoking (tobacco OR contains:cig OR contains:smok OR truth)": 783
+"tinder smoking (tobacco OR contains:cig OR contains:smok OR truth)": 783,
+"(swish contains:smok)": 784,
+"swisher OR swishers": 785,
+"swisha OR swishas": 786
 }
