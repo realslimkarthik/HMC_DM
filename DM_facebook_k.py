@@ -337,7 +337,7 @@ def getFiles(src, infoOrComments):
     fileList = os.listdir(src)
     outputFiles = []
     for i in fileList:
-        if '.xml' in i: #or '.json' in i:
+        if '.xml' in i or '.json' in i:
                 if infoOrComments in i:
                     if len(i.split('_')) == 5 or len(i.split('-')) == 3:
                         if '_e.' not in i:
