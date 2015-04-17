@@ -7,10 +7,53 @@ import ConfigParser
 from CSVUnicodeWriter import CSVUnicodeWriter
 from utility import mkdir_p
 
-def makeCSVfromXMLfbStreams(jsonfile, dest):
-    currentComments = ""
-    with open(conf_path.format("fb_comments_fields.json")) as f:
-        fields = json.loads(f.read())
+def makeCSVfromXMLfbStreams(jsonfile, fields, dest):
+    data = []
+    line = ""
+    for i in f.readlines():
+        if '</entry>' in i:
+            line += i
+            dataLine = extract(line, fields)
+            if dataLine is not None:
+                data.append(dataLine)
+            line = ""
+        else:
+            line += i
+    f.close()
+    print data
+    return data
+
+
+def extract(line, fields):
+    soup = BeautifulSoup(line)
+    data = {}
+    for (key, val) in fields.iteritems():
+        part_xml = soup.find(key)
+        if isinstance(val, list):
+            for j in val:
+                try:
+                    item = part_xml.find(j).get_text().strip()
+                    newKey = key + '_' + j
+                    data[newKey] = item
+                except AttributeError:
+                    return None
+        elif isinstance(val, dict):
+            for (k, v) in val.iteritems():
+                newKey = key + '_' + k
+                try:
+                    item = soup.find(key, rel=k)['href']
+                except KeyError:
+                    return None
+                data[newKey] = item
+        else:
+            try:
+                item = part_xml.get_text().strip()
+                newKey = key
+                data[newKey] = item
+            except AttributeError:
+                data = None
+                break
+    return data
 
 #Creates the CSV
 #makeCSVfromJSONfbStreams("h:/data/rawdata/gnip/facebook/2014/08/18/")
@@ -26,124 +69,44 @@ def makeCSVfromJSONfbStreams(jsonfile, op, dest=""):
     outInfo = []
     outComments = []
     myline = ""
-        f = open(jsonfile, "r")
-        for line in f:
-            myline = string.strip(line)
-            if myline != "":
-                myline = myline.decode("utf-8", "ignore")
-                #print myline
-                #Remove new lines from within
-                mylines = myline.split("\\n")
-                if len(mylines) > 1:
-                    myline = " ".join(mylines)
-                #Remove carriage returns from within
-                mylines = myline.split("\\r")
-                if len(mylines) > 1:
-                    myline = " ".join(mylines)
-                #Remove problematic \s
-                mylines = myline.split("\\\\")
-                if len(mylines) > 1:
-                    myline = " ".join(mylines)
-                mylines = myline.split("\\ ")
-                if len(mylines) > 1:
-                    myline = " ".join(mylines)
-                if "info" in f.name:
-                    parseString(myline, outInfo, currentInfo, keysInfo, op)
-                elif "comments" in f.name:
-                    parseString(myline, outComments, currentComments, keysComments, op, fields)
-        if op == "info":
-            outputInfo = open(dest + jsonfile.split('\\')[-1].split('.')[0] + "info.csv", "wb")
-            printCSVInfo(outputInfo, outInfo, keysInfo)
-            outputInfo.close()
-        elif op == "comments":
-            outputComments = open(dest + jsonfile.split('\\')[-1].split('.')[0] + "comments.csv", "wb")
-            keysComments.append('type')
-            printCSVComments(outputComments, outComments, keysComments, fields)
-            outputComments.close()
-
-
-def parseString(myline, outList, current, outKeys, op, fields=[]):
-    if current != "":
-        myline = "".join([current,myline])
-    try:
-        elt = json.loads(myline)
-    except ValueError as e:
-        current = myline
-    else:
-        current = ""
-        dataDict = {}
-        if op == "info":
-            extractInfo(elt, dataDict, outKeys)
-        elif op == "comments":
-            dataType = elt.keys()[0]
-            extractComments(elt[dataType], dataDict, outKeys, fields, "")
-            dataDict['type'] = dataType
-        outList.append(dataDict)
-
-
-def printCSVInfo(csvfile, resultList, mykeys):
-    delim = ','
-    print len(resultList)
-    
-    for key in mykeys:
-        csvfile.write(key + delim)
-
-    for result in resultList:
-        csvfile.write("\n")
-        for item in mykeys:
-            if item in result:
-                entry = result[item]
-                if type(entry) == unicode:
-                    #entry = unicode(entry, "utf-8", errors="ignore")
-                    entrys = entry.split(",")
-                    if len(entrys) > 1:
-                        entry = "".join(entrys)
-                else:
-                    entry = unicode(entry)
-                #Override to avoid errors for weird characters
-                csvfile.write(entry.encode('ascii','ignore')+delim)
-            else:
-                csvfile.write(delim)
-
-
-def printCSVComments(csvfile, resultList, mykeys, fields):
-    delim = ','
-    writer = CSVUnicodeWriter(csvfile)
-    map_writer = CSVUnicodeWriter(f)
-    print len(resultList)
-    for key in fields:
-        csvfile.write(key + delim)
-
-    csvfile.write('\n')
-    for result in resultList:
-        ids = result['id'].split('_')
-        row = []
-        map_row = []
-        if result['from_id'] in fanpages:
-            map_row.append(result['from_id'])
-            map_row.append(result['id'])
-            map_writer.writerow(map_row)
-        for key in fields:
-            if key in result:
-                #Override to avoid errors for weird characters
-                entry = unicode(result[key])
-                row.append(entry)
-            else:
-                if key == "id1":
-                    row.append(ids[0])
-                elif key == "id2":
-                    try:
-                        row.append(ids[1])
-                    except IndexError:
-                        row.append("")
-                elif key == "threadid":
-                    row.append(ids[0])
-                elif key == "like_count":
-                    row.append('0')
-                else:
-                    row.append('')
-        writer.writerow(row)
-
+    f = open(jsonfile, "r")
+    for line in f:
+        myline = string.strip(line)
+        if myline != "":
+            myline = myline.decode("utf-8", "ignore")
+            #print myline
+            #Remove new lines from within
+            mylines = myline.split("\\n")
+            if len(mylines) > 1:
+                myline = " ".join(mylines)
+            #Remove carriage returns from within
+            mylines = myline.split("\\r")
+            if len(mylines) > 1:
+                myline = " ".join(mylines)
+            #Remove problematic \s
+            mylines = myline.split("\\\\")
+            if len(mylines) > 1:
+                myline = " ".join(mylines)
+            mylines = myline.split("\\ ")
+            if len(mylines) > 1:
+                myline = " ".join(mylines)
+            if "info" in f.name:
+                parseString(myline, outInfo, currentInfo, keysInfo, op)
+            elif "comments" in f.name:
+                parseString(myline, outComments, currentComments, keysComments, op, fields)
+    f.close()
+    if op == "info":
+        outputInfo = open(dest + jsonfile.split('\\')[-1].split('.')[0] + "info.csv", "wb")
+        printCSVInfo(outputInfo, outInfo, keysInfo)
+        outputFile = outputInfo
+        outputInfo.close()
+    elif op == "comments":
+        outputComments = open(dest + jsonfile.split('\\')[-1].split('.')[0] + "comments.csv", "wb")
+        keysComments.append('type')
+        printCSVComments(outputComments, outComments, keysComments, fields)
+        outputFile = outputComments
+        outputComments.close()
+    return outputFile
 
 #Recursive function to process the input dictionary
 def extractComments(DictIn, Dictout, allkeys, fields, nestedKey=""):
@@ -189,7 +152,6 @@ def extractComments(DictIn, Dictout, allkeys, fields, nestedKey=""):
                 Dictout[nestedKey] = unicode(Dictout[nestedKey])+"; "+unicode(DictIn)
 
 
-
 #Recursive function to process the input dictionary
 def extractInfo(DictIn, Dictout, allkeys, nestedKey=""):
     #If DictIn is a dictionary
@@ -233,6 +195,92 @@ def extractInfo(DictIn, Dictout, allkeys, nestedKey=""):
             Dictout[nestedKey] = unicode(Dictout[nestedKey])+"; "+unicode(DictIn)
 
 
+def parseString(myline, outList, current, outKeys, op, fields=[]):
+    if current != "":
+        myline = "".join([current,myline])
+    try:
+        elt = json.loads(myline)
+    except ValueError as e:
+        current = myline
+    else:
+        current = ""
+        dataDict = {}
+        if op == "info":
+            extractInfo(elt, dataDict, outKeys)
+        elif op == "comments":
+            dataType = elt.keys()[0]
+            extractComments(elt[dataType], dataDict, outKeys, fields, "")
+            dataDict['type'] = dataType
+        outList.append(dataDict)
+
+
+def printCSVInfo(csvfile, resultList, mykeys):
+    delim = ','
+    print len(resultList)
+    
+    for key in mykeys:
+        with open(conf_path.format('facebook_fanpages.txt')) as f:
+            fanpages = [i.strip() for i in f.readlines()]
+        csvfile.write(key + delim)
+
+    for result in resultList:
+        csvfile.write("\n")
+        for item in mykeys:
+            if item in result:
+                entry = result[item]
+                if type(entry) == unicode:
+                    #entry = unicode(entry, "utf-8", errors="ignore")
+                    entrys = entry.split(",")
+                    if len(entrys) > 1:
+                        entry = "".join(entrys)
+                else:
+                    entry = unicode(entry)
+                #Override to avoid errors for weird characters
+                csvfile.write(entry.encode('ascii','ignore')+delim)
+            else:
+                csvfile.write(delim)
+
+
+def printCSVComments(csvfile, resultList, mykeys, fields):
+    delim = ','
+    writer = CSVUnicodeWriter(csvfile)
+    map_writer = CSVUnicodeWriter(comment_list_file)
+    print len(resultList)
+    for key in fields:
+        csvfile.write(key + delim)
+
+    csvfile.write('\n')
+    for result in resultList:
+        ids = result['id'].split('_')
+        row = []
+        map_row = []
+        if result['from_id'] in fanpages:
+            map_row.append(result['from_id'])
+            map_row.append(result['id'])
+            map_writer.writerow(map_row)
+        for key in fields:
+            if key in result:
+                #Override to avoid errors for weird characters
+                entry = unicode(result[key])
+                row.append(entry)
+            else:
+                if key == "id1":
+                    row.append(ids[0])
+                elif key == "id2":
+                    try:
+                        row.append(ids[1])
+                    except IndexError:
+                        row.append("")
+                elif key == "threadid":
+                    row.append(ids[0])
+                elif key == "like_count":
+                    row.append('0')
+                else:
+                    row.append('')
+        writer.writerow(row)
+
+
+
 
 def aggregateByDay(year, conf):
     src_parts_path = conf.get("facebook", "prod_src_parts_path")
@@ -261,15 +309,15 @@ def aggregateByDay(year, conf):
 
 def getFiles(src, infoOrComments):
     fileList = os.listdir(src)
+    outputFiles = []
     for i in fileList:
-        if 'xml' not in i and 'json' not in i and infoOrComments not in i and 'error' in i:
-            fileList.remove(i)
-            continue
-        if i.split('_') != 3:
-            if i.split('-') != 3:
-                fileList.remove(i)
-
-    return fileList
+        if '.xml' in i or '.json' in i:
+                if infoOrComments in i:
+                    if len(i.split('_')) == 5 or len(i.split('-')):
+                        if '_e.' not in i:
+                            outputFiles.append(i)
+                            continue
+    return outputFiles
 
 
 # TO DO: write code to automate this for a bunch of months so that we can leave it running over the weekend
@@ -284,21 +332,22 @@ if __name__ == "__main__":
     # aggregateByDay(year, conf)
     src = conf.get("facebook", "prod_src_path").format(year, month)
     dest = conf.get("facebook", "prod_dest_path").format(year, month)
-    infoFileList = getFiles(src, 'info')
-    commentsFileList = getFiles(src, 'comments')
     mkdir_p(dest)
     if op == "info":
+        infoFileList = getFiles(src, 'info')
         for i in infoFileList:
-            makeCSVfromJSONfbStreams(i, op, dest)
+            makeCSVfromJSONfbStreams(src + i, op, dest)
     elif op == "comments":
-        f = open(conf_path.format('facebook_fanpages.txt'))
-        f = open(dest + 'fanpage_to_user_id.csv', 'wb')
-        for i in commentsFileList:
+        commentsFileList = getFiles(src, "comments")
+        with open(conf_path.format("fb_comments_fields.json")) as f:
+            fields = json.loads(f.read())
+        with open(conf_path.format('facebook_fanpages.txt')) as f:
             fanpages = [i.strip() for i in f.readlines()]
-            f.close()
-            f.write('Fanpage, Comment_Id\n')
+        comment_list_file = open(dest + 'fanpage_to_user_id.csv', 'wb')
+        comment_list_file.write('Fanpage, Comment_Id\n')
+        for i in commentsFileList:
             if 'xml' in i:
-                makeCSVfromXMLfbStreams(i, dest)
+                makeCSVfromXMLfbStreams(src + i, fields, dest)
             elif 'json' in i:
-                makeCSVfromJSONfbStreams(i, op, dest)
-        f.close()
+                makeCSVfromJSONfbStreams(src + i, op, dest)
+        comment_list_file.close()
