@@ -81,11 +81,7 @@ def CSVfromTwitterJSON(jsonfilename, collName, DorP, errorfile=None, overwrite=F
                         extract(tweet, tweetObj, mykeys)
                         #Add the output dictionary to the list
                         populateMongo(tweetObj, collName, ruleConf, tagConf, configData)
-                        try:
-                            print tweetObj['geocoordinates']
-                        except KeyError:
-                            # print "NA"
-                            continue
+                        
         #Print the number of tweets processed
         jsonfile.close()
         print "Finished populating collection ", collName
@@ -235,8 +231,6 @@ def populateMongo(inputTweet, collName, ruleConf, tagConf, configData):
     # Remove the former matchingrulesvalue key
     inputTweet['matchingrulesvalue'] = ruleIndex
     inputTweet['matchingrulestag'] = list(tagIndex)
-    print ruleIndex
-    print list(tagIndex)
     # Initialize a new Dict to hold the record that needs to be uploaded into the corresponding Mongo Collection
     newRecord = {}
     
@@ -250,7 +244,6 @@ def populateMongo(inputTweet, collName, ruleConf, tagConf, configData):
     # Attempt to insert record into the collection. If it fails, do an update
     try:
         collection.insert(newRecord)
-        logging.info('Posted collection with id: ' + str(inputTweet['_id']) + ' into collection ' + collName)
     except errors.DuplicateKeyError:
         oldRecord = collection.find({'_id': newRecord['_id']})
         for i in oldRecord:
@@ -258,11 +251,7 @@ def populateMongo(inputTweet, collName, ruleConf, tagConf, configData):
             mrt = set(newRecord['mrt'] + i['mrt'])
         newRecord['mrv'] = list(mrv)
         newRecord['mrt'] = list(mrt)
-
-
         collection.save(newRecord)
-        logging.debug("Updated tweet _id=" + str(inputTweet['_id']) + ' into collection ' + collName)
-        print "Updated tweet _id=" + str(inputTweet['_id'])  + ' into collection ' + collName
 
 # ========================================================================================
 # Command to run the script
@@ -292,7 +281,6 @@ if __name__ == "__main__":
 
         # Format the input month and year to form a a part of the Mongo Collection name
         collName = current_month[0:3] + current_year[2:]
-        print collName
         # Get the path for the logs output
         logs = conf.get("conf", "prod_log_path")
         logging.basicConfig(filename=logs.format('prodUpload' + collName +'.log'), level=logging.DEBUG)
