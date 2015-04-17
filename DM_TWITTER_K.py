@@ -221,11 +221,11 @@ def populateMongo(inputTweet, collName, ruleConf, tagConf, configData):
 
     tagIndex = set()
     for j in inputTweet['matchingrulestag']:
+        if j.strip() == 'LCC':
+            tag = 'cigar/cigarillo'
+        else:
+            tag = j.lower().strip()
         try:
-            if j == 'LCC':
-                tag = 'cigar/cigarillo'
-            else:
-                tag = j.lower().strip()
             tagIndex.add(int(tagConf[tag]))
         except KeyError:
             logging.warning("Invalid tag fetched via GNIP with _id=" + inputTweet['_id'] + " with tag=" + j.strip())
