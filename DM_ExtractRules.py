@@ -5,6 +5,7 @@ from pymongo import MongoClient
 from datetime import datetime
 import time
 from utility import mkdir_p, CSVUnicodeWriter
+from pympler import asizeof
 
 
 #     coll_names = set()
@@ -62,9 +63,9 @@ def queryDB(mongoConf, month, year, filterRule, path, rtLines):
                 longestRule = len(k['mrv'])
             # Add the record to the dataset list
             dataSet.append(k)
-            print k['_id']
             # If the size of the dataSet list exceeds a certain threshold, write to a file
-            if sys.getsizeof(dataSet) > 104857600:
+            # if sys.getsizeof(dataSet) > 104857600:
+            if asizeof.asizeof(dataSet) > 104857600:
                 print "\nWriting to File...\n"
                 # Package all the control information into a tuple
                 outputSet = (dataSet, longestRule, longestHtag, longestUMen, longestRTag, count)
@@ -240,7 +241,8 @@ def printCSV(resultList, path, month, rule, rtLines):
 # Eg - python DM_Extract.py Aug 2014
 
 
-monthToNames = {'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'}
+monthToNames = {'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06', 
+        'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'}
 
 if __name__ == "__main__":
     month = sys.argv[1]
