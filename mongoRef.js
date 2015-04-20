@@ -219,3 +219,32 @@ function indexTags(coll_name) {
         db[coll_name].update({'_id': doc._id}, {'$set':{'mrt': doc.mrtI}});
     });
 }
+
+function getLocationFraction(gnip) {
+    yearCount = 0;
+    totalYear = 0;
+    year.forEach(function(m) {
+        monthlyCount = 0;
+        totalMonth = 0;
+        m.forEach(function(c) {
+            totalMonth = db[c].count();
+            if (gnip == true) {
+                monthlyCount += db[c].count({'gplg': {$exists: true}});
+            } else {
+                monthlyCount += db[c].count({'': {$exists: true}});
+            }
+        });
+        yearCount += monthlyCount;
+        totalYear += totalMonth;
+        if (gnip) {
+            print('for the month of ' + m + ': ' + monthlyCount/totalMonth + '% of tweets have gnip location data');
+        } else {
+            print('for the month of ' + m + ': ' + monthlyCount/totalMonth + '% of tweets have location data');
+        }
+    });
+    if (gnip == true) {
+        print('The year of 2014 has ' + yearCount/totalYear + '% of tweets with gnip location data');
+    } else {
+        print('The year of 2014 has ' + yearCount/totalYear + '% of tweets with location data');
+    }
+}
