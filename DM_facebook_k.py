@@ -47,7 +47,10 @@ def extractXML(line, fields):
             try:
                 item = part_xml.get_text().strip()
                 if item == "":
-                    item = part_xml['href']
+                    try:
+                        item = part_xml['href']
+                    except KeyError:
+                        return None
                 newKey = key
                 data[newKey] = item
             except AttributeError:
