@@ -148,7 +148,7 @@ def countTweetsSearch(src_path, dest_path):
         rule, month, date = key.split('_')
         rId = rules[rule]
         rTag = rulesToTags[rule]
-        writer.writerow([rule, rId, rTag, count, date, month])
+        writer.writerow([rule, str(rId), rTag, str(count), date, month])
     csv.close()
 
 
