@@ -55,6 +55,7 @@ def twAggregateByDay(jsonDirectory):
         #Add the full name of the file to the list
         myfiles.extend(os.path.join(dirpath, filename) for filename in filenames)
     #For each file in the list
+    outputDirectory = ''.join(jsonDirectory.split('\\')[0:-1])
     for myfile in myfiles:
         #Require .json and exclude .csv
         if ".json" in myfile and not ".csv" in myfile and not "errors" in myfile and "twitter" in myfile:
