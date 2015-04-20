@@ -10,6 +10,7 @@ from pymongo import MongoClient, errors, ASCENDING
 from datetime import datetime
 import time
 import logging
+from utility import mkdir_p
 
 # ========================================================================================
 # Populates the CSV. Gets CSV's file handle from caller
@@ -199,6 +200,9 @@ def populateMongo(inputTweet, collName, ruleConf, tagConf, configData):
     inputTweet.pop('Idpost', None)
     # packing the matchingrulesvalue field into an array
     inputTweet['matchingrulesvalue'] = inputTweet['matchingrulesvalue'].split(';')
+
+    if inputTweet['matchingrulestag'] == 'LCC':
+        inputTweet['matchingrulestag'] = 'cigar/cigarillo'
     inputTweet['matchingrulestag'] = inputTweet['matchingrulestag'].split(';')
 
     # Changing postedTime into ISO format for processing using JavaScript in Mongo
@@ -297,6 +301,7 @@ if __name__ == "__main__":
         else:
             src_path = conf.get("twitter", "prod_spl_src_path").format(current_year + monthToNames[current_month], proj_name)
         # Get the list of files in the source directory
+        src_path = conf.get("twitter", "prod_one_time_src")
         fileList = os.listdir(src_path)
         # Iterate over every file in the source directory
         for j in fileList:
