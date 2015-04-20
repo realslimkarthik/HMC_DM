@@ -252,7 +252,10 @@ def populateMongo(inputTweet, collName, ruleConf, tagConf, configData):
         oldRecord = collection.find({'_id': newRecord['_id']})
         for i in oldRecord:
             mrv = set(newRecord['mrv'] + i['mrv'])
-            mrt = set(newRecord['mrt'] + i['mrt'])
+            if i['mrt'] is not None:
+                mrt = set(newRecord['mrt'] + i['mrt'])
+            else:
+                mrt = set(newRecord['mrt'])
         newRecord['mrv'] = list(mrv)
         newRecord['mrt'] = list(mrt)
         collection.save(newRecord)
