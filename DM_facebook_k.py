@@ -3,6 +3,7 @@ import string
 import dm_rules
 import json
 import sys
+import re
 from bs4 import BeautifulSoup
 import ConfigParser
 from CSVUnicodeWriter import CSVUnicodeWriter
@@ -39,7 +40,8 @@ def extractXML(line, fields):
                             item = part_xml.find(j)['href']
                         except KeyError:
                             return None
-                    newKey = key + '_' + j
+                    newKey = key + j
+                    newKey = re.sub('[^a-zA-Z0-9]', '', newKey)
                     data[newKey] = item
                 except AttributeError:
                     return None
@@ -52,6 +54,7 @@ def extractXML(line, fields):
                     except KeyError:
                         return None
                 newKey = key
+                newKey = re.sub('[^a-zA-Z0-9]', '', newKey)
                 data[newKey] = item
             except AttributeError:
                 data = None
