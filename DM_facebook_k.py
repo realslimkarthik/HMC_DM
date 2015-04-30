@@ -151,7 +151,7 @@ def extractComments(DictIn, Dictout, allkeys, fields, nestedKey=""):
                 if "tags" in nestedKey and isinstance(value,list):
                     mykey = nestedKey
                 else:
-                    mykey = nestedKey+"_"+key
+                    mykey = nestedKey + key
             else:
                 mykey = key
             if isinstance(value, dict): # If value itself is dictionary
@@ -197,7 +197,7 @@ def extractInfo(DictIn, Dictout, allkeys, nestedKey=""):
                 if "tags" in nestedKey and isinstance(value,list):
                     mykey = nestedKey
                 else:
-                    mykey = nestedKey+"_"+key
+                    mykey = nestedKey + key
             else:
                 mykey = key
             if isinstance(value, dict): # If value itself is dictionary
