@@ -57,8 +57,7 @@ def extractXML(line, fields):
                 newKey = re.sub('[^a-zA-Z0-9]', '', newKey)
                 data[newKey] = item
             except AttributeError:
-                data = None
-                break
+                return None
     return data
 
 
