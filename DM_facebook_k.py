@@ -67,6 +67,9 @@ def printCSVXMLComments(csvfile, data, fields):
     writer = CSVUnicodeWriter(csvfile)
     keys = []
     for (key, val) in fields.iteritems():
+        if key == 'id':
+            keys.append('id1')
+            keys.append('id2')
         if isinstance(val, list):
             for i in val:
                 keys.append(key + '_' + i)
@@ -81,7 +84,12 @@ def printCSVXMLComments(csvfile, data, fields):
         row = []
         for key in keys:
             if key in item:
-                row.append(item[key])
+                if key == 'id1':
+                    row.append(str(item['id'].split()[0]))
+                elif key == 'id2':
+                    row.append(str(item['id'].split()[1]))
+                else:
+                    row.append(str(item[key]))
             else:
                 row.append("")
         writer.writerow(row)
