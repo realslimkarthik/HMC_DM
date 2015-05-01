@@ -90,9 +90,15 @@ def printCSVXMLComments(csvfile, data, fields, headers=True):
                 row.append(str(item[key]))
             else:
                 if key == 'id1':
-                    row.append(str(item['id'].split('_')[0]))
+                    try:
+                        row.append(str(item['id'].split('_')[0]))
+                    except IndexError:
+                        row.append(str(item['id']))
                 elif key == 'id2':
-                    row.append(str(item['id'].split('_')[1]))
+                    try:
+                        row.append(str(item['id'].split('_')[1]))
+                    except IndexError:
+                        row.append(str(item['id']))
                 else:
                     row.append("")
         writer.writerow(row)
