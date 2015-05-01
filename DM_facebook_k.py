@@ -292,10 +292,13 @@ def printCSVComments(csvfile, resultList, mykeys, fields, headers=True):
         ids = result['id'].split('_')
         row = []
         map_row = []
-        if result['from_id'] in fanpages:
-            map_row.append(result['from_id'])
-            map_row.append(result['id'])
-            map_writer.writerow(map_row)
+        try:
+            if result['from_id'] in fanpages:
+                map_row.append(result['from_id'])
+                map_row.append(result['id'])
+                map_writer.writerow(map_row)
+        except KeyError:
+            pass
         for key in fields:
             if key in result:
                 #Override to avoid errors for weird characters
