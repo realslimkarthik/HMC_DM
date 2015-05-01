@@ -3,6 +3,7 @@ import string
 import dm_rules
 import json
 import sys
+import re
 from bs4 import BeautifulSoup
 import ConfigParser
 from CSVUnicodeWriter import CSVUnicodeWriter
@@ -39,7 +40,8 @@ def extractXML(line, fields):
                             item = part_xml.find(j)['href']
                         except KeyError:
                             return None
-                    newKey = key + '_' + j
+                    newKey = key + j
+                    newKey = re.sub('[^a-zA-Z0-9]', '', newKey)
                     data[newKey] = item
                 except AttributeError:
                     return None
@@ -52,10 +54,10 @@ def extractXML(line, fields):
                     except KeyError:
                         return None
                 newKey = key
+                newKey = re.sub('[^a-zA-Z0-9]', '', newKey)
                 data[newKey] = item
             except AttributeError:
-                data = None
-                break
+                return None
     return data
 
 
@@ -64,6 +66,9 @@ def printCSVXMLComments(csvfile, data, fields):
     writer = CSVUnicodeWriter(csvfile)
     keys = []
     for (key, val) in fields.iteritems():
+        if key == 'id':
+            keys.append('id1')
+            keys.append('id2')
         if isinstance(val, list):
             for i in val:
                 keys.append(key + '_' + i)
@@ -78,7 +83,12 @@ def printCSVXMLComments(csvfile, data, fields):
         row = []
         for key in keys:
             if key in item:
-                row.append(item[key])
+                if key == 'id1':
+                    row.append(str(item['id'].split()[0]))
+                elif key == 'id2':
+                    row.append(str(item['id'].split()[1]))
+                else:
+                    row.append(str(item[key]))
             else:
                 row.append("")
         writer.writerow(row)
@@ -148,7 +158,7 @@ def extractComments(DictIn, Dictout, allkeys, fields, nestedKey=""):
                 if "tags" in nestedKey and isinstance(value,list):
                     mykey = nestedKey
                 else:
-                    mykey = nestedKey+"_"+key
+                    mykey = nestedKey + key
             else:
                 mykey = key
             if isinstance(value, dict): # If value itself is dictionary
@@ -194,7 +204,7 @@ def extractInfo(DictIn, Dictout, allkeys, nestedKey=""):
                 if "tags" in nestedKey and isinstance(value,list):
                     mykey = nestedKey
                 else:
-                    mykey = nestedKey+"_"+key
+                    mykey = nestedKey + key
             else:
                 mykey = key
             if isinstance(value, dict): # If value itself is dictionary
