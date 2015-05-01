@@ -6,6 +6,7 @@ import sys
 import re
 from bs4 import BeautifulSoup
 import ConfigParser
+import csv
 from CSVUnicodeWriter import CSVUnicodeWriter
 from utility import mkdir_p
 
@@ -43,6 +44,7 @@ def extractXML(line, fields):
                     newKey = key + j
                 except AttributeError:
                     return None
+                item = item.replace('\n', '').replace('\r', '')
                 data[newKey] = item
         else:
             try:
@@ -55,6 +57,7 @@ def extractXML(line, fields):
                 newKey = key
             except AttributeError:
                 return None
+            item = item.replace('\n', '').replace('\r', '')
             data[newKey] = item
     return data
 
@@ -62,6 +65,7 @@ def extractXML(line, fields):
 def printCSVXMLComments(csvfile, data, fields, headers=True):
     print len(data)
     writer = CSVUnicodeWriter(csvfile)
+    # writer = csv.writer(csvfile, delimiter=',',quoting=csv.QUOTE_ALL)
     keys = []
     row = []
     for (key, val) in fields.iteritems():
