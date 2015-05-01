@@ -41,10 +41,9 @@ def extractXML(line, fields):
                         except KeyError:
                             return None
                     newKey = key + j
-                    newKey = re.sub('[^a-zA-Z0-9]', '', newKey)
-                    data[newKey] = item
                 except AttributeError:
                     return None
+                data[newKey] = item
         else:
             try:
                 item = part_xml.get_text().strip()
@@ -54,49 +53,54 @@ def extractXML(line, fields):
                     except KeyError:
                         return None
                 newKey = key
-                newKey = re.sub('[^a-zA-Z0-9]', '', newKey)
-                data[newKey] = item
             except AttributeError:
                 return None
+            data[newKey] = item
     return data
 
 
-def printCSVXMLComments(csvfile, data, fields):
+def printCSVXMLComments(csvfile, data, fields, headers=True):
     print len(data)
     writer = CSVUnicodeWriter(csvfile)
     keys = []
+    row = []
     for (key, val) in fields.iteritems():
         if key == 'id':
             keys.append('id1')
             keys.append('id2')
         if isinstance(val, list):
             for i in val:
-                keys.append(key + '_' + i)
+                keys.append(key + i)
         elif isinstance(val, dict):
             for i in val.iteritems():
-                keys.append(key + '_' + i)
+                keys.append(key + i)
         else:
             keys.append(key)
-    writer.writerow(keys)
+    for key in keys:
+        newKey = re.sub('[^a-zA-Z0-9]', '', key)
+        row.append(newKey)
+
+    if headers:
+        writer.writerow(row)
 
     for item in data:
         row = []
         for key in keys:
             if key in item:
-                if key == 'id1':
-                    row.append(str(item['id'].split()[0]))
-                elif key == 'id2':
-                    row.append(str(item['id'].split()[1]))
-                else:
-                    row.append(str(item[key]))
+                row.append(str(item[key]))
             else:
-                row.append("")
+                if key == 'id1':
+                    row.append(str(item['id'].split('_')[0]))
+                elif key == 'id2':
+                    row.append(str(item['id'].split('_')[1]))
+                else:
+                    row.append("")
         writer.writerow(row)
 
 
 #Creates the CSV
 #makeCSVfromJSONfbStreams("h:/data/rawdata/gnip/facebook/2014/08/18/")
-def makeCSVfromJSONfbStreams(jsonfile, op, dest=""):
+def makeCSVfromJSONfbStreams(jsonfile, op):
     currentInfo = ""
     currentComments = ""
     fieldsFile = open(conf_path.format("fb_comments_fields.txt"))
@@ -134,18 +138,12 @@ def makeCSVfromJSONfbStreams(jsonfile, op, dest=""):
             elif "comments" in f.name:
                 parseString(myline, outComments, currentComments, keysComments, op, fields)
     f.close()
-    if op == "info":
-        outputInfo = open(dest + jsonfile.split('\\')[-1].split('.')[0] + "info.csv", "wb")
-        printCSVInfo(outputInfo, outInfo, keysInfo)
-        outputFile = outputInfo
-        outputInfo.close()
-    elif op == "comments":
-        outputComments = open(dest + jsonfile.split('\\')[-1].split('.')[0] + "comments.csv", "wb")
+    if "info" in f.name:
+        returnData = (keysInfo, outInfo)
+    elif "comments" in f.name:
         keysComments.append('type')
-        printCSVComments(outputComments, outComments, keysComments, fields)
-        outputFile = outputComments
-        outputComments.close()
-    return outputFile
+        returnData = (keysComments, outComments)
+    return returnData
 
 #Recursive function to process the input dictionary
 def extractComments(DictIn, Dictout, allkeys, fields, nestedKey=""):
@@ -280,13 +278,14 @@ def printCSVInfo(csvfile, resultList, mykeys):
                 csvfile.write(delim)
 
 
-def printCSVComments(csvfile, resultList, mykeys, fields):
+def printCSVComments(csvfile, resultList, mykeys, fields, headers=True):
     delim = ','
     writer = CSVUnicodeWriter(csvfile)
     map_writer = CSVUnicodeWriter(comment_list_file)
     print len(resultList)
-    for key in fields:
-        csvfile.write(key + delim)
+    if headers:
+        for key in fields:
+            csvfile.write(key + delim)
 
     csvfile.write('\n')
     for result in resultList:
@@ -320,7 +319,6 @@ def printCSVComments(csvfile, resultList, mykeys, fields):
 
 
 
-
 def aggregateByDay(year, conf):
     src_parts_path = conf.get("facebook", "prod_src_parts_path")
     src_path = conf.get("facebook", "prod_src_path")
@@ -331,7 +329,7 @@ def aggregateByDay(year, conf):
         curr_file = None
         fileList = sorted(fileList)
         for j in fileList:
-            fileName = '-'.join(j.split('-')[:-2])
+            fileName = '_'.join(j.split('-')[:-2])
             if curr_file is None:
                 curr_file = open(src + fileName + ".json", 'w')
             currFileName = curr_file.name.split('.')[0].split('\\')[-1]
@@ -362,20 +360,24 @@ def getFiles(src, infoOrComments):
 # TO DO: write code to automate this for a bunch of months so that we can leave it running over the weekend
 
 if __name__ == "__main__":
-    op = sys.argv[1]
-    month = sys.argv[2]
-    year = sys.argv[3]
+    op = sys.argv[1].lower()
+    year = sys.argv[2]
+    month = sys.argv[3]
+    outputType = sys.argv[4].lower()
     conf = ConfigParser.ConfigParser()
     conf.read("config\config.cfg")
     conf_path = conf.get("conf", "conf_path")
     # aggregateByDay(year, conf)
-    src = conf.get("facebook", "prod_src_path").format(year, month)
-    dest = conf.get("facebook", "prod_dest_path").format(year, month)
+    src = conf.get("facebook", "prod_src_path").format(year, str(month).zfill(2))
+    dest = conf.get("facebook", "prod_dest_path").format(year, str(month).zfill(2))
     mkdir_p(dest)
     if op == "info":
         infoFileList = getFiles(src, 'info')
         for i in infoFileList:
-            makeCSVfromJSONfbStreams(src + i, op, dest)
+            outputInfo = open(dest + jsonfile.split('\\')[-1].split('.')[0] + ".csv", "wb")
+            makeCSVfromJSONfbStreams(src + i, op)
+            printCSVInfo(outputInfo, outInfo, keysInfo)
+            outputInfo.close()
     elif op == "comments":
         commentsFileList = getFiles(src, "comments")
         with open(conf_path.format("fb_comments_fields.json")) as f:
@@ -384,13 +386,36 @@ if __name__ == "__main__":
             fanpages = [i.strip() for i in f.readlines()]
         comment_list_file = open(dest + 'fanpage_to_user_id.csv', 'wb')
         comment_list_file.write('Fanpage, Comment_Id\n')
+        if outputType == 'single':
+            outputFile = open(dest + year + str(month).zfill(2) + '.csv', "wb")
+            headers = True
+
         for i in commentsFileList:
-            print i
-            if 'xml' in i:
-                data = getDatafromXMLfbStreams(src + i, fields)
-                outputComments = open(dest + i.split('\\')[-1].split('.')[0] + "comments.csv", "wb")
-                printCSVXMLComments(outputComments, data, fields)
+            if outputType == 'single':
+                if 'xml' in i:
+                    commentsData = getDatafromXMLfbStreams(src + i, fields)
+                    if headers:
+                        printCSVXMLComments(outputFile, commentsData, fields)
+                        headers = False
+                    else:
+                        printCSVXMLComments(outputFile, commentsData, fields, False)
+
+                elif 'json' in i:
+                    commentsData = makeCSVfromJSONfbStreams(src + i, op)
+                    if headers:
+                        printCSVComments(outputFile, commentsData[1], commentsData[0], fields)
+                        headers = False
+                    else:
+                        printCSVComments(outputFile, commentsData[1], commentsData[0], fields, False)
+
+            elif outputType == 'multiple':
+                print i
+                outputComments = open(dest + i.split('\\')[-1].split('.')[0] + '.csv', "wb")
+                if 'xml' in i:
+                    commentsData = getDatafromXMLfbStreams(src + i, fields)
+                    printCSVXMLComments(outputComments, commentsData, fields)
+                elif 'json' in i:
+                    commentsData = makeCSVfromJSONfbStreams(src + i, op)
+                    printCSVComments(outputComments, commentsData[1], commentsData[0], fields)
                 outputComments.close()
-            elif 'json' in i:
-                makeCSVfromJSONfbStreams(src + i, op, dest)
         comment_list_file.close()
