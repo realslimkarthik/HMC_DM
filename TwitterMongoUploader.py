@@ -11,7 +11,7 @@ from datetime import datetime
 import time
 import logging
 
-monthToNames = {'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'}
+monthToNames = {'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06', 'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'}
 
 
 class TwitterMongoUploader(object):
@@ -22,9 +22,11 @@ class TwitterMongoUploader(object):
         Attributes:
             year: Year in which the data was fetched
             month: Month in which data was fetched
-            rules: Dictionary that provides Rule to Rule Index mapping
-            tags: Dictionary that provides Tag to Tag Index mapping
-            conf: ConfigParser object for some control information
+            _conf: ConfigParser object for some control information
+            _rules: Dictionary that provides Rule to Rule Index mapping
+            _max_rule: Current largest Rule Index
+            _tags: Dictionary that provides Tag to Tag Index mapping
+            _rules_tags: Dictionary that provides Rule to Tag mapping
             fields: List of fields that we keep from raw JSON and their corresponding mapping to new field names
             mongoConf: Mapping of fields from generated keys to optimized keys for Mongo Collections
             src: Path to where the input Source files are to be read from
@@ -35,34 +37,75 @@ class TwitterMongoUploader(object):
     """
 
 
-    def __init__(self, year, month, rules, tags):
-        self.year = year
-        self.month = month
-        self.rules = rules
-        self.tags = tags
+    def __init__(self, year, month):
+        self.year = str(year)
+        self.month = month.lower()
 
-
-        self.conf = ConfigParser.ConfigParser()
-        self.conf.read('config\\config.cfg')
-        conf_path = self.conf.get('conf', 'conf_path')
+        self._conf = ConfigParser.ConfigParser()
+        self._conf.read('config\\config.cfg')
+        conf_path = self._conf.get('conf', 'conf_path')
         
+        rules_file = open(self._conf.get('twitter', 'rules'))
+        self._rules = json.loads(rules_file.read())
+        self._max_rule = sorted(self._rules, key = lambda r: r[1])[-1][1]
+        rules_file.close()
+
+        tags_file = open(self._conf.get('twitter', 'tags'))
+        self._tags = json.loads(tags_file.read())
+        tags_file.close()
+
+        rules_tags_file = open(self._conf.get('twitter', 'rules_tags'))
+        self._rules_tags = json.loads(rules_tags_file.read())
+        rules_tags_file.close()
+
         self.fields = ConfigParser.ConfigParser()
         self.fields.read(conf_path.format('fields.cfg'))
 
         self.mongoConf = ConfigParser.ConfigParser()
         self.mongoConf.read(conf_path.format('fieldsToMongo.cfg'))
         
-        self.src = conf.get('twitter', 'prod_src_path').format(self.year + monthToNames[self.month])
-        self.dest = conf.get('twitter', 'prod_dest_path').format(self.year + monthToNames[self.month])
+        self.src = self._conf.get('twitter', 'prod_src_path').format(self.year + monthToNames[self.month])
+        self.dest = self._conf.get('twitter', 'prod_dest_path').format(self.year + monthToNames[self.month], 'CSVRULES')
 
 
-        host = self.conf.get('mongo', 'host')
-        port = int(self.conf.get('mongo', 'port'))
+        # host = self._conf.get('mongo', 'host')
+        # port = int(self._conf.get('mongo', 'port'))
+        host = self._conf.get('mongo_dev', 'host')
+        port = int(self._conf.get('mongo_dev', 'port'))
         self.mongoClient = MongoClient(host, port)
         self.collName = self.month + self.year
-        logging.basicConfig(filename=logs.format('prodUpload' + self.collName +'.log'), level=logging.DEBUG)
+        # logging.basicConfig(filename=logs.format('prodUpload' + self.collName +'.log'), level=logging.DEBUG)
 
 
+    # Method to add new rules added in twitter_master_rules.json to our set of rules
+    def updateRules(self):
+        # Open and iterate through each line of the master rules file
+        master_rules_file = open(self._conf.get('twitter', 'master_rules_file'))
+        for line in master_rules_file.readlines():
+            
+            # Attempt to create a dict from each line of the file
+            try:
+                line_json = json.loads(line[:-2])
+            except ValueError:
+                continue
+
+            # If the rule is not already in our set of rules
+            if line_json['value'] not in self._rules:
+                # Increment the current maximum Rule Index
+                self._max_rule += 1
+                # Set the new maximum Rule Index for the new Rule
+                self._rules[line_json['value']] = self._max_rule
+                # Map the new Rule to its corresponding Tag from the line in the file
+                self._rules_tags[line_json['value']] = line_json['tag']
+        
+        master_rules_file.close()
+
+        # Once the file is fully iterated through, dump the _rules and _rules_tags dict to their corresponding files
+        with open('test.json', 'w') as rule_file:
+            rule_file.write(json.dumps(self._rules))
+
+        with open('test_tags.json', 'w') as rule_tag_file:
+            rule_tag_file.write(json.dumps(self._rules_tags))
 
 
 
@@ -77,67 +120,66 @@ class TwitterMongoUploader(object):
                 logging.info("Started uploading " + j)
                 # Upload to the corresponding Mongo Collection based on the date extracted from the file
                 if fileDate < 6:
-                    self.CSVfromTwitterJSON(self.src + j, self.collName + "_1")
+                    self.dictFromTwitterJSON(self.src + j, self.collName + "_1")
                 elif fileDate > 5 and  fileDate < 11:
-                    self.CSVfromTwitterJSON(self.src + j, self.collName + "_2")
+                    self.dictFromTwitterJSON(self.src + j, self.collName + "_2")
                 elif fileDate > 13 and fileDate < 16:
-                    self.CSVfromTwitterJSON(self.src + j, self.collName + "_3")
+                    self.dictFromTwitterJSON(self.src + j, self.collName + "_3")
                 elif fileDate > 15 and fileDate < 21:
-                    self.CSVfromTwitterJSON(self.src + j, self.collName + "_4")
+                    self.dictFromTwitterJSON(self.src + j, self.collName + "_4")
                 elif fileDate > 20 and fileDate < 26:
-                    self.CSVfromTwitterJSON(self.src + j, self.collName + "_5")
+                    self.dictFromTwitterJSON(self.src + j, self.collName + "_5")
                 elif fileDate > 25 and fileDate < 32:
-                    self.CSVfromTwitterJSON(self.src + j, self.collName + "_6")
+                    self.dictFromTwitterJSON(self.src + j, self.collName + "_6")
 
 
 
-    # Populates the CSV. Gets CSV's file handle from caller
-    def CSVfromTwitterJSON(self, jsonfilename, collName, errorfile=None, overwrite=False):
-        if (not os.path.isfile(jsonfilename+".csv")) or overwrite:
-            jsonfile = open(jsonfilename, 'r')
-            # List to hold a dictionary for each processed tweet
-            tweetList = []
-            
-            # List to track all variables seen across all tweets in the file
-            mykeys = []
+    # Generates an array of dicts from json files
+    def dictFromTwitterJSON(self, jsonfilename, collName, errorfile=None):
+        jsonfile = open(jsonfilename, 'r')
+        # List to hold a dictionary for each processed tweet
+        tweetList = []
+        
+        # List to track all variables seen across all tweets in the file
+        mykeys = []
 
-            for line in jsonfile:
-                myline = string.strip(line)
-                if myline != "":
-                    #For each tweet in the file, decode the weird characters without complaining
-                    myline = myline.decode("utf-8", "ignore")
-                    
-                    #Remove new lines from within the tweet
-                    myline = myline.replace('\\n' ' ')
-                    #Remove carriage returns from within the tweet
-                    myline = myline.replace('\\r' ' ')
-                    #Remove problematic \s
-                    myline = myline.replace('\\\\' ' ')
-                    myline = myline.replace('\\ ' ' ')
+        for line in jsonfile:
+            myline = string.strip(line)
+            if myline != "":
+                #For each tweet in the file, decode the weird characters without complaining
+                myline = myline.decode("utf-8", "ignore")
+                
+                #Remove new lines from within the tweet
+                myline = myline.replace('\\n' ' ')
+                #Remove carriage returns from within the tweet
+                myline = myline.replace('\\r' ' ')
+                #Remove problematic \s
+                myline = myline.replace('\\\\' ' ')
+                myline = myline.replace('\\ ' ' ')
 
-                    #Create a dictionary using the JSON processor
-                    try:
-                        tweet = json.loads(myline)
-                    except ValueError as e:
-                        if errorfile != None:
-                            write(jsonfilename+"\n"+myline+"\n"+e+"\n\n")
-                        else:
-                            print e
+                #Create a dictionary using the JSON processor
+                try:
+                    tweet = json.loads(myline)
+                except ValueError as e:
+                    if errorfile != None:
+                        write(jsonfilename+"\n"+myline+"\n"+e+"\n\n")
                     else:
-                        #Find the summary count
-                        if "Replay Request Completed" in myline:
-                            print tweet['info']['activity_count']
-                        else:
-                            #Create an empty dictionary
-                            tweetObj = {}
-                            #Send the JSON dictionary, the empty dictionary, and the list of all keys
-                            extract(self, tweet, tweetObj, mykeys)
-                            #Add the output dictionary to the list
-                            populateMongo(self, tweetObj, collName, ruleConf, tagConf) # , configData)
-                            
-            #Print the number of tweets processed
-            jsonfile.close()
-            print "Finished populating collection ", collName
+                        print e
+                else:
+                    #Find the summary count
+                    if "Replay Request Completed" in myline:
+                        print tweet['info']['activity_count']
+                    else:
+                        #Create an empty dictionary
+                        tweetObj = {}
+                        #Send the JSON dictionary, the empty dictionary, and the list of all keys
+                        self.extract(tweet, tweetObj, mykeys)
+                        #Add the output dictionary to the list
+                        populateMongo(self, tweetObj, collName, ruleConf, tagConf) # , configData)
+                        
+        #Print the number of tweets processed
+        jsonfile.close()
+        print "Finished populating collection ", collName
 
     # Function to map json key name to user defined key name
     def replaceKey(self, key):
@@ -148,28 +190,12 @@ class TwitterMongoUploader(object):
 
 
     #Recursive function to process the input dictionary
-    def extract(self, DictIn, Dictout, keys, nestedKey=""):
+    def extract(self, rawTweet, finalTweet, keys, nestedKey=""):
 
-        # Explicitly adding keys to Dictout
-        if nestedKey == "twitter_entities_user_mentions":
-            Dictout["entitiesusrmentions"] = []
-            mentionSet = set()
-            inObj = {}
-            for i in DictIn:
-                inObj['is'] = i['id_str']
-                inObj['n'] = i['name']
-                inObj['sn'] = i['screen_name']
-                Dictout["entitiesusrmentions"].append(inObj)
-                inObj = {}
-        elif "coordinates" in nestedKey:
-            newKey = self.replaceKey(nestedKey)
-            if newKey != "":
-                Dictout[newKey] = DictIn
-        
-        # If DictIn is a dictionary
-        elif isinstance(DictIn, dict):
+        # If rawTweet is a dictionary
+        if isinstance(rawTweet, dict):
             #Process each entry
-            for key, value in DictIn.iteritems():
+            for key, value in rawTweet.iteritems():
                 #If nested, prepend the previous variables
                 if nestedKey != "":
                     mykey = nestedKey+"_"+key
@@ -177,61 +203,57 @@ class TwitterMongoUploader(object):
                     mykey = key
                 # If value is a dictionary or a list
                 if isinstance(value, dict) or isinstance(value, list):
-                    extract(self, value, Dictout, keys, nestedKey=mykey)
+                    self.extract(value, finalTweet, keys, nestedKey=mykey)
                 else: #Value is just a string
                     newKey = self.replaceKey(mykey)
                     if newKey == "":
                         continue
-                    value = value.strip()
+                    if isinstance(value, str) or isinstance(value, unicode):
+                        value = value.strip()
                     if value != "":
                         #If this is a new variable, add it to the list
                         if not newKey in keys:
                             keys.append(newKey)
                         #Add it to the output dictionary
-                        if not newKey in Dictout:
-                            Dictout[newKey] = value
+                        if not newKey in finalTweet:
+                            finalTweet[newKey] = value
                         else:
-                            Dictout[newKey] = unicode(Dictout[newKey])+"; "+unicode(value)
+                            if isinstance(finalTweet[newKey], str) or isinstance(finalTweet[newKey], unicode):
+                                finalTweet[newKey] = [unicode(finalTweet[newKey]), unicode(value)]
+                            elif isinstance(finalTweet[newKey], list):
+                                finalTweet[newKey].append(unicode(value))
                     else:
                         if not newKey in keys:
                             keys.append(newKey)
-                        if not newKey in Dictout:
-                            Dictout[newKey] = ""
+                        if not newKey in finalTweet:
+                            finalTweet[newKey] = ""
 
-        #If DictIn is a list, call extract on each member of the list
-        elif isinstance(DictIn, list):
-            newKey = replaceKey(nestedKey)
+        #If rawTweet is a list, call extract on each member of the list
+        elif isinstance(rawTweet, list):
+            newKey = self.replaceKey(nestedKey)
             if newKey != "":
+                print nestedKey
                 if not newKey in keys:
                     keys.append(newKey)
                 #Add it to the output dictionary
-                if not newKey in Dictout:
-                    Dictout[newKey] = value
+                if not newKey in finalTweet:
+                    finalTweet[newKey] = []
+                    for item in rawTweet:
+                        if isinstance(item, dict):
+                            inObj = {}
+                            for (k, v) in item.iteritems():
+                                innerKey = self.replaceKey(nestedKey + '_' + k)
+                                if innerKey != "":
+                                    inObj[innerKey] = v
+                            finalTweet[newKey].append(inObj)
+                        else:
+                            finalTweet[newKey] = item
             else:
-                for value in DictIn:
-                    extract(self, value,Dictout,keys,nestedKey=nestedKey)
-        #If DictIn is a string, check if it is a new variable and then add to dictionary
-        else:
-            if isinstance(DictIn, unicode) or isinstance(DictIn, str):
-                newKey = self.replaceKey(nestedKey)
-                if newKey == "":
-                    return
-                if isinstance(DictIn, unicode) or isinstance(DictIn, str):
-                    DictIn = DictIn.strip()
-                if DictIn != "":
-                    if not newKey in keys:
-                        keys.append(newKey)
-                    if not newKey in Dictout:
-                        Dictout[newKey] = DictIn
-                    else:
-                        Dictout[newKey] = unicode(Dictout[newKey])+"; "+unicode(DictIn)
-                else:
-                    if not newKey in keys:
-                        keys.append(newKey)
-                    if not newKey in Dictout:
-                        Dictout[newKey] = ""
+                for value in rawTweet:
+                    self.extract(value, finalTweet, keys, nestedKey=nestedKey)
 
     
+    # Method to input tweet into Mongo Collection
     def populateMongo(self, inputTweet, collName):
         # Creating a new MongoDB client
         client = self.mongoClient
@@ -266,7 +288,7 @@ class TwitterMongoUploader(object):
         ruleIndex = []
         for j in inputTweet['matchingrulesvalue']:
             try:
-                ruleIndex.append(int(self.rules[j.strip()]))
+                ruleIndex.append(int(self._rules[j.strip()]))
             except KeyError:
                 logging.warning("Invalid rule fetched via GNIP with _id=" + inputTweet['_id'] + " with rule=" + j.strip())
                 logging.debug(str(inputTweet))
@@ -279,7 +301,7 @@ class TwitterMongoUploader(object):
             else:
                 tag = j.lower().strip()
             try:
-                tagIndex.add(int(self.tags[tag]))
+                tagIndex.add(int(self._tags[tag]))
             except KeyError:
                 logging.warning("Invalid tag fetched via GNIP with _id=" + inputTweet['_id'] + " with tag=" + j.strip())
                 logging.debug(str(inputTweet))
