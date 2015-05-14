@@ -31,7 +31,7 @@ class TwitterMongoUploader(object):
             mongoConf: Mapping of fields from generated keys to optimized keys for Mongo Collections
             src: Path to where the input Source files are to be read from
             dest: Path to the Destination where the output files are to be written
-            mongoClient: MongoClient instance used to communicate with the MongoDB instance
+            db: MongoDB Database in which to write into/read from
             collName: Name of the collection to which data is to be uploaded
 
     """
@@ -68,11 +68,15 @@ class TwitterMongoUploader(object):
         self.dest = self._conf.get('twitter', 'prod_dest_path').format(self.year + monthToNames[self.month], 'CSVRULES')
 
 
-        # host = self._conf.get('mongo', 'host')
-        # port = int(self._conf.get('mongo', 'port'))
-        host = self._conf.get('mongo_dev', 'host')
-        port = int(self._conf.get('mongo_dev', 'port'))
-        self.mongoClient = MongoClient(host, port)
+        host = self._conf.get('mongo', 'host')
+        port = int(self._conf.get('mongo', 'port'))
+        username = self._conf.get('mongo', 'username')
+        password = self._conf.get('mongo', 'password')
+        authDB = self._conf.get('mongo', 'authDB')
+        mongoClient = MongoClient(host, port)
+        mongoClient.twitter.authenticate(username, password, source=authDB)
+        self.db = mongoClient['twitter']
+
         self.collName = self.month + self.year
         # logging.basicConfig(filename=logs.format('prodUpload' + self.collName +'.log'), level=logging.DEBUG)
 
@@ -175,7 +179,7 @@ class TwitterMongoUploader(object):
                         #Send the JSON dictionary, the empty dictionary, and the list of all keys
                         self.extract(tweet, tweetObj, mykeys)
                         #Add the output dictionary to the list
-                        populateMongo(self, tweetObj, collName, ruleConf, tagConf) # , configData)
+                        self.populateMongo(tweetObj, collName) # , configData)
                         
         #Print the number of tweets processed
         jsonfile.close()
@@ -255,10 +259,8 @@ class TwitterMongoUploader(object):
     
     # Method to input tweet into Mongo Collection
     def populateMongo(self, inputTweet, collName):
-        # Creating a new MongoDB client
-        client = self.mongoClient
-        db = client.twitter
-        collection = db[collName]
+        # Obtaining a reference to the MongoDB Collection
+        collection = self.db[collName]
 
         collection.ensure_index([("mrv", ASCENDING)])
         collection.ensure_index([("mrt", ASCENDING)])
