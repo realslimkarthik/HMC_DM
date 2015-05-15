@@ -4,33 +4,9 @@ import ConfigParser
 from pymongo import MongoClient
 from datetime import datetime
 import time
-import csv, codecs, cStringIO
+from utility import mkdir_p, CSVUnicodeWriter
+from pympler import asizeof
 
-# Set the default encoding to utf-8
-reload(sys)
-sys.setdefaultencoding("utf-8")
-
-# Class given in Python 2.7 documentation for handling of unicode documents
-class CSVUnicodeWriter:
-    def __init__(self, f, dialect=csv.excel, encoding="utf-8-sig", **kwds):
-        self.queue = cStringIO.StringIO()
-        self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
-        self.stream = f
-        self.encoder = codecs.getincrementalencoder(encoding)()
-    def writerow(self, row):
-        '''writerow(unicode) -> None
-        This function takes a Unicode string and encodes it to the output.
-        '''
-        self.writer.writerow([s.encode("utf-8", "ignore") for s in row])
-        data = self.queue.getvalue()
-        data = data.decode("utf-8")
-        data = self.encoder.encode(data)
-        self.stream.write(data)
-        self.queue.truncate(0)
-
-    def writerows(self, rows):
-        for row in rows:
-            self.writerow(row)
 
 #     coll_names = set()
 #     dataSet = []
@@ -40,7 +16,7 @@ class CSVUnicodeWriter:
 
 # ========================================================================================
 # Function to query Mongo Collection and retrieve all records matching a particular rule
-def queryDB(mongoConf, month, year, filterRule, path, ruleLines):
+def queryDB(mongoConf, month, year, filterRule, path, rtLines):
     host = mongoConf.get("mongo", "host")
     port = int(mongoConf.get("mongo", "port"))
     # Create a new MongoDB client
@@ -72,26 +48,29 @@ def queryDB(mongoConf, month, year, filterRule, path, ruleLines):
         for k in data:
             # Track the longest of each of the array fields
             if 'eumh' in k:
-                if len(k['eumh']) > longestHtag:
-                    longestHtag = len(k['eumh'])
+                lenHtag = len(k['eumh'])
+                if lenHtag > longestHtag:
+                    longestHtag = lenHtag
             if 'eum' in k:
-                if len(k['eum']) > longestUMen:
-                    longestUMen = len(k['eum'])
+                lenUM = len(k['eum'])
+                if lenUM > longestUMen:
+                    longestUMen = lenUM
             if 'mrt' in k:
-                if len(k['mrt'].split(';')) > longestRTag:
-                    longestRTag = len(k['mrt'].split(';'))
+                lenRTag = len(k['mrt'])
+                if lenRTag > longestRTag:
+                    longestRTag = lenRTag
             if len(k['mrv']) > longestRule:
                 longestRule = len(k['mrv'])
             # Add the record to the dataset list
             dataSet.append(k)
-            print k['_id']
             # If the size of the dataSet list exceeds a certain threshold, write to a file
-            if sys.getsizeof(dataSet) > 106954752:
+            # if sys.getsizeof(dataSet) > 104857600:
+            if asizeof.asizeof(dataSet) > 104857600:
                 print "\nWriting to File...\n"
                 # Package all the control information into a tuple
                 outputSet = (dataSet, longestRule, longestHtag, longestUMen, longestRTag, count)
                 # Send all the control information to the PrintCSV function to convert the Dict into a CSV
-                printCSV(outputSet, path, month, filterRule, ruleLines)
+                printCSV(outputSet, path, month, filterRule, rtLines)
                 # Reset all the values and increment the count to denote that the next file must be started when writing next
                 outputSet = ()
                 dataSet = []
@@ -106,16 +85,16 @@ def queryDB(mongoConf, month, year, filterRule, path, ruleLines):
     # Once iteration over all the records is done, send all control info to PrintCSV to generate CSV file
     print "\nWriting to File...\n"
     outputSet = (dataSet, longestRule, longestHtag, longestUMen, longestRTag, count)
-    printCSV(outputSet, path, month, filterRule, ruleLines)
+    printCSV(outputSet, path, month, filterRule, rtLines)
 
 
 # ========================================================================================
 # Function to print the Header of the CSV file
-def printHead(csvfile, resultList, delim, conf):
+def printHead(csvfile, resultList, delim, fields):
     # Initialize the keyList to an empty list to hold all the keys to iterate over while printing data
     keyList = []
     # Iterating over all the column headings to be printed
-    for (key, val) in conf.items('fields'):
+    for (key, val) in fields:
         # Adding heading to keyList
         keyList.append(key)
         # Break postedTime into multiple fields as shown below
@@ -147,21 +126,24 @@ def printHead(csvfile, resultList, delim, conf):
             if resultList[3] >= 1:
                 for i in range(1, resultList[3] + 1):
                     csvfile.write("entitiesusrmentionsidstr" + str(i) + delim + "entitiesusrmentionssname" + str(i) + delim + "entitiesusrmentionsname" + str(i) + delim)
+                continue
             else:
                 csvfile.write("entitiesusrmentionsidstr" + delim + "entitiesusrmentionssname" + delim + "entitiesusrmentionsname" + delim)
+            continue
+        if val == "entitiesusrmentionsidstr" or val == "entitiesusrmentionssname" or val == "entitiesusrmentionsname":
             continue
         # Else write the field name into the file
         csvfile.write(val + delim)
     # Write a new line character to denote the end of header line
     csvfile.write('\n')
     # Create a Unicode based CSV writer with the opened csvfile and quoting all the values in all the fields
-    writer = CSVUnicodeWriter(csvfile, quoting=csv.QUOTE_ALL)
+    writer = CSVUnicodeWriter(csvfile)
     # Return a writer, keyList tuple
     return (writer, keyList)
 
 # ========================================================================================
 
-def printCSV(resultList, path, month, rule, ruleLines):
+def printCSV(resultList, path, month, rule, rtLines):
     # Mention the delimiter
     delim = ","
     # Retrieve the count from the resultList parameter
@@ -171,18 +153,10 @@ def printCSV(resultList, path, month, rule, ruleLines):
     conf = ConfigParser.ConfigParser()
     conf.read(conf_path.format("mongoToFields.cfg"))
     # Retrieve the CSVUnicodeWriter and the list of all the field names after the header of the CSV file has been printed
-    (writer, keyList) = printHead(csvfile, resultList, delim, conf)
-    # ruleFile = open("rules.json")
-    # ruleFile.seek(0, 0)
-    # ruleLines = ruleFile.readlines()
+    (writer, keyList) = printHead(csvfile, resultList, delim, conf.items('fields'))
 
     # Iterate over each record
     for result in resultList[0]:
-        # if os.path.getsize(csvfile.name) / 1048576 > 100:
-        #     csvfile.close()
-        #     csvfile = next(fileGen)
-        #     keyList = printHead(csvfile, resultList, delim)
-        # Initialize an empty list to store values that are to be written into a row of the CSV file
         row = []
         # For each key in keyList
         for key in keyList:
@@ -206,104 +180,56 @@ def printCSV(resultList, path, month, rule, ruleLines):
                     if result[key] is None:
                         row.append('.')
                         continue
-                # if key == "mrv":
-                #     translatedRules = []
-                #     rules = ""
-                #     for j in range(0, resultList[1]):
-                #         try:
-                #             rule = ':'.join(ruleLines[int(result[key][j])].split(':')[0:-1])
-                #             translatedRules.append(rule)
-                #         except IndexError:
-                #             pass
-                #     row.append(';'.join(translatedRules))
-                #     result[key] += [""] * (resultList[1] - len(result[key]))
-                #     row.extend(result[key])
-                #     continue
-                # # Unroll the matchingrulestag array into multiple fields
-                # if key == "mrt":
-                #     result[key] += [""] * (resultList[4] - len(result[key]))
-                #     row.extend(result[key])
-                #     continue
-                # # Unroll the entitieshtagstext array into multiple fields
-                # if key == "eumh":
-                #     result[key] += [""] * (resultList[2] - len(result[key]))
-                #     row.extend(result[key])
-                #     continue
-                # # Unroll the entitiesusrmentions array and its constituent fields into multiple fields
-                # if key == "eum":
-                #     result[key] += ["", "", ""] * (resultList[3] - len(result[key]))
-                #     row.extend(result[key])
-                #     continue
-                # Unroll the matchingrulesvalue array into multiple fields
-                if key == "mrv":
-                    if resultList[1] > 0:
-                        translatedRules = []
-                        rules = ""
-                        for j in range(0, resultList[1]):
-                            try:
-                                rule = ':'.join(ruleLines[int(result[key][j])].split(':')[0:-1])
-                                translatedRules.append(rule)
-                            except IndexError:
-                                pass
-                        for j in translatedRules:
-                            rules += j + ';'
-                        row.append(';'.join(translatedRules))
-                        for j in range(0, resultList[1]):
-                            try:
-                                row.append(str(result[key][j]))
-                            except IndexError:
-                                row.append("")
-                        continue
-                    else:
-                        row.append("")
-                        row.append("")
                 # Unroll the matchingrulestag array into multiple fields
                 if key == "mrt":
-                    if resultList[4] > 0:
-                        mrtList = result[key].split(';')
-                        for j in range(0, resultList[4]):
-                            try:
-                                row.append(mrtList[j] + ';')
-                            except IndexError:
-                                row.append("")
-                    else:
-                        row.append("")
+                    tags = result[key]
+                    translatedTags = []
+                    for t in tags:
+                        try:
+                            tag = (rtLines[0][int(t)].split(':')[0]).strip('"')
+                            translatedTags.append(tag)
+                        except IndexError:
+                            break
+                    translatedTags += [""] * (resultList[4] - len(translatedTags))
+                    row.extend(translatedTags)
                     continue
-                # Unroll the entitieshtagstext array into multiple fields
-                if key == "eumh":
-                    if resultList[2] >= 1:
-                        for j in range(0, resultList[2]):
-                            try:
-                                row.append(result[key][j])
-                            except IndexError:
-                                row.append("")
-                        continue
-                    elif resultList[2] == 0:
-                        row.append("")
+                # Unroll the matchingrulesvalue array into multiple fields
+                if key == "mrv":
+                    translatedRules = []
+                    rules = []
+                    for j in range(0, resultList[1]):
+                        try:
+                            rule = ':'.join(rtLines[1][int(result[key][j])].split(':')[0:-1])
+                            translatedRules.append(rule)
+                            rules.append(str(result[key][j]))
+                        except IndexError:
+                            break
+                    row.append(';'.join(translatedRules))
+                    rules += [""] * (resultList[1] - len(result[key]))
+                    row.extend(rules)
                     continue
                 # Unroll the entitiesusrmentions array and its constituent fields into multiple fields
                 if key == "eum":
-                    if resultList[3] >= 1:
-                        for j in range(0, resultList[3]):
-                            try:
-                                for (k, v) in result[key][j].iteritems():
-                                    row.append(v.strip())
-                            except IndexError:
-                                row.append("")
-                                row.append("")
-                                row.append("")
-
-                        continue
-                    elif resultList[3] == 0:
-                        row.append("")
-                        row.append("")
-                        row.append("")
+                    usrMentions = []
+                    for j in result[key]:
+                        for (k, v) in j.iteritems():
+                            usrMentions.append(v)
+                    usrMentions += ["", "", ""] * (resultList[3] - len(result[key]))
+                    row.extend(usrMentions)
                     continue
-                # Add the field to the row in unicode format
+                # Unroll the entitieshtagstext array into multiple fields
+                if key == "eumh":
+                    htag = result[key]
+                    htag += [""] * (resultList[2] - len(result[key]))
+                    row.extend(htag)
+                    continue
                 row.append(unicode(result[key]))
             else:
                 # If the key doesn't exist, append an empty string into the row
-                row.append("")
+                if key == 'eumh':
+                    row.extend([""] * resultList[2])
+                else:
+                    row.append("")
         # Writer writes the row list
         writer.writerow(row)
     # Close the CSV file
@@ -315,7 +241,8 @@ def printCSV(resultList, path, month, rule, ruleLines):
 # Eg - python DM_Extract.py Aug 2014
 
 
-monthToNames = {'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'}
+monthToNames = {'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06', 
+        'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'}
 
 if __name__ == "__main__":
     month = sys.argv[1]
@@ -328,7 +255,7 @@ if __name__ == "__main__":
     dest = conf.get("twitter", "prod_dest_path")
     # Generate full path for the corresponding year and month
     path = dest.format(year + monthToNames[month], 'CSVRULES')
-    
+    mkdir_p(path)
     # Future work
     # If time frame based, generate files based on start and end month and rule
     # if start_time == end_time:
@@ -340,13 +267,16 @@ if __name__ == "__main__":
     # rules = sys.argv[3:]
     
     # Get the total number of rules and the list of all the rules
-    r = open(conf_path.format("rules.json"))
+    r = open(conf_path.format("tw_rules.json"))
     ruleLines = r.readlines()
     r.close()
+    r = open(conf_path.format("tw_tags.json"))
+    tagLines = r.readlines()
+    r.close()
     rules = range(1, len(ruleLines))
-    
+    rtLines = (tagLines, ruleLines)
     # for each rule
     for i in rules:
         # Run queryDB for the corresponding month, year and rule
-        queryDB(conf, month, year, str(i), path, ruleLines)
+        queryDB(conf, month, year, str(i), path, rtLines)
         print i
