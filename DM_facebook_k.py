@@ -7,6 +7,7 @@ import re
 from bs4 import BeautifulSoup
 import ConfigParser
 import csv
+import pandas as pd
 from CSVUnicodeWriter import CSVUnicodeWriter
 from utility import mkdir_p
 
@@ -45,6 +46,7 @@ def extractXML(line, fields):
                 except AttributeError:
                     return None
                 item = item.replace('\n', '').replace('\r', '')
+                newKey = newKey.replace(':', '').replace('-', '')
                 data[newKey] = item
         else:
             try:
@@ -58,54 +60,9 @@ def extractXML(line, fields):
             except AttributeError:
                 return None
             item = item.replace('\n', '').replace('\r', '')
+            newKey = newKey.replace(':', '').replace('-', '')
             data[newKey] = item
     return data
-
-
-def printCSVXMLComments(csvfile, data, fields, headers=True):
-    print len(data)
-    writer = CSVUnicodeWriter(csvfile)
-    # writer = csv.writer(csvfile, delimiter=',',quoting=csv.QUOTE_ALL)
-    keys = []
-    row = []
-    for (key, val) in fields.iteritems():
-        if key == 'id':
-            keys.append('id1')
-            keys.append('id2')
-        if isinstance(val, list):
-            for i in val:
-                keys.append(key + i)
-        elif isinstance(val, dict):
-            for i in val.iteritems():
-                keys.append(key + i)
-        else:
-            keys.append(key)
-    for key in keys:
-        newKey = re.sub('[^a-zA-Z0-9]', '', key)
-        row.append(newKey)
-
-    if headers:
-        writer.writerow(row)
-
-    for item in data:
-        row = []
-        for key in keys:
-            if key in item:
-                row.append(str(item[key]))
-            else:
-                if key == 'id1':
-                    try:
-                        row.append(str(item['id'].split('_')[0]))
-                    except IndexError:
-                        row.append(str(item['id']))
-                elif key == 'id2':
-                    try:
-                        row.append(str(item['id'].split('_')[1]))
-                    except IndexError:
-                        row.append(str(item['id']))
-                else:
-                    row.append("")
-        writer.writerow(row)
 
 
 #Creates the CSV
@@ -113,9 +70,8 @@ def printCSVXMLComments(csvfile, data, fields, headers=True):
 def makeCSVfromJSONfbStreams(jsonfile, op):
     currentInfo = ""
     currentComments = ""
-    fieldsFile = open(conf_path.format("fb_comments_fields.txt"))
-    fields = [line.strip() for line in fieldsFile.readlines()]
-    fieldsFile.close()
+    with open(conf_path.format("fb_comments_fields_json.json")) as fieldsFile:
+        fields = json.loads(fieldsFile.read())
 
     keysInfo = []
     keysComments = []
@@ -152,51 +108,103 @@ def makeCSVfromJSONfbStreams(jsonfile, op):
         returnData = (keysInfo, outInfo)
     elif "comments" in f.name:
         keysComments.append('type')
-        returnData = (keysComments, outComments)
+        returnData = outComments
     return returnData
 
-#Recursive function to process the input dictionary
-def extractComments(DictIn, Dictout, allkeys, fields, nestedKey=""):
-    #If DictIn is a dictionary
+def parseString(myline, outList, current, outKeys, op, fields=[]):
+    if current != "":
+        myline = "".join([current,myline])
+    try:
+        elt = json.loads(myline)
+    except ValueError as e:
+        current = myline
+    else:
+        current = ""
+        dataDict = {}
+        msgTagLen = None
+        if op == "info":
+            extractInfo(elt, dataDict, outKeys)
+        elif op == "comments":
+            dataType = elt.keys()[0]
+            extractComments(elt[dataType], dataDict, outKeys, fields, "")
+            dataDict['type'] = dataType
+            dataDict['id1'], dataDict['id2'] = dataDict['id'].split('_')
+            if dataDict.get('messagetags') is not None:
+                counter = 1
+                for i in dataDict['messagetags']:
+                    dataDict['messagetagsid' + str(counter)] = i['messagetagsid']
+                    dataDict['messagetagsname' + str(counter)] = i['messagetagsname']
+                    counter += 1
+                del(dataDict['messagetags'])
+
+        outList.append(dataDict)
+        
+
+def replaceKey(mykey, fields):
+    if fields.get(mykey) is not None:
+        return fields[mykey]
+    else:
+        return ""
+
+def extractComments(DictIn, Dictout, keys, fields, nestedKey=""):
+    # If DictIn is a dictionary
     if isinstance(DictIn, dict):
         #Process each entry
         for key, value in DictIn.iteritems():
             #If nested, prepend the previous variables
             if nestedKey != "":
-                if "tags" in nestedKey and isinstance(value,list):
-                    mykey = nestedKey
-                else:
-                    mykey = nestedKey + key
+                mykey = nestedKey+"_"+key
             else:
                 mykey = key
-            if isinstance(value, dict): # If value itself is dictionary
-                extractComments(value, Dictout, allkeys, fields, nestedKey=mykey)
-            elif isinstance(value, list): # If value itself is list
-                extractComments(value, Dictout, allkeys, fields, nestedKey=mykey)
-            elif value != None and value != "": #Value is just a string
-                #If this is a new variable, add it to the list
-                if mykey not in allkeys and mykey in fields:
-                    allkeys.append(mykey)
-                #Add it to the output dictionary
-                if mykey in fields:
-                    if not mykey in Dictout:
-                        Dictout[mykey] = value
+            # If value is a dictionary or a list
+            if isinstance(value, dict) or isinstance(value, list):
+                extractComments(value, Dictout, keys, fields, nestedKey=mykey)
+            else: #Value is just a string
+                newKey = replaceKey(mykey, fields)
+                if newKey == "":
+                    continue
+                if isinstance(value, str) or isinstance(value, unicode):
+                    value = value.strip()
+                if value != "":
+                    #If this is a new variable, add it to the list
+                    if not newKey in keys:
+                        keys.append(newKey)
+                    #Add it to the output dictionary
+                    if not newKey in Dictout:
+                        Dictout[newKey] = value
                     else:
-                        Dictout[mykey] = unicode(Dictout[mykey]) + "; " + unicode(value)
+                        if isinstance(Dictout[newKey], str) or isinstance(Dictout[newKey], unicode):
+                            Dictout[newKey] = [unicode(Dictout[newKey]), unicode(value)]
+                        elif isinstance(Dictout[newKey], list):
+                            Dictout[newKey].append(unicode(value))
+                else:
+                    if not newKey in keys:
+                        keys.append(newKey)
+                    if not newKey in Dictout:
+                        Dictout[newKey] = ""
 
     #If DictIn is a list, call extractComments on each member of the list
     elif isinstance(DictIn, list):
-        for value in DictIn:
-            extractComments(value, Dictout, allkeys, fields, nestedKey=nestedKey)
-    #If DictIn is a string, check if it is a new variable and then add to dictionary
-    else:
-        if mykey in fields:
-            if nestedKey not in allkeys and nestedKey in fields:
-                allkeys.append(nestedKey)
-            if not nestedKey in Dictout:
-                Dictout[nestedKey] = DictIn
-            else:
-                Dictout[nestedKey] = unicode(Dictout[nestedKey])+"; "+unicode(DictIn)
+        newKey = replaceKey(nestedKey, fields)
+        if newKey != "":
+            if not newKey in keys:
+                keys.append(newKey)
+            #Add it to the output dictionary
+            if not newKey in Dictout:
+                Dictout[newKey] = []
+                for item in DictIn:
+                    if isinstance(item, dict):
+                        inObj = {}
+                        for (k, v) in item.iteritems():
+                            innerKey = replaceKey(nestedKey + '_' + k, fields)
+                            if innerKey != "":
+                                inObj[innerKey] = v
+                        Dictout[newKey].append(inObj)
+                    else:
+                        Dictout[newKey] = item
+        else:
+            for value in DictIn:
+                extractComments(value, Dictout, keys, fields, nestedKey=nestedKey)
 
 
 #Recursive function to process the input dictionary
@@ -204,15 +212,13 @@ def extractInfo(DictIn, Dictout, allkeys, nestedKey=""):
     #If DictIn is a dictionary
     if isinstance(DictIn, dict):
         #Process each entry
-        #print DictIn
-        #print len(DictIn.items())
         for key, value in DictIn.iteritems():
             #If nested, prepend the previous variables
             if nestedKey != "":
                 if "tags" in nestedKey and isinstance(value,list):
                     mykey = nestedKey
                 else:
-                    mykey = nestedKey + key
+                    mykey = nestedKey + '_' + key
             else:
                 mykey = key
             if isinstance(value, dict): # If value itself is dictionary
@@ -242,23 +248,6 @@ def extractInfo(DictIn, Dictout, allkeys, nestedKey=""):
             Dictout[nestedKey] = unicode(Dictout[nestedKey])+"; "+unicode(DictIn)
 
 
-def parseString(myline, outList, current, outKeys, op, fields=[]):
-    if current != "":
-        myline = "".join([current,myline])
-    try:
-        elt = json.loads(myline)
-    except ValueError as e:
-        current = myline
-    else:
-        current = ""
-        dataDict = {}
-        if op == "info":
-            extractInfo(elt, dataDict, outKeys)
-        elif op == "comments":
-            dataType = elt.keys()[0]
-            extractComments(elt[dataType], dataDict, outKeys, fields, "")
-            dataDict['type'] = dataType
-        outList.append(dataDict)
 
 
 def printCSVInfo(csvfile, resultList, mykeys):
@@ -288,47 +277,6 @@ def printCSVInfo(csvfile, resultList, mykeys):
                 csvfile.write(delim)
 
 
-def printCSVComments(csvfile, resultList, mykeys, fields, headers=True):
-    delim = ','
-    writer = CSVUnicodeWriter(csvfile)
-    map_writer = CSVUnicodeWriter(comment_list_file)
-    print len(resultList)
-    if headers:
-        for key in fields:
-            csvfile.write(key + delim)
-
-    csvfile.write('\n')
-    for result in resultList:
-        ids = result['id'].split('_')
-        row = []
-        map_row = []
-        try:
-            if result['from_id'] in fanpages:
-                map_row.append(result['from_id'])
-                map_row.append(result['id'])
-                map_writer.writerow(map_row)
-        except KeyError:
-            pass
-        for key in fields:
-            if key in result:
-                #Override to avoid errors for weird characters
-                entry = unicode(result[key])
-                row.append(entry)
-            else:
-                if key == "id1":
-                    row.append(ids[0])
-                elif key == "id2":
-                    try:
-                        row.append(ids[1])
-                    except IndexError:
-                        row.append("")
-                elif key == "threadid":
-                    row.append(ids[0])
-                elif key == "like_count":
-                    row.append('0')
-                else:
-                    row.append('')
-        writer.writerow(row)
 
 
 
@@ -393,7 +341,7 @@ if __name__ == "__main__":
             outputInfo.close()
     elif op == "comments":
         commentsFileList = getFiles(src, "comments")
-        with open(conf_path.format("fb_comments_fields.json")) as f:
+        with open(conf_path.format("fb_comments_fields_xml.json")) as f:
             fields = json.loads(f.read())
         with open(conf_path.format('facebook_fanpages.txt')) as f:
             fanpages = [i.strip() for i in f.readlines()]
@@ -404,31 +352,13 @@ if __name__ == "__main__":
             headers = True
 
         for i in commentsFileList:
-            if outputType == 'single':
-                if 'xml' in i:
-                    commentsData = getDatafromXMLfbStreams(src + i, fields)
-                    if headers:
-                        printCSVXMLComments(outputFile, commentsData, fields)
-                        headers = False
-                    else:
-                        printCSVXMLComments(outputFile, commentsData, fields, False)
-
-                elif 'json' in i:
-                    commentsData = makeCSVfromJSONfbStreams(src + i, op)
-                    if headers:
-                        printCSVComments(outputFile, commentsData[1], commentsData[0], fields)
-                        headers = False
-                    else:
-                        printCSVComments(outputFile, commentsData[1], commentsData[0], fields, False)
-
-            elif outputType == 'multiple':
-                print i
-                outputComments = open(dest + i.split('\\')[-1].split('.')[0] + '.csv', "wb")
-                if 'xml' in i:
-                    commentsData = getDatafromXMLfbStreams(src + i, fields)
-                    printCSVXMLComments(outputComments, commentsData, fields)
-                elif 'json' in i:
-                    commentsData = makeCSVfromJSONfbStreams(src + i, op)
-                    printCSVComments(outputComments, commentsData[1], commentsData[0], fields)
-                outputComments.close()
+            print i
+            outputComments = open(dest + i.split('\\')[-1].split('.')[0] + '_comments.csv', "wb")
+            if 'xml' in i:
+                commentsData = getDatafromXMLfbStreams(src + i, fields)
+            elif 'json' in i:
+                commentsData = makeCSVfromJSONfbStreams(src + i, op)
+            df = pd.DataFrame(commentsData)
+            df.to_csv(outputComments, sep=',', index=False)
+            outputComments.close()
         comment_list_file.close()
