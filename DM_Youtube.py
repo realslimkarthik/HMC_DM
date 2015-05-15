@@ -113,9 +113,7 @@ def backfillRawFiles(backfillData, rawFile):
 
 
 def getFileName(src_path, fileType, date, ext):
-    inputFile = src_path + 'youtube_' + fileType + '_' + date[0] + '-' + date[1] + '-' + date[2] + '.' + ext
-    if not os.path.isfile(inputFile):
-        inputFile = src_path + 'youtube_' + fileType + '_' + date[0] + '_' + date[1] + '_' + date[2] + '.' + ext
+    inputFile = src_path + 'youtube_' + fileType + '_' + date[0] + '_' + date[1] + '_' + date[2] + '.' + ext
     return inputFile
 
 
@@ -138,39 +136,40 @@ def processBackfill(backfillFile):
     f = open(backfillFile)
     line = ""
     data = []
-    rawData = { start_date[2]: [], end_date[2]: [] }
-    processedData = { start_date[2]: [], end_date[2]: [] }
+    rawData = {}
+    processedData = {}
     
     fields_file = open(conf_path.format("youtubeFields.json"))
     fields = json.loads(fields_file.read())
     fields_file.close()
+    date = ""
 
     for i in f.readlines():
         if '</entry>' in i:
             line += i
             dataLine = extract(line, fields[getFileType(fileType)])
-            day = dataLine['updated'].split('T')[0].split('-')[-1]
             if dataLine is not None:
-                try:
-                    processedData[day].append(dataLine)
-                except KeyError:
-                    print backfillFile + ' has erroneous data'
-                    return
-            rawData[day] += line
+                date = dataLine['updated'].split('T')[0]
+                if date in processedData:
+                    processedData[date].append(dataLine)
+                else:
+                    processedData[date] = [dataLine]
+            if date != "":
+                if date in rawData:
+                    rawData[date] += line
+                else:
+                    rawData[date] = line
             line = ""
         else:
             line += i
 
-    
-    if len(rawData[start_date[2]]) > 0:
-        backfillRawFiles(rawData[start_date[2]], start_inputFile)
-    if end_inputFile != '':
-        backfillRawFiles(rawData[end_date[2]], end_inputFile)
-
-    if len(processedData[start_date[2]]) > 0:
-        printCSV(start_outputFile, processedData[start_date[2]], True)
-    if end_outputFile != '':
-        printCSV(end_outputFile, processedData[end_date[2]], True)
+    for (key, val) in processedData.iteritems():
+        y, m, d = key.split('-')
+        xmlFileName = getFileName(src, fileType, (y, m, d), 'xml')
+        csvFileName = getFileName(src, fileType, (y, m, d), 'csv')
+        # print xmlFileName, csvFileName, rawData[key]
+        printCSV(xmlFileName, processedData[key], True)
+        backfillRawFiles(rawData[key], xmlFileName)
     
     print backfillFile + ' is done'
     # print start_inputFile + '\n' + start_outputFile + '\n' + end_inputFile + '\n' + end_outputFile
