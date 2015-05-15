@@ -1,0 +1,11 @@
+{
+"id": 1,
+"created": 1,
+"updated": 1,
+"published": 1,
+"title": 1,
+"link": 1,
+"source": ["updated", "gnip:rule"],
+"activity:object": ["activity:object-type", "title", "content", "link", "thr:in-reply-to"],
+"author": ["name", "uri"]
+}
