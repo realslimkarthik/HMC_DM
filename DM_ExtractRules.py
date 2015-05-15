@@ -13,16 +13,16 @@ from pympler import asizeof
 # ========================================================================================
 # Function to query Mongo Collection and retrieve all records matching a particular rule
 def queryDB(mongoConf, month, year, filterRule, path, rtLines):
-    host = mongoConf.get("mongo", "host")
-    port = int(mongoConf.get("mongo", "port"))
+    host = mongoConf.get('mongo', 'host')
+    port = int(mongoConf.get('mongo', 'port'))
+    username = mongoConf.get('mongo', 'username')
+    password = mongoConf.get('mongo', 'password')
+    authDB = self._conf.get('mongo', 'authDB')
     # Create a new MongoDB client
     client = MongoClient(host, port)
+    client.twitter.authenticate(username, password, source=authDB)
     db = client.twitter
-    # Initialize integers to denote the length of the arrays to help unroll arrays in the CSV file
-    longestHtag = 0
-    longestRule = 0
-    longestUMen = 0
-    longestRTag = 0
+
     coll_names = set()
     # Generate Collection names, i.e. MonYY_x, where x is in range(1, 7)
     collName = month + year[2:]
