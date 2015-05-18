@@ -1,0 +1,39 @@
+{
+    "id": 1,
+    "updated": 1,
+    "published": 1,
+    "title": 1,
+    "link": {
+        "alternate": 1
+    },
+    "source": [
+        "updated",
+        "gnip:rule",
+        "link"
+    ],
+    "activity:object": [
+        {
+            "activity:object-type": 1
+        },
+        {
+            "content": 1
+        },
+        {
+            "link": 1
+        },
+        {
+            "category": {
+                "term": 1
+            }
+        },
+        {
+            "gnip:statistics": {
+                "count": 1
+            }
+        }
+    ],
+    "author": [
+        "name",
+        "uri"
+    ]
+}
