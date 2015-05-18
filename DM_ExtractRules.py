@@ -20,20 +20,23 @@ def queryDB(mongoConf, month, year, filterRule, path, rtLines):
     authDB = self._conf.get('mongo', 'authDB')
     # Create a new MongoDB client
     client = MongoClient(host, port)
+    # User Authentication
     client.twitter.authenticate(username, password, source=authDB)
     db = client.twitter
 
     coll_names = set()
     # Generate Collection names, i.e. MonYY_x, where x is in range(1, 7)
-    collName = month + year[2:]
+    collName = month.title() + year[2:]
     # Initialize a list to hold all the data queried from the Database
     dataSet = []
     for j in range(1, 7):
         coll_names.add(collName + '_' + str(j))
-    # For each of the collections
+    # Maintain count to track the file number of the corresponding rule file
     count = 1
+    # Obtaining Mongo fields to CSV fields mapping as a dict
     with (conf_path.format('mongoToFields.json')) as fieldsFile:
         mongoFields = json.loads(fieldsFile.read())
+    # For each of the collections
     for i in coll_names:
         coll = db[i]
         try:
@@ -41,7 +44,6 @@ def queryDB(mongoConf, month, year, filterRule, path, rtLines):
             data = coll.find({'mrv': {'$in': [int(filterRule)]}}, timeout=False)
         except pymongo.errors.CursorNotFound:
             continue
-        # Maintain count to track the file number of the corresponding rule file
         # For each record returned by the query
         for k in data:
             modifiedObj = {}
@@ -112,12 +114,11 @@ def queryDB(mongoConf, month, year, filterRule, path, rtLines):
 # Eg - python DM_Extract.py Aug 2014
 
 
-monthToNames = {'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06', 
-        'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'}
 
 if __name__ == "__main__":
-    month = sys.argv[1]
+    month = sys.argv[1].lower()
     year = sys.argv[2]
+    monthDict = {v.lower(): (str(k).zfill(2)) for (k, v) in (calendar.month_abbr)}
     conf = ConfigParser.ConfigParser()
     conf.read("config\config.cfg")
     # Get unformatted path to the Config files
@@ -125,7 +126,7 @@ if __name__ == "__main__":
     # Get the destination path
     dest = conf.get("twitter", "prod_dest_path")
     # Generate full path for the corresponding year and month
-    path = dest.format(year + monthToNames[month], 'CSVRULES')
+    path = dest.format(year + monthDict[month], 'CSVRULES')
     mkdir_p(path)
     # Get the total number of rules and the list of all the rules
     r = open(conf_path.format("tw_rules.json"))
