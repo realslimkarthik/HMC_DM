@@ -4,14 +4,12 @@ import sys
 import os
 import random
 import re
-import Tkinter as tk
 import ConfigParser
 from pymongo import MongoClient, errors, ASCENDING
 from datetime import datetime
 import time
 import logging
-
-monthToNames = {'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06', 'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'}
+import calendar
 
 
 class TwitterMongoUploader(object):
@@ -22,6 +20,7 @@ class TwitterMongoUploader(object):
         Attributes:
             year: Year in which the data was fetched
             month: Month in which data was fetched
+            monthDict: Mapping of abbreviated month to month index
             _conf: ConfigParser object for some control information
             _rules: Dictionary that provides Rule to Rule Index mapping
             _max_rule: Current largest Rule Index
@@ -40,6 +39,8 @@ class TwitterMongoUploader(object):
     def __init__(self, year, month):
         self.year = str(year)
         self.month = month.lower()
+        
+        self.monthDict = {v.lower(): str(k).zfill(2) for (k, v) in enumerate(calendar.month_abbr)}
 
         self._conf = ConfigParser.ConfigParser()
         self._conf.read('config\\config.cfg')
@@ -64,8 +65,8 @@ class TwitterMongoUploader(object):
         self.mongoConf = ConfigParser.ConfigParser()
         self.mongoConf.read(conf_path.format('fieldsToMongo.cfg'))
         
-        self.src = self._conf.get('twitter', 'prod_src_path').format(self.year + monthToNames[self.month])
-        self.dest = self._conf.get('twitter', 'prod_dest_path').format(self.year + monthToNames[self.month], 'CSVRULES')
+        self.src = self._conf.get('twitter', 'prod_src_path').format(self.year + self.monthDict[self.month])
+        self.dest = self._conf.get('twitter', 'prod_dest_path').format(self.year + self.monthDict[self.month], 'CSVRULES')
 
 
         host = self._conf.get('mongo', 'host')
@@ -112,7 +113,7 @@ class TwitterMongoUploader(object):
             rule_tag_file.write(json.dumps(self._rules_tags))
 
 
-
+    # Method to go over individual files in the directory to go through the data to upload to Mongo
     def iterateOverFiles(self):
         fileList = os.listdir(self.src)
         # Iterate over every file in the source directory
@@ -135,7 +136,6 @@ class TwitterMongoUploader(object):
                     self.dictFromTwitterJSON(self.src + j, self.collName + "_5")
                 elif fileDate > 25 and fileDate < 32:
                     self.dictFromTwitterJSON(self.src + j, self.collName + "_6")
-
 
 
     # Generates an array of dicts from json files
@@ -185,7 +185,8 @@ class TwitterMongoUploader(object):
         jsonfile.close()
         print "Finished populating collection ", collName
 
-    # Function to map json key name to user defined key name
+
+    # Method to map json key name to user defined key name
     def replaceKey(self, key):
         if self.fields.has_option("fields", key):
             return self.fields.get("fields", key)
@@ -193,14 +194,14 @@ class TwitterMongoUploader(object):
             return ""
 
 
-    #Recursive function to process the input dictionary
+    # Recursive method to process the rawTweet dictionary
     def extract(self, rawTweet, finalTweet, keys, nestedKey=""):
 
         # If rawTweet is a dictionary
         if isinstance(rawTweet, dict):
-            #Process each entry
+            # Process each entry
             for key, value in rawTweet.iteritems():
-                #If nested, prepend the previous variables
+                # If nested, prepend the previous variables
                 if nestedKey != "":
                     mykey = nestedKey+"_"+key
                 else:
@@ -208,17 +209,17 @@ class TwitterMongoUploader(object):
                 # If value is a dictionary or a list
                 if isinstance(value, dict) or isinstance(value, list):
                     self.extract(value, finalTweet, keys, nestedKey=mykey)
-                else: #Value is just a string
+                else: # Value is just a string
                     newKey = self.replaceKey(mykey)
                     if newKey == "":
                         continue
                     if isinstance(value, str) or isinstance(value, unicode):
                         value = value.strip()
                     if value != "":
-                        #If this is a new variable, add it to the list
+                        # If this is a new variable, add it to the list
                         if not newKey in keys:
                             keys.append(newKey)
-                        #Add it to the output dictionary
+                        # Add it to the output dictionary
                         if not newKey in finalTweet:
                             finalTweet[newKey] = value
                         else:
@@ -232,14 +233,15 @@ class TwitterMongoUploader(object):
                         if not newKey in finalTweet:
                             finalTweet[newKey] = ""
 
-        #If rawTweet is a list, call extract on each member of the list
+        # If rawTweet is a list, call extract on each member of the list
         elif isinstance(rawTweet, list):
             newKey = self.replaceKey(nestedKey)
             if newKey != "":
                 print nestedKey
+                print newKey
                 if not newKey in keys:
                     keys.append(newKey)
-                #Add it to the output dictionary
+                # Add it to the output dictionary
                 if not newKey in finalTweet:
                     finalTweet[newKey] = []
                     for item in rawTweet:
