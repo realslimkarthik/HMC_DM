@@ -318,6 +318,15 @@ def getFiles(src, infoOrComments):
     return outputFiles
 
 
+def processBackfill(backfillFile):
+    fileType, _,s_date, e_date = backfillFile.split('.')[0].split('_')[1:]
+
+    f = open(backfillFile)
+    line = ""
+    data = []
+    rawData = {}
+    processedData = {}
+
 # TO DO: write code to automate this for a bunch of months so that we can leave it running over the weekend
 
 if __name__ == "__main__":
@@ -335,9 +344,9 @@ if __name__ == "__main__":
     if op == "info":
         infoFileList = getFiles(src, 'info')
         for i in infoFileList:
-            outputInfo = open(dest + jsonfile.split('\\')[-1].split('.')[0] + ".csv", "wb")
-            makeCSVfromJSONfbStreams(src + i, op)
-            printCSVInfo(outputInfo, outInfo, keysInfo)
+            outputInfo = open(dest + i.split('\\')[-1].split('.')[0] + ".csv", "wb")
+            outInfo = makeCSVfromJSONfbStreams(src + i, op)
+            printCSVInfo(outputInfo, outInfo[1], outInfo[0])
             outputInfo.close()
     elif op == "comments":
         commentsFileList = getFiles(src, "comments")
@@ -362,3 +371,6 @@ if __name__ == "__main__":
             df.to_csv(outputComments, sep=',', index=False)
             outputComments.close()
         comment_list_file.close()
+    elif op == "backfill":
+        backfillSrc = conf.get("facebook", "prod_backfill_path")
+        fileList = os.listdir(backfillSrc)
