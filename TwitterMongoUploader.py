@@ -31,7 +31,7 @@ class TwitterMongoUploader(object):
             src: Path to where the input Source files are to be read from
             dest: Path to the Destination where the output files are to be written
             db: MongoDB Database in which to write into/read from
-            collName: Name(s) of the collection to which data is to be uploaded
+            collName: Name of the collection to which data is to be uploaded
 
     """
 
@@ -78,7 +78,7 @@ class TwitterMongoUploader(object):
         mongoClient.twitter.authenticate(username, password, source=authDB)
         self.db = mongoClient['twitter']
 
-        self.collName = tuple(self.month + self.year + '_' + str(i) for i in range(1, 7))
+        self.collName = self.month + self.year
         # logging.basicConfig(filename=logs.format('prodUpload' + self.collName +'.log'), level=logging.DEBUG)
 
 
@@ -125,17 +125,17 @@ class TwitterMongoUploader(object):
                 logging.info("Started uploading " + j)
                 # Upload to the corresponding Mongo Collection based on the date extracted from the file
                 if fileDate < 6:
-                    self.dictFromTwitterJSON(self.src + j, self.collName[0])
+                    self.dictFromTwitterJSON(self.src + j, self.collName + "_1")
                 elif fileDate > 5 and  fileDate < 11:
-                    self.dictFromTwitterJSON(self.src + j, self.collName[1])
+                    self.dictFromTwitterJSON(self.src + j, self.collName + "_2")
                 elif fileDate > 13 and fileDate < 16:
-                    self.dictFromTwitterJSON(self.src + j, self.collName[2])
+                    self.dictFromTwitterJSON(self.src + j, self.collName + "_3")
                 elif fileDate > 15 and fileDate < 21:
-                    self.dictFromTwitterJSON(self.src + j, self.collName[3])
+                    self.dictFromTwitterJSON(self.src + j, self.collName + "_4")
                 elif fileDate > 20 and fileDate < 26:
-                    self.dictFromTwitterJSON(self.src + j, self.collName[4])
+                    self.dictFromTwitterJSON(self.src + j, self.collName + "_5")
                 elif fileDate > 25 and fileDate < 32:
-                    self.dictFromTwitterJSON(self.src + j, self.collName[5])
+                    self.dictFromTwitterJSON(self.src + j, self.collName + "_6")
 
 
     # Generates an array of dicts from json files

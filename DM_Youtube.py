@@ -2,7 +2,6 @@ import sys
 import ConfigParser
 import json
 import os, os.path
-import re
 from bs4 import BeautifulSoup
 from CSVUnicodeWriter import CSVUnicodeWriter
 
@@ -46,28 +45,22 @@ def extract(line, fields):
             for j in val:
                 try:
                     item = part_xml.find(j).get_text().strip()
-                    newKey = key + j
-                    newKey = re.sub(':-', '', newKey)
-                    item = re.sub('\r\n', ' ', item)
+                    newKey = key + '_' + j
                     data[newKey] = item
                 except AttributeError:
                     return None
         elif isinstance(val, dict):
             for (k, v) in val.iteritems():
-                newKey = key + k
+                newKey = key + '_' + k
                 try:
                     item = soup.find(key, rel=k)['href']
                 except KeyError:
                     return None
-                newKey = re.sub(':-', '', newKey)
-                item = re.sub('\r\n', ' ', item)
                 data[newKey] = item
         else:
             try:
                 item = part_xml.get_text().strip()
                 newKey = key
-                newKey = re.sub(':-', '', newKey)
-                item = re.sub('\r\n', ' ', item)
                 data[newKey] = item
             except AttributeError:
                 data = None
@@ -126,6 +119,19 @@ def getFileName(src_path, fileType, date, ext):
 
 def processBackfill(backfillFile):
     fileType, _,s_date, e_date = backfillFile.split('.')[0].split('_')[1:]
+    start_date = (s_date[0:4], s_date[4:6], s_date[6:8])
+    end_date = (e_date[0:4], e_date[4:6], e_date[6:8])
+    sameDay = start_date == end_date
+
+    src = src_path.format(start_date[0], start_date[1])
+    dest = dest_path.format(end_date[0], end_date[1]) + 'CSV\\'
+
+    start_inputFile = getFileName(src, fileType, start_date, 'xml')
+    end_inputFile = ''  if sameDay else getFileName(src, fileType, end_date, 'xml')
+
+    start_outputFile = getFileName(dest, fileType, start_date, 'csv')
+    end_outputFile = '' if sameDay else getFileName(dest, fileType, end_date, 'csv')
+
 
     f = open(backfillFile)
     line = ""
@@ -182,10 +188,7 @@ def iterate(src_path, dest_path, month):
             print j
             data = getData(src + j)
             filename = j.split('.')[0] + '.csv'
-            df = pd.DataFrame(data)
-            with open(filename, 'w') as csvfile:
-                df.to_csv(csvfile, sep=',', index=False)
-            # printCSV(dest + filename, data)
+            printCSV(dest + filename, data)
 
 
 # Command to run the script
