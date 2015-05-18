@@ -31,8 +31,8 @@ def queryDB(mongoConf, month, year, filterRule, path, rtLines):
     dataSet = []
     for j in range(1, 7):
         coll_names.add(collName + '_' + str(j))
-    # Maintain count to track the file number of the corresponding rule file
-    count = 1
+    # Maintain counter to track the file number of the corresponding rule file
+    counter = 1
     # Obtaining Mongo fields to CSV fields mapping as a dict
     with (conf_path.format('mongoToFields.json')) as fieldsFile:
         mongoFields = json.loads(fieldsFile.read())
@@ -105,7 +105,7 @@ def queryDB(mongoConf, month, year, filterRule, path, rtLines):
                 df = pd.DataFrame(dataSet)
                 with open(path + month + rule + '_' + str(counter) + '.csv', 'wb') as csvfile:
                     df.to_csv(csvfile, sep=',', index=False)
-                count += 1
+                counter += 1
                 
 
 # ========================================================================================

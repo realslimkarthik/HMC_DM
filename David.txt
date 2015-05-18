@@ -1,0 +1,22 @@
+Things David Should know:
+
+    1.  Directory Structure
+    2.  Twitter details,
+        a. Mongo Fields
+        b. Script(s) that deal with Twitter Data
+        c. Rule, Tag indices
+    3.  Facebook details,
+        a. Scripts that deal with Facebook Data
+        b. Facebook format changes
+        c. Backfill
+    4.  Youtube details,
+        a. Scripts that deal with Youtube Data
+        b. Backfill
+        c. Stats files
+    5. Instagram details,
+        a. Scripts that deal with Instagram Data
+        b. Backfill
+    6. Mongo details,
+        a. User profiles
+        b. How to access using pymongo
+        c. General querying procedures and mongoRef.js

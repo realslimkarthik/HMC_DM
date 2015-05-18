@@ -248,15 +248,11 @@ def extractInfo(DictIn, Dictout, allkeys, nestedKey=""):
             Dictout[nestedKey] = unicode(Dictout[nestedKey])+"; "+unicode(DictIn)
 
 
-
-
 def printCSVInfo(csvfile, resultList, mykeys):
     delim = ','
     print len(resultList)
     
     for key in mykeys:
-        with open(conf_path.format('facebook_fanpages.txt')) as f:
-            fanpages = [i.strip() for i in f.readlines()]
         csvfile.write(key + delim)
 
     for result in resultList:
@@ -318,13 +314,21 @@ def getFiles(src, infoOrComments):
     return outputFiles
 
 
-# TO DO: write code to automate this for a bunch of months so that we can leave it running over the weekend
+def processBackfill(backfillFile):
+    fileType, _,s_date, e_date = backfillFile.split('.')[0].split('_')[1:]
+
+    f = open(backfillFile)
+    line = ""
+    data = []
+    rawData = {}
+    processedData = {}
+
+
 
 if __name__ == "__main__":
     op = sys.argv[1].lower()
     year = sys.argv[2]
     month = sys.argv[3]
-    outputType = sys.argv[4].lower()
     conf = ConfigParser.ConfigParser()
     conf.read("config\config.cfg")
     conf_path = conf.get("conf", "conf_path")
@@ -335,9 +339,9 @@ if __name__ == "__main__":
     if op == "info":
         infoFileList = getFiles(src, 'info')
         for i in infoFileList:
-            outputInfo = open(dest + jsonfile.split('\\')[-1].split('.')[0] + ".csv", "wb")
-            makeCSVfromJSONfbStreams(src + i, op)
-            printCSVInfo(outputInfo, outInfo, keysInfo)
+            outputInfo = open(dest + i.split('\\')[-1].split('.')[0] + ".csv", "wb")
+            outInfo = makeCSVfromJSONfbStreams(src + i, op)
+            printCSVInfo(outputInfo, outInfo[1], outInfo[0])
             outputInfo.close()
     elif op == "comments":
         commentsFileList = getFiles(src, "comments")
@@ -347,9 +351,6 @@ if __name__ == "__main__":
             fanpages = [i.strip() for i in f.readlines()]
         comment_list_file = open(dest + 'fanpage_to_user_id.csv', 'wb')
         comment_list_file.write('Fanpage, Comment_Id\n')
-        if outputType == 'single':
-            outputFile = open(dest + year + str(month).zfill(2) + '.csv', "wb")
-            headers = True
 
         for i in commentsFileList:
             print i
@@ -362,3 +363,6 @@ if __name__ == "__main__":
             df.to_csv(outputComments, sep=',', index=False)
             outputComments.close()
         comment_list_file.close()
+    elif op == "backfill":
+        backfillSrc = conf.get("facebook", "prod_backfill_path")
+        fileList = os.listdir(backfillSrc)
