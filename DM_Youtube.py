@@ -2,6 +2,7 @@ import sys
 import ConfigParser
 import json
 import os, os.path
+import pandas as pd
 from bs4 import BeautifulSoup
 from CSVUnicodeWriter import CSVUnicodeWriter
 
@@ -180,8 +181,11 @@ def iterate(src_path, dest_path, month):
         if "xml" in j and "error" not in j and ("v3" in j or "comments" in j):
             print j
             data = getData(src + j)
+            df = pd.DataFrame(data)
             filename = j.split('.')[0] + '.csv'
-            printCSV(dest + filename, data)
+            with open(filename) as csvfile:
+                df.to_csv(csvfile, sep=',', index=False)
+            # printCSV(dest + filename, data)
 
 
 # Command to run the script
