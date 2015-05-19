@@ -24,8 +24,8 @@ def getData(filename):
                     for i in dataLine['activityobjectcategory']:
                         dataLine['activityobjectcategory' + str(count)] = i
                         count += 1
-                    else:
-                        dataLine['activityobjectcategory1'] = dataLine['activityobjectcategory']
+                else:
+                    dataLine['activityobjectcategory1'] = dataLine['activityobjectcategory']
                 del(dataLine['activityobjectcategory'])
                 data.append(dataLine)
             line = ""
