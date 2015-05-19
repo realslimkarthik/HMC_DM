@@ -1,12 +1,13 @@
 import ConfigParser
 import sys
 import os
+import json
 import pandas as pd
 import re
-
+from bs4 import BeautifulSoup
+from utility import mkdir_p
 
 def getData(filename):
-    fileType = getFileType(filename)
     f = open(filename)
     fields_file = open(conf_path.format("insta_fields.json"))
     fields = json.loads(fields_file.read())
@@ -14,14 +15,20 @@ def getData(filename):
     data = []
     line = ""
     for i in f.readlines():
+        line += i
         if '</entry>' in i:
-            line += i
-            dataLine = extract(line, fields[fileType])
+            dataLine = extract(line.decode('utf-8', 'ignore'), fields)
             if dataLine is not None:
+                count = 1
+                if isinstance(dataLine['activityobjectcategory'], list):
+                    for i in dataLine['activityobjectcategory']:
+                        dataLine['activityobjectcategory' + str(count)] = i
+                        count += 1
+                    else:
+                        dataLine['activityobjectcategory1'] = dataLine['activityobjectcategory']
+                del(dataLine['activityobjectcategory'])
                 data.append(dataLine)
             line = ""
-        else:
-            line += i
     f.close()
     return data
 
@@ -32,41 +39,64 @@ def extract(line, fields):
     for (key, val) in fields.iteritems():
         part_xml = soup.find(key)
         if isinstance(val, list):
-            for (k, v) in val:
-                try:
-                    if isinstance(v, int):
-                        item = part_xml.find(k).get_text().strip()
-                        newKey = key + k
-                        newKey = re.sub(':-', '', newKey)
-                        item = re.sub('\r\n', ' ', item)
+            for i in val:
+                if isinstance(i, dict):
+                    (k, v) = i.items()[0]
+                    try:
+                        if isinstance(v, int):
+                            item = part_xml.find(k).get_text().strip()
+                            newKey = key + k
+                            newKey = re.sub('[:-]', '', newKey)
+                            item = re.sub('[\r\n]', ' ', item)
+                            data[newKey] = item
+                        elif isinstance(v, dict):
+                            item = [i[v.keys()[0]] for i in part_xml.find_all(k)]
+                            item = item[0] if len(item) == 1 and isinstance(item, list) else item
+                            newKey = key + k
+                            newKey = re.sub('[:-]', '', newKey)
+                            if isinstance(item, list):
+                                data[newKey] = [re.sub('[\r\n]', ' ', i) for i in item]
+                            else:
+                                data[newKey] = re.sub('[\r\n]', ' ', item)
+                    except AttributeError:
+                        print 'list --> dict None'
+                        return None
+                    except KeyError:
+                        print 'list --> dict KeyError None'
+                        print k
+                        print part_xml
+                        return None
+                else:
+                    try:
+                        item = part_xml.find(i).get_text()
+                        newKey = key + i
+                        newKey = re.sub('[:-]', '', newKey)
+                        item = re.sub('[\r\n]', ' ', item)
                         data[newKey] = item
-                    elif isinstance(v, dict):
-                        item = part_xml.find_all(k)[v.keys()[0]]
-                        newKey = key + k
-                        newKey = re.sub(':-', '', newKey)
-                        data[newKey] = [re.sub('\r\n', ' ', i) for i in item]
-                except AttributeError:
-                    return None
+                    except AttributeError:
+                        print 'list --> regular None'
+                        return None
         elif isinstance(val, dict):
             for (k, v) in val.iteritems():
                 newKey = key + k
                 try:
                     item = soup.find(key, rel=k)['href']
                 except KeyError:
+                    print 'dict None'
                     return None
-                newKey = re.sub(':-', '', newKey)
-                item = re.sub('\r\n', ' ', item)
+                newKey = re.sub('[:-]', '', newKey)
+                item = re.sub('[\r\n]', ' ', item)
                 data[newKey] = item
         else:
             try:
                 item = part_xml.get_text().strip()
                 newKey = key
-                newKey = re.sub(':-', '', newKey)
-                item = re.sub('\r\n', ' ', item)
+                newKey = re.sub('[:-]', '', newKey)
+                item = re.sub('[\r\n]', ' ', item)
                 data[newKey] = item
             except AttributeError:
-                data = None
-                break
+                print 'Direct None'
+                return None
     return data
 
 
@@ -98,15 +128,16 @@ if __name__ == "__main__":
     conf = ConfigParser.ConfigParser()
     conf.read('config\\config.cfg')
     conf_path = conf.get('conf', 'conf_path')
-    aggregate(year, month, conf)
+    # aggregate(year, month, conf)
     src = conf.get('instagram', 'src_path').format(year, str(month).zfill(2))
     dest = conf.get('instagram', 'dest_path').format(year, str(month).zfill(2))
+    mkdir_p(dest)
     fileList = os.listdir(src)
-    # for i in fileList:
-    #     if len(i.split('_')) == 4:
-    #         data = getData(src + i)
-    #         df = pd.DataFrame(data)
-    #         fileName = i.split('.')[0] + '.csv'
-    #         with open(fileName) as csvfile:
-    #             df.to_csv(csvfile, sep=',', index=False)
-
+    for i in fileList:
+        if len(i.split('_')) == 4:
+            print i
+            data = getData(src + i)
+            df = pd.DataFrame(data)
+            fileName = dest + i.split('.')[0] + '.csv'
+            with open(fileName, 'w') as csvfile:
+                df.to_csv(csvfile, sep=',', index=False)
