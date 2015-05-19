@@ -100,6 +100,54 @@ def extract(line, fields):
     return data
 
 
+def backfillRawFiles(backfillData, rawFile):
+    xmlFile = open(rawFile, 'a')
+    xmlFile.write('\n')
+    for i in backfillData:
+        xmlFile.write(i)
+    xmlFile.close()
+
+
+def processBackfill(backfillFile, raw_file, csv_file):
+    f = open(backfillFile)
+    line = ""
+    data = []
+    rawData = {}
+    processedData = {}
+    
+    fields_file = open(conf_path.format("youtubeFields.json"))
+    fields = json.loads(fields_file.read())
+    fields_file.close()
+    date = ""
+
+    for i in f.readlines():
+        line += i
+        if '</entry>' in i:
+            dataLine = extract(line, fields)
+            if dataLine is not None:
+                date = dataLine['updated'].split('T')[0]
+                if date in processedData:
+                    processedData[date].append(dataLine)
+                else:
+                    processedData[date] = [dataLine]
+            if date != "":
+                if date in rawData:
+                    rawData[date] += line
+                else:
+                    rawData[date] = line
+            line = ""
+
+    for (key, val) in processedData.iteritems():
+        y, m, d = key.split('-')
+        xmlFileName = raw_file.format(y, m, d)
+        csvFileName = csv_file.format(y, m, d)
+        backfillRawFiles(rawData[key], xmlFileName)
+        df = pd.DataFrame(processedData[key])
+        with open(csvFileName, 'a') as csvfile:
+            df.to_csv(csvfile, sep=',', index=False, header=False)
+
+    print backfillFile + ' is done'
+
 
 def aggregate(year, month, conf):
     parts_src = conf.get('instagram', 'src_parts_path')
@@ -123,21 +171,31 @@ def aggregate(year, month, conf):
 
 
 if __name__ == "__main__":
-    year = sys.argv[1]
-    month = sys.argv[2]
+    op = sys.argv[1].lower()
+    year = sys.argv[2]
+    month = sys.argv[3]
     conf = ConfigParser.ConfigParser()
     conf.read('config\\config.cfg')
     conf_path = conf.get('conf', 'conf_path')
     # aggregate(year, month, conf)
-    src = conf.get('instagram', 'src_path').format(year, str(month).zfill(2))
-    dest = conf.get('instagram', 'dest_path').format(year, str(month).zfill(2))
-    mkdir_p(dest)
-    fileList = os.listdir(src)
-    for i in fileList:
-        if len(i.split('_')) == 4:
-            print i
-            data = getData(src + i)
-            df = pd.DataFrame(data)
-            fileName = dest + i.split('.')[0] + '.csv'
-            with open(fileName, 'w') as csvfile:
-                df.to_csv(csvfile, sep=',', index=False)
+    if op == "regular":
+        src = conf.get('instagram', 'src_path').format(year, str(month).zfill(2))
+        dest = conf.get('instagram', 'dest_path').format(year, str(month).zfill(2))
+        mkdir_p(dest)
+        fileList = os.listdir(src)
+        for i in fileList:
+            if len(i.split('_')) == 4:
+                print i
+                data = getData(src + i)
+                df = pd.DataFrame(data)
+                fileName = dest + i.split('.')[0] + '.csv'
+                with open(fileName, 'w') as csvfile:
+                    df.to_csv(csvfile, sep=',', index=False)
+    elif op == "backfill":
+        src = conf.get('instagram', 'backfill_path').format(year, str(month).zfill(2))
+        raw_file = conf.get("instagram", "prod_backfill_src")
+        csv_file = conf.get("instagram", "prod_backfill_dest")
+        fileList = os.listdir(src)
+        for i in fileList:
+            if 'xml'in i and 'csv' not in i:
+                processBackfill(src + i, raw_file, csv_file)
