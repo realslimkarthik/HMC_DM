@@ -119,13 +119,8 @@ def backfillRawFiles(backfillData, rawFile):
     xmlFile.close()
 
 
-def getFileName(src_path, fileType, date, ext):
-    inputFile = src_path + 'youtube_' + fileType + '_' + date[0] + '_' + date[1] + '_' + date[2] + '.' + ext
-    return inputFile
-
-
-def processBackfill(backfillFile):
-    fileType, _,s_date, e_date = backfillFile.split('.')[0].split('_')[1:]
+def processBackfill(backfillFile, raw_file, csv_file):
+    fileType = backfillFile.split('.')[0].split('_')[1]
     
     f = open(backfillFile)
     line = ""
@@ -159,14 +154,14 @@ def processBackfill(backfillFile):
 
     for (key, val) in processedData.iteritems():
         y, m, d = key.split('-')
-        xmlFileName = getFileName(src, fileType, (y, m, d), 'xml')
-        csvFileName = getFileName(src, fileType, (y, m, d), 'csv')
-        # print xmlFileName, csvFileName, rawData[key]
-        printCSV(xmlFileName, processedData[key], True)
+        xmlFileName = raw_file.format(y, m, d, fileType)
+        csvFileName = csv_file.format(y, m, d, fileType)
         backfillRawFiles(rawData[key], xmlFileName)
+        df = pd.DataFrame(processedData[key])
+        with open(csvFileName, 'a') as csvfile:
+            df.to_csv(csvfile, sep=',', index=False, header=False)
     
     print backfillFile + ' is done'
-    # print start_inputFile + '\n' + start_outputFile + '\n' + end_inputFile + '\n' + end_outputFile
 
 
 def iterate(src_path, dest_path, month):
@@ -212,6 +207,8 @@ if __name__ == "__main__":
 
     elif op == "backfill":
         backfill_src = conf.get("youtube", "prod_backfill_path")
+        raw_file = conf.get("youtube", "prod_backfill_src")
+        csv_file = conf.get("youtube", "prod_backfill_dest")
         try:
             fileList = os.listdir(backfill_src)
         except IOError, WindowsError:
@@ -219,4 +216,4 @@ if __name__ == "__main__":
             sys.exit(1)
         for j in fileList:
             if 'xml' in j and "error" not in j and ("v3" in j or "comments" in j):
-                processBackfill(backfill_src + j)
+                processBackfill(backfill_src + j, raw_file, csv_file)
