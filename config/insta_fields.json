@@ -9,7 +9,11 @@
     "source": [
         "updated",
         "gnip:rule",
-        "link"
+        {
+            "link": {
+                "href": 1
+            }
+        }
     ],
     "activity:object": [
         {
@@ -19,16 +23,13 @@
             "content": 1
         },
         {
-            "link": 1
-        },
-        {
             "category": {
                 "term": 1
             }
         },
         {
             "gnip:statistics": {
-                "count": 1
+                "favoritecount": 1
             }
         }
     ],
