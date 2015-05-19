@@ -1,4 +1,7 @@
 pymongo
 pympler
 beautifulsoup4
+numpy
+pytz
+python-dateutil
 pandas
