@@ -79,8 +79,37 @@ class TwitterMongoUploader(object):
         self.db = mongoClient['twitter']
 
         self.collName = tuple(self.month + self.year + '_' + str(i) for i in range(1, 7))
-        # logging.basicConfig(filename=logs.format('prodUpload' + self.collName +'.log'), level=logging.DEBUG)
+        logs = self._conf.get("conf", "prod_log_path")
+        logging.basicConfig(filename=logs.format('prodUpload' + self.collName[0].split('_')[0] +'.log'), level=logging.DEBUG)
 
+
+    def fixByMonth(self):
+        jsonDirectory = self.src
+        myfiles = []
+        myfilename = ""
+        jsonfile = None
+        print jsonDirectory
+        #Use the os package to find all files in the directory and its subdirectories
+        for (dirpath, dirnames, filenames) in os.walk(jsonDirectory):
+            #Add the full name of the file to the list
+            myfiles.extend(os.path.join(dirpath, filename) for filename in filenames)
+        #For each file in the list
+        for myfile in myfiles:
+            #Require .json and exclude .csv
+            if ".json" in myfile and not ".csv" in myfile and not "errors" in myfile and "twitter" in myfile:
+                onefile = open(myfile, "r")
+                name = myfile.split("_")
+                filename = "tw"+"_".join(name[3:len(name)-2])+".json"
+                #Check if still same day file
+                if filename != myfilename:
+                    if jsonfile != None:
+                        jsonfile.close()
+                    jsonfile = open(jsonDirectory+filename,"a")
+                    myfilename = filename
+                    print filename
+                jsonfile.write(onefile.read())
+                onefile.close()
+        jsonfile.close()
 
     # Method to add new rules added in twitter_master_rules.json to our set of rules
     def updateRules(self):
@@ -106,10 +135,10 @@ class TwitterMongoUploader(object):
         master_rules_file.close()
 
         # Once the file is fully iterated through, dump the _rules and _rules_tags dict to their corresponding files
-        with open('test.json', 'w') as rule_file:
+        with open('tw_rules.json', 'w') as rule_file:
             rule_file.write(json.dumps(self._rules))
 
-        with open('test_tags.json', 'w') as rule_tag_file:
+        with open('tw_rules_tags.json', 'w') as rule_tag_file:
             rule_tag_file.write(json.dumps(self._rules_tags))
 
 
@@ -237,8 +266,6 @@ class TwitterMongoUploader(object):
         elif isinstance(rawTweet, list):
             newKey = self.replaceKey(nestedKey)
             if newKey != "":
-                print nestedKey
-                print newKey
                 if not newKey in keys:
                     keys.append(newKey)
                 # Add it to the output dictionary
