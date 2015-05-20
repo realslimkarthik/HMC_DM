@@ -59,10 +59,10 @@ def extract(line, fields):
                             else:
                                 data[newKey] = re.sub('[\r\n]', ' ', item)
                     except AttributeError:
-                        print 'list --> dict None'
+                        # print 'list --> dict None'
                         return None
                     except KeyError:
-                        print 'list --> dict KeyError None'
+                        # print 'list --> dict KeyError None'
                         print k
                         print part_xml
                         return None
@@ -74,7 +74,7 @@ def extract(line, fields):
                         item = re.sub('[\r\n]', ' ', item)
                         data[newKey] = item
                     except AttributeError:
-                        print 'list --> regular None'
+                        # print 'list --> regular None'
                         return None
         elif isinstance(val, dict):
             for (k, v) in val.iteritems():
@@ -82,7 +82,7 @@ def extract(line, fields):
                 try:
                     item = soup.find(key, rel=k)['href']
                 except KeyError:
-                    print 'dict None'
+                    # print 'dict None'
                     return None
                 newKey = re.sub('[:-]', '', newKey)
                 item = re.sub('[\r\n]', ' ', item)
@@ -95,7 +95,7 @@ def extract(line, fields):
                 item = re.sub('[\r\n]', ' ', item)
                 data[newKey] = item
             except AttributeError:
-                print 'Direct None'
+                # print 'Direct None'
                 return None
     return data
 
@@ -109,13 +109,13 @@ def backfillRawFiles(backfillData, rawFile):
 
 
 def processBackfill(backfillFile, raw_file, csv_file):
+    print backfillFile.split('\\')[-1]
     f = open(backfillFile)
     line = ""
-    data = []
     rawData = {}
     processedData = {}
     
-    fields_file = open(conf_path.format("youtubeFields.json"))
+    fields_file = open(conf_path.format("insta_fields.json"))
     fields = json.loads(fields_file.read())
     fields_file.close()
     date = ""
@@ -136,11 +136,20 @@ def processBackfill(backfillFile, raw_file, csv_file):
                 else:
                     rawData[date] = line
             line = ""
+    f.close()
 
     for (key, val) in processedData.iteritems():
         y, m, d = key.split('-')
         xmlFileName = raw_file.format(y, m, d)
         csvFileName = csv_file.format(y, m, d)
+        print xmlFileName
+        print csvFileName
+
+        if not os.path.exists(os.path.dirname(xmlFileName)):
+            os.makedirs(os.path.dirname(xmlFileName))
+        if not os.path.exists(os.path.dirname(csvFileName)):
+            os.makedirs(os.path.dirname(csvFileName))
+
         backfillRawFiles(rawData[key], xmlFileName)
         df = pd.DataFrame(processedData[key])
         with open(csvFileName, 'a') as csvfile:
@@ -172,12 +181,14 @@ def aggregate(year, month, conf):
 
 if __name__ == "__main__":
     op = sys.argv[1].lower()
-    year = sys.argv[2]
-    month = sys.argv[3]
+    try:
+        year = sys.argv[2]
+        month = sys.argv[3]
+    except IndexError:
+        pass
     conf = ConfigParser.ConfigParser()
     conf.read('config\\config.cfg')
     conf_path = conf.get('conf', 'conf_path')
-    # aggregate(year, month, conf)
     if op == "regular":
         src = conf.get('instagram', 'src_path').format(year, str(month).zfill(2))
         dest = conf.get('instagram', 'dest_path').format(year, str(month).zfill(2))
@@ -192,10 +203,15 @@ if __name__ == "__main__":
                 with open(fileName, 'w') as csvfile:
                     df.to_csv(csvfile, sep=',', index=False)
     elif op == "backfill":
-        src = conf.get('instagram', 'backfill_path').format(year, str(month).zfill(2))
+        src = conf.get('instagram', 'backfill_path')
         raw_file = conf.get("instagram", "prod_backfill_src")
         csv_file = conf.get("instagram", "prod_backfill_dest")
         fileList = os.listdir(src)
+        done_src = src + 'done\\'
+        mkdir_p(done_src)
         for i in fileList:
             if 'xml'in i and 'csv' not in i:
                 processBackfill(src + i, raw_file, csv_file)
+                os.rename(src + i, done_src + i)
+    elif op == "aggregate":
+        aggregate(year, month, conf)
