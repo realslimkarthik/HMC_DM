@@ -49,7 +49,8 @@ class TwitterMongoUploader(object):
         
         rules_file = open(self._conf.get('twitter', 'rules'))
         self._rules = json.loads(rules_file.read())
-        self._max_rule = sorted(self._rules, key = lambda r: r[1])[-1][1]
+        self._max_rule = self._rules[sorted(self._rules, key = lambda r: r[1])[-1]]
+        self._max_rule = max(v for k, v in self._rules.iteritems())
         rules_file.close()
 
         tags_file = open(self._conf.get('twitter', 'tags'))
@@ -136,10 +137,10 @@ class TwitterMongoUploader(object):
         master_rules_file.close()
 
         # Once the file is fully iterated through, dump the _rules and _rules_tags dict to their corresponding files
-        with open('tw_rules.json', 'w') as rule_file:
+        with open('config\\tw_rules.json', 'w') as rule_file:
             rule_file.write(json.dumps(self._rules))
 
-        with open('tw_rules_tags.json', 'w') as rule_tag_file:
+        with open('config\\tw_rules_tags.json', 'w') as rule_tag_file:
             rule_tag_file.write(json.dumps(self._rules_tags))
 
 
