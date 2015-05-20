@@ -10,6 +10,7 @@ from datetime import datetime
 import time
 import logging
 import calendar
+import datetime
 
 
 class TwitterMongoUploader(object):
@@ -151,7 +152,7 @@ class TwitterMongoUploader(object):
             if len(j.split('_')) == 3 and '.json' in j:
                 # Extract the date of the corresponding file from it's name
                 fileDate = int(j.split('_')[-1].split('.')[0])
-                logging.info("Started uploading " + j)
+                logging.info(str(datetime.datetime.today()) + " : Started uploading " + j)
                 # Upload to the corresponding Mongo Collection based on the date extracted from the file
                 if fileDate < 6:
                     self.dictFromTwitterJSON(self.src + j, self.collName[0])
