@@ -79,7 +79,7 @@ class TwitterMongoUploader(object):
         mongoClient.twitter.authenticate(username, password, source=authDB)
         self.db = mongoClient['twitter']
 
-        self.collName = tuple(self.month + self.year + '_' + str(i) for i in range(1, 7))
+        self.collName = tuple(self.month + self.year[2:] + '_' + str(i) for i in range(1, 7))
         logs = self._conf.get("conf", "prod_log_path")
         logging.basicConfig(level=logging.INFO,
                             filename=logs.format('prodUpload' + self.collName[0].split('_')[0] +'.log'), 
