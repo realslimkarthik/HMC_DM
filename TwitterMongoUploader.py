@@ -10,7 +10,6 @@ from datetime import datetime
 import time
 import logging
 import calendar
-import datetime
 
 
 class TwitterMongoUploader(object):
@@ -82,7 +81,9 @@ class TwitterMongoUploader(object):
 
         self.collName = tuple(self.month + self.year + '_' + str(i) for i in range(1, 7))
         logs = self._conf.get("conf", "prod_log_path")
-        logging.basicConfig(filename=logs.format('prodUpload' + self.collName[0].split('_')[0] +'.log'), level=logging.DEBUG)
+        logging.basicConfig(level=logging.INFO,
+                            filename=logs.format('prodUpload' + self.collName[0].split('_')[0] +'.log'), 
+                            format='%(asctime)s : %(levelname)s - %(message)s')
 
 
     def fixByMonth(self):
@@ -153,7 +154,7 @@ class TwitterMongoUploader(object):
             if len(j.split('_')) == 3 and '.json' in j:
                 # Extract the date of the corresponding file from it's name
                 fileDate = int(j.split('_')[-1].split('.')[0])
-                logging.info(str(datetime.datetime.today()) + " : Started uploading " + j)
+                logging.info("Started uploading " + j)
                 # Upload to the corresponding Mongo Collection based on the date extracted from the file
                 if fileDate < 6:
                     self.dictFromTwitterJSON(self.src + j, self.collName[0])
@@ -185,12 +186,12 @@ class TwitterMongoUploader(object):
                 myline = myline.decode("utf-8", "ignore")
                 
                 #Remove new lines from within the tweet
-                myline = myline.replace('\\n' ' ')
+                myline = myline.replace('\\n', ' ')
                 #Remove carriage returns from within the tweet
-                myline = myline.replace('\\r' ' ')
+                myline = myline.replace('\\r', ' ')
                 #Remove problematic \s
-                myline = myline.replace('\\\\' ' ')
-                myline = myline.replace('\\ ' ' ')
+                myline = myline.replace('\\\\', ' ')
+                myline = myline.replace('\\ ', ' ')
 
                 #Create a dictionary using the JSON processor
                 try:
@@ -298,16 +299,18 @@ class TwitterMongoUploader(object):
         #packing the entitieshtagstext field into an array
         if 'entitieshtagstext' not in inputTweet:
             inputTweet['entitieshtagstext'] = []
-        else:
-            inputTweet['entitieshtagstext'] = inputTweet['entitieshtagstext'].split(';')
 
         # Renaming id field
         inputTweet['_id'] = inputTweet['Idpost'].split(':')[2]
         # Remove the former id key
         inputTweet.pop('Idpost', None)
         # packing the matchingrulesvalue field into an array
-        inputTweet['matchingrulesvalue'] = inputTweet['matchingrulesvalue'].split(';')
-        inputTweet['matchingrulestag'] = inputTweet['matchingrulestag'].split(';')
+        if isinstance(inputTweet['matchingrulesvalue'], unicode) or isinstance(inputTweet['matchingrulesvalue'], str):
+            inputTweet['matchingrulesvalue'] = inputTweet['matchingrulesvalue'].split(';')
+        if isinstance(inputTweet['matchingrulestag'], unicode) or isinstance(inputTweet['matchingrulestag'], str):
+            inputTweet['matchingrulestag'] = [i.lower() for i in inputTweet['matchingrulestag'].split(';')]
+        else:
+            inputTweet['matchingrulestag'] = [i.lower() for i in inputTweet['matchingrulestag']]
 
         # Changing postedTime into ISO format for processing using JavaScript in Mongo
         dateFrag = inputTweet['postedTime'].split('T')
@@ -316,7 +319,7 @@ class TwitterMongoUploader(object):
         timeStruct = time.strptime(dateStr, "%Y-%m-%d %H:%M:%S")
         dateObj = datetime.fromtimestamp(time.mktime(timeStruct))
         inputTweet['postedTime'] = dateObj
-        
+
         # Mapping the rules into integers from the rules
         ruleIndex = []
         for j in inputTweet['matchingrulesvalue']:
@@ -329,7 +332,7 @@ class TwitterMongoUploader(object):
 
         tagIndex = set()
         for j in inputTweet['matchingrulestag']:
-            if j.strip() == 'LCC':
+            if j.strip() == 'lcc':
                 tag = 'cigar/cigarillo'
             else:
                 tag = j.lower().strip()
