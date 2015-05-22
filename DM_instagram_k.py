@@ -20,13 +20,13 @@ def getData(filename):
             dataLine = extract(line.decode('utf-8', 'ignore'), fields)
             if dataLine is not None:
                 count = 1
-                if isinstance(dataLine['activityobjectcategory'], list):
-                    for i in dataLine['activityobjectcategory']:
-                        dataLine['activityobjectcategory' + str(count)] = i
-                        count += 1
-                else:
-                    dataLine['activityobjectcategory1'] = dataLine['activityobjectcategory']
-                del(dataLine['activityobjectcategory'])
+                # if isinstance(dataLine['activityobjectcategory'], list):
+                #     for i in dataLine['activityobjectcategory']:
+                #         dataLine['activityobjectcategory' + str(count)] = i
+                #         count += 1
+                # else:
+                #     dataLine['activityobjectcategory1'] = dataLine['activityobjectcategory']
+                # del(dataLine['activityobjectcategory'])
                 data.append(dataLine)
             line = ""
     f.close()
@@ -98,6 +98,47 @@ def extract(line, fields):
                 # print 'Direct None'
                 return None
     return data
+
+
+def populateMongo(conf, inputTweet):
+    host = conf.get('mongo', 'host')
+    port = int(conf.get('mongo', 'port'))
+    username = conf.get('mongo', 'username')
+    password = conf.get('mongo', 'password')
+    authDB = conf.get('mongo', 'authDB')
+    mongoClient = MongoClient(host, port)
+    mongoClient.twitter.authenticate(username, password, source=authDB)
+    db = mongoClient['instagram']
+    date = inputTweet['sourceupdated'].split('T')[0]
+    collName = ''.join(date.split('-')[:2])
+    collection = db[collName]
+    collection.ensure_index([("mrv", ASCENDING)])
+
+    with open(conf_path.format('insta_fieldsToMongo.json')) as fieldsFile:
+        fieldsToMongo = json.loads(fieldsFile.read())
+
+    newRecord = {}
+    for (key, val) in inputTweet.iteritems():
+        newKey = fieldsToMongo[key]
+        newRecord[newKey] = val
+
+    with open(conf_path.format('insta_rules.json')) as rulesFile:
+        rules_mapping = json.loads(rulesFile.read())
+
+    ruleIndex = []
+    for rule in inputTweet['mrv']:
+        ruleIndex.append(rules_mapping[rule])
+    newRecord['mrv'] = ruleIndex
+
+    try:
+        collection.insert(newRecord)
+    except errors.DuplicateKeyError:
+        oldRecord = collection.find({'_id': newRecord['_id']})
+        for i in oldRecord:
+            mrv = set(newRecord['mrv'] + i['mrv'])
+        newRecord['mrv'] = list(mrv)
+        collection.save(newRecord)
+    
 
 
 def backfillRawFiles(backfillData, rawFile):
@@ -198,10 +239,12 @@ if __name__ == "__main__":
             if len(i.split('_')) == 4:
                 print i
                 data = getData(src + i)
-                df = pd.DataFrame(data)
                 fileName = dest + i.split('.')[0] + '.csv'
-                with open(fileName, 'w') as csvfile:
-                    df.to_csv(csvfile, sep=',', index=False)
+                for i in data:
+                    populateMongo(conf, i)
+                # df = pd.DataFrame(data)
+                # with open(fileName, 'w') as csvfile:
+                #     df.to_csv(csvfile, sep=',', index=False)
     elif op == "backfill":
         src = conf.get('instagram', 'backfill_path')
         raw_file = conf.get("instagram", "prod_backfill_src")
