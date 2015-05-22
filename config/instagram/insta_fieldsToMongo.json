@@ -1,0 +1,19 @@
+{
+    "id": "_id",
+    "updated": "u",
+    "published": "p",
+    "title": "t",
+    "linkalternate": "la",
+    "linkself": "ls",
+    "linkenclosure": "le",
+    "linkpreview": "lp",
+    "sourceupdated": "su",
+    "activityobjectactivityobjecttype": "aot",
+    "activityobjectcontent": "aoc",
+    "activityobjectgeorsspoint": "aogp",
+    "activityobjectcategoryterm": "aoct",
+    "activityobjectgnipstatistics": "aogs",
+    "authorname": "an",
+    "authoruri": "au",
+    "gnipmatchingrulesgnipmatchingrule": "mrv"
+}
