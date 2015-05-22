@@ -25,6 +25,7 @@ class TwitterMongoUploader(object):
             _rules: Dictionary that provides Rule to Rule Index mapping
             _max_rule: Current largest Rule Index
             _tags: Dictionary that provides Tag to Tag Index mapping
+            _max_tag: Current largest Tag Index
             _rules_tags: Dictionary that provides Rule to Tag mapping
             fields: List of fields that we keep from raw JSON and their corresponding mapping to new field names
             mongoConf: Mapping of fields from generated keys to optimized keys for Mongo Collections
@@ -44,27 +45,28 @@ class TwitterMongoUploader(object):
 
         self._conf = ConfigParser.ConfigParser()
         self._conf.read('config\\config.cfg')
-        conf_path = self._conf.get('conf', 'conf_path')
         
         rules_file = open(self._conf.get('twitter', 'rules'))
         self._rules = json.loads(rules_file.read())
-        self._max_rule = self._rules[sorted(self._rules, key = lambda r: r[1])[-1]]
-        self._max_rule = max(v for k, v in self._rules.iteritems())
         rules_file.close()
+
+        self._max_rule = max(v for k, v in self._rules.iteritems())
 
         tags_file = open(self._conf.get('twitter', 'tags'))
         self._tags = json.loads(tags_file.read())
         tags_file.close()
 
+        self._max_tag = max(v for k, v in self._tags.iteritems())
+
         rules_tags_file = open(self._conf.get('twitter', 'rules_tags'))
         self._rules_tags = json.loads(rules_tags_file.read())
         rules_tags_file.close()
 
-        self.fields = ConfigParser.ConfigParser()
-        self.fields.read(conf_path.format('fields.cfg'))
+        with open(self._conf.get('fields')) as fieldsFile:
+            self.fields = json.loads(fieldsFile.read())
 
-        self.mongoConf = ConfigParser.ConfigParser()
-        self.mongoConf.read(conf_path.format('fieldsToMongo.cfg'))
+        with open(self._conf.get('fields_mongo')) as fieldsToMongoFile:
+            self.mongoConf = json.loads(fieldsToMongoFile)
         
         self.src = self._conf.get('twitter', 'prod_src_path').format(self.year + self.monthDict[self.month])
         self.dest = self._conf.get('twitter', 'prod_dest_path').format(self.year + self.monthDict[self.month], 'CSVRULES')
@@ -134,15 +136,36 @@ class TwitterMongoUploader(object):
                 self._rules[line_json['value']] = self._max_rule
                 # Map the new Rule to its corresponding Tag from the line in the file
                 self._rules_tags[line_json['value']] = line_json['tag']
+            # If the tag is not already in our set of tags
+            if line_json['tag'] not in self._tags:
+                # Increment the current maximum Tag Index
+                self._max_tag += 1
+                # Set the new maximum Tag Index for the new Tag
+                self._tags[line_json['tag'].lower()] = self._max_tag
         
         master_rules_file.close()
 
-        # Once the file is fully iterated through, dump the _rules and _rules_tags dict to their corresponding files
-        with open('config\\tw_rules.json', 'w') as rule_file:
+        # Once the file is fully iterated through, dump the _rules and _rules_tags and _tags dict to their corresponding files
+        with open(self._conf('rules'), 'w') as rule_file:
             rule_file.write(json.dumps(self._rules))
 
-        with open('config\\tw_rules_tags.json', 'w') as rule_tag_file:
+        with open(self._conf('rules_tags'), 'w') as rule_tag_file:
             rule_tag_file.write(json.dumps(self._rules_tags))
+
+        with open(self._conf('tags'), 'w') as tag_file:
+            tag_file.write(json.dumps(self._tags))
+
+
+    # Function to pretty print a json object into a given file name
+    def prettyPrint(jsonObj, jsonFileName):
+        # Obtain a list of tuples sorted by the val
+        sortedJsonObj = sorted((v, k) for (k, v) in jsonObj.iteritems())
+        # Iterate through the list of tuples and print the data as required
+        with open(jsonFileName, 'w') as jsonFile:
+            jsonFile.write('{\n')
+            for i in sortedJsonObj:
+                jsonFile.write('\t' + i[1] + ': ' + i[0] + ',\n')
+            jsonFile.write('}')
 
 
     # Method to go over individual files in the directory to go through the data to upload to Mongo
@@ -220,8 +243,8 @@ class TwitterMongoUploader(object):
 
     # Method to map json key name to user defined key name
     def replaceKey(self, key):
-        if self.fields.has_option("fields", key):
-            return self.fields.get("fields", key)
+        if key in self.fields:
+            return self.fields[key]
         else:
             return ""
 
@@ -352,7 +375,7 @@ class TwitterMongoUploader(object):
         # Iterate through each of the keys in the original Dict
         for (key, val) in inputTweet.iteritems():
             # Get the new translated key from the mongoConf dict
-            newKey = self.mongoConf.get('fields', key)
+            newKey = self.mongoConf[key]
             # create a new with translated field names to upload onto the corresponding Mongo Collection
             newRecord[newKey] = val
 
