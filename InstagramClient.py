@@ -34,7 +34,7 @@ class InstagramClient(object):
     """
 
 
-        def __init__(self, year, month):
+    def __init__(self, year, month):
         self.year = str(year)
         self.month = str(month).zfill(2)
         
@@ -63,9 +63,9 @@ class InstagramClient(object):
         with open(self._conf.get('instagram', 'fields_mongo')) as fieldsToMongoFile:
             self.mongoConf = json.loads(fieldsToMongoFile.read())
         
-        self.src = self._conf.get('instagram', 'src_path').format(self.year + self.monthDict[self.month])
-        self.dest = self._conf.get('instagram', 'dest_path').format(self.year + self.monthDict[self.month], 'CSVRULES')
-        self.parts = self._conf.get('instagram', '')
+        self.src = self._conf.get('instagram', 'src_path').format(self.year, self.month)
+        self.dest = self._conf.get('instagram', 'dest_path').format(self.year, self.month)
+        self.parts = self._conf.get('instagram', 'src_parts_path')
 
 
         host = self._conf.get('mongo', 'host')
@@ -80,34 +80,34 @@ class InstagramClient(object):
 
 
     def aggregate(self):
-    for i in range(1, 31):
-        dayPath = self.parts.format(self.year, self.month, str(i).zfill(2))
-        try:
-            fileList = os.listdir(dayPath)
-        except WindowsError, IOError:
-            continue
-        fileName = ''
-        groupFile = None
-        for i in fileList:
-            if 'instagram_' in i and '.xml' in i:
-                if groupFile is None:
-                    fileName = "_".join(i.split('-')[:-2])
-                    groupFile = open(self.src + fileName + '.xml', 'w')
-                with open(dayPath + i) as f:
-                    groupFile.write(f.read())
-        groupFile.close()
+        for i in range(1, 31):
+            dayPath = self.parts.format(self.year, self.month, str(i).zfill(2))
+            try:
+                fileList = os.listdir(dayPath)
+            except WindowsError, IOError:
+                continue
+            fileName = ''
+            groupFile = None
+            for i in fileList:
+                if 'instagram_' in i and '.xml' in i:
+                    if groupFile is None:
+                        fileName = "_".join(i.split('-')[:-2])
+                        groupFile = open(self.src + fileName + '.xml', 'w')
+                    with open(dayPath + i) as f:
+                        groupFile.write(f.read())
+            groupFile.close()
 
 
     def iterateOverFiles(self):
-        mkdir_p(dest)
+        mkdir_p(self.dest)
         fileList = os.listdir(self.src)
         for i in fileList:
             if len(i.split('_')) == 4:
                 print i
-                data = getData(self.src + i)
+                data = self.getData(self.src + i)
                 fileName = dest + i.split('.')[0] + '.csv'
                 for i in data:
-                    populateMongo(i)
+                    self.populateMongo(i)
 
 
 
@@ -118,7 +118,7 @@ class InstagramClient(object):
         for i in f.readlines():
             line += i
             if '</entry>' in i:
-                dataLine = extract(line.decode('utf-8', 'ignore'))
+                dataLine = self.extract(line.decode('utf-8', 'ignore'))
                 if dataLine is not None:
                     count = 1
                     # if isinstance(dataLine['activityobjectcategory'], list):
@@ -270,7 +270,7 @@ class InstagramClient(object):
         for i in f.readlines():
             line += i
             if '</entry>' in i:
-                dataLine = extract(line, fields)
+                dataLine = self.extract(line, fields)
                 if dataLine is not None:
                     date = dataLine['sourceupdated'].split('T')[0]
                     if date in processedData:
