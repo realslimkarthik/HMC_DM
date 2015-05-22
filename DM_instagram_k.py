@@ -4,12 +4,14 @@ import os
 import json
 import pandas as pd
 import re
+import datetime
 from bs4 import BeautifulSoup
+from pymongo import MongoClient, errors, ASCENDING
 from utility import mkdir_p
 
 def getData(filename):
     f = open(filename)
-    fields_file = open(conf_path.format("insta_fields.json"))
+    fields_file = open(conf.get('instagram', 'fields'))
     fields = json.loads(fields_file.read())
     fields_file.close()
     data = []
@@ -87,6 +89,12 @@ def extract(line, fields):
                 newKey = re.sub('[:-]', '', newKey)
                 item = re.sub('[\r\n]', ' ', item)
                 data[newKey] = item
+        elif isinstance(val, str):
+            item = [i.get_text() for i in part_xml.find_all(val)]
+            print item
+            newKey = key
+            newKey = re.sub('[:-]', '', newKey)
+            data[newKey] = [re.sub('[\r\n]', ' ', i) for i in item]
         else:
             try:
                 item = part_xml.get_text().strip()
@@ -114,7 +122,7 @@ def populateMongo(conf, inputTweet):
     collection = db[collName]
     collection.ensure_index([("mrv", ASCENDING)])
 
-    with open(conf_path.format('insta_fieldsToMongo.json')) as fieldsFile:
+    with open(conf.get('instagram', 'fields_mongo')) as fieldsFile:
         fieldsToMongo = json.loads(fieldsFile.read())
 
     newRecord = {}
@@ -122,13 +130,25 @@ def populateMongo(conf, inputTweet):
         newKey = fieldsToMongo[key]
         newRecord[newKey] = val
 
-    with open(conf_path.format('insta_rules.json')) as rulesFile:
+    with open(conf.get('instagram', 'rules')) as rulesFile:
         rules_mapping = json.loads(rulesFile.read())
 
+    with open(conf.get('instagram', 'rules_tags')) as rules_tagsFile:
+        rules_tags_mapping = json.loads(rules_tagsFile.read())
+
+    with open(conf.get('instagram', 'tags')) as tagsFile:
+        tags_mapping = json.loads(tagsFile.read())
+
     ruleIndex = []
-    for rule in inputTweet['mrv']:
+    tagIndex = set()
+    print newRecord['mrv']
+    for r in newRecord['mrv']:
+        rule = r.lower().strip()
         ruleIndex.append(rules_mapping[rule])
+        tag = rules_tags_mapping[rule]
+        tagIndex.add(tags_mapping[tag])
     newRecord['mrv'] = ruleIndex
+    newRecord['mrt'] = list(tagIndex)
 
     try:
         collection.insert(newRecord)
