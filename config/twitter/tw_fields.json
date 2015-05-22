@@ -60,5 +60,5 @@
     "gnip_profileLocations_address_locality": "gniploclocality",
     "gnip_profileLocations_geo_coordinates": "gniplocgeocoordinates",
     "gnip_urls_url": "gnipurl",
-    "gnip_urls_expanded_url": "gnipexpandedurl",
+    "gnip_urls_expanded_url": "gnipexpandedurl"
 }
