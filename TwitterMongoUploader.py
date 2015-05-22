@@ -184,7 +184,7 @@ class TwitterMongoUploader(object):
                     self.dictFromTwitterJSON(self.src + j, self.collName[0])
                 elif fileDate > 5 and  fileDate < 11:
                     self.dictFromTwitterJSON(self.src + j, self.collName[1])
-                elif fileDate > 13 and fileDate < 16:
+                elif fileDate > 10 and fileDate < 16:
                     self.dictFromTwitterJSON(self.src + j, self.collName[2])
                 elif fileDate > 15 and fileDate < 21:
                     self.dictFromTwitterJSON(self.src + j, self.collName[3])
