@@ -1,17 +1,1 @@
-{
-"antismoking": "1",
-"cdc tips ii": "2",
-"cessation product": "3",
-"chew": "4",
-"cigar/cigarillo": "5",
-"cigarette": "6",
-"ecig": "7",
-"general": "8",
-"hookah": "9",
-"marijuana": "10",
-"pipe": "11",
-"state public health": "12",
-"legacy campaign": "13",
-"goldilocks": "14",
-"johnoliver": "15"
-}
+{"chew": 4, "goldilocks": 14, "ecig": 7, "antismoking": 1, "legacy campaign": 13, "marijuana": 10, "general": 8, "pipe": 11, "cigarette": 6, "cdc tips ii": 2, "hookah": 9, "state public health": 12, "cessation product": 3, "ca ecig": 16, "johnoliver": 15, "cigar/cigarillo": 5}
