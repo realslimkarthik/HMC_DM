@@ -1,0 +1,49 @@
+{
+    "id": 1,
+    "updated": 1,
+    "published": 1,
+    "title": 1,
+    "link": {
+        "alternate": 1
+    },
+    "link": {
+        "self": 1
+    },
+    "link": {
+        "enclosure": 1
+    },
+    "link": {
+        "preview": 1
+    },
+    "source": [
+        "updated",
+    ],
+    "activity:object": [
+        {
+            "activity:object-type": 1
+        },
+        {
+            "content": 1
+        },
+        {
+            "georss:point": 1
+        },
+        {
+            "category": {
+                "term": 1
+            }
+        },
+        {
+            "gnip:statistics": {
+                "favoritecount": 1
+            }
+        }
+    ],
+    "author": [
+        "name",
+        "uri"
+    ],
+    "gnip:matching_rules": [
+        "gnip:matching_rule"
+    ]
+}

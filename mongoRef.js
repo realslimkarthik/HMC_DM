@@ -1,13 +1,15 @@
 // Commonly used MongoDB queries:
 
+mongo -h 10.177.54.27/twitter -u HMCUser -authenticationDatabase admin -p Reader
+
 // Query for getting data after a date:
 db.coll_name.find({'pT': {$gte: new Date('Sep 1, 2014')}})
 
-// Query for finding all tweets that have a rule 22 (from:uwctri):
-db.coll_name.find({'mrv': {'$in': [22]}})
+// Query for finding all tweets that have a rule 22 and/or 23 (from:uwctri, from:venomocity):
+db.coll_name.find({'mrv': {'$in': [22, 23]}})
 
 // Query for finding all tweets that have a tag 7 (Ecig):
-db.coll_name.find({'mrtI': {'$in': [7]}})
+db.coll_name.find({'mrt': {'$in': [7]}})
 // fields
 
 // _id     =   Idpost
