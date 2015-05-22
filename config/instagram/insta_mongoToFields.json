@@ -1,0 +1,19 @@
+{
+    "_id": "id",
+    "u": "updated",
+    "p": "published",
+    "t": "title",
+    "la": "linkalternate",
+    "ls": "linkself",
+    "le": "linkenclosure",
+    "lp": "linkpreview",
+    "su": "sourceupdated",
+    "aot": "actobjactobjtype",
+    "aoc": "actobjcontent",
+    "aogp": "actobjgeopoint",
+    "aoct": "actobjcategoryterm",
+    "aogs": "actobjfavcount",
+    "an": "authname",
+    "au": "authuri",
+    "mrv": "matchingrulesvalue"
+}

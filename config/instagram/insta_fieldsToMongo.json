@@ -11,9 +11,9 @@
     "activityobjectactivityobjecttype": "aot",
     "activityobjectcontent": "aoc",
     "activityobjectgeorsspoint": "aogp",
-    "activityobjectcategoryterm": "aoct",
+    "activityobjectcategory": "aoct",
     "activityobjectgnipstatistics": "aogs",
     "authorname": "an",
     "authoruri": "au",
-    "gnipmatchingrulesgnipmatchingrule": "mrv"
+    "gnipmatching_rules": "mrv"
 }

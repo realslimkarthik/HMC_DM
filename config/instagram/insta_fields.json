@@ -16,7 +16,7 @@
         "preview": 1
     },
     "source": [
-        "updated",
+        "updated"
     ],
     "activity:object": [
         {
@@ -43,7 +43,5 @@
         "name",
         "uri"
     ],
-    "gnip:matching_rules": [
-        "gnip:matching_rule"
-    ]
+    "gnip:matching_rules": "gnip:matching_rule"
 }
