@@ -1,0 +1,9 @@
+{
+    "antismoking": 1,
+    "cigar/cigarillo": 5,
+    "cigarette": 6,
+    "ecig": 7,
+    "general": 8,
+    "hookah": 9,
+    "legacy campaign": 13
+}
