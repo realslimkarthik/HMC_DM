@@ -62,11 +62,11 @@ class TwitterMongoUploader(object):
         self._rules_tags = json.loads(rules_tags_file.read())
         rules_tags_file.close()
 
-        with open(self._conf.get('fields')) as fieldsFile:
+        with open(self._conf.get('twitter', 'fields')) as fieldsFile:
             self.fields = json.loads(fieldsFile.read())
 
-        with open(self._conf.get('fields_mongo')) as fieldsToMongoFile:
-            self.mongoConf = json.loads(fieldsToMongoFile)
+        with open(self._conf.get('twitter', 'fields_mongo')) as fieldsToMongoFile:
+            self.mongoConf = json.loads(fieldsToMongoFile.read())
         
         self.src = self._conf.get('twitter', 'prod_src_path').format(self.year + self.monthDict[self.month])
         self.dest = self._conf.get('twitter', 'prod_dest_path').format(self.year + self.monthDict[self.month], 'CSVRULES')
@@ -136,8 +136,9 @@ class TwitterMongoUploader(object):
                 self._rules[line_json['value']] = self._max_rule
                 # Map the new Rule to its corresponding Tag from the line in the file
                 self._rules_tags[line_json['value']] = line_json['tag']
+            
             # If the tag is not already in our set of tags
-            if line_json['tag'] not in self._tags:
+            if line_json['tag'].lower() not in self._tags:
                 # Increment the current maximum Tag Index
                 self._max_tag += 1
                 # Set the new maximum Tag Index for the new Tag
@@ -146,13 +147,13 @@ class TwitterMongoUploader(object):
         master_rules_file.close()
 
         # Once the file is fully iterated through, dump the _rules and _rules_tags and _tags dict to their corresponding files
-        with open(self._conf('rules'), 'w') as rule_file:
+        with open(self._conf.get('twitter', 'rules'), 'w') as rule_file:
             rule_file.write(json.dumps(self._rules))
 
-        with open(self._conf('rules_tags'), 'w') as rule_tag_file:
+        with open(self._conf.get('twitter', 'rules_tags'), 'w') as rule_tag_file:
             rule_tag_file.write(json.dumps(self._rules_tags))
 
-        with open(self._conf('tags'), 'w') as tag_file:
+        with open(self._conf.get('twitter', 'tags'), 'w') as tag_file:
             tag_file.write(json.dumps(self._tags))
 
 
