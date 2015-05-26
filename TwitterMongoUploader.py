@@ -236,7 +236,7 @@ class TwitterMongoUploader(object):
                         
         #Print the number of tweets processed
         jsonfile.close()
-        print "Finished populating collection ", collName
+        print "Finished populating json file ", jsonfilename
 
 
     # Method to map json key name to user defined key name
