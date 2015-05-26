@@ -212,7 +212,7 @@ class InstagramClient(object):
         collName = ''.join(date.split('-')[:2])
         collection = self.db[collName]
         collection.ensure_index([("mrv", ASCENDING)])
-        collection.ensure_index(["mrt", ASCENDING])
+        collection.ensure_index([("mrt", ASCENDING)])
 
         with open(self._conf.get('instagram', 'fields_mongo')) as fieldsFile:
             fieldsToMongo = json.loads(fieldsFile.read())
