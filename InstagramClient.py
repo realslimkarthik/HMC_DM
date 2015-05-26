@@ -34,7 +34,7 @@ class InstagramClient(object):
     """
 
 
-    def __init__(self, year, month):
+    def __init__(self, year, month, server):
         self.year = str(year)
         self.month = str(month).zfill(2)
         
@@ -63,9 +63,14 @@ class InstagramClient(object):
         with open(self._conf.get('instagram', 'fields_mongo')) as fieldsToMongoFile:
             self.mongoConf = json.loads(fieldsToMongoFile.read())
         
-        self.src = self._conf.get('instagram', 'src_path').format(self.year, self.month)
-        self.dest = self._conf.get('instagram', 'dest_path').format(self.year, self.month)
-        self.parts = self._conf.get('instagram', 'src_parts_path')
+        if server:
+            self.src = self._conf.get('instagram', 'prod_src_path').format(self.year, self.month)
+            self.dest = self._conf.get('instagram', 'prod_dest_path').format(self.year, self.month)
+            self.parts = self._conf.get('instagram', 'prod_src_parts_path')
+        else:
+            self.src = self._conf.get('instagram', 'src_path').format(self.year, self.month)
+            self.dest = self._conf.get('instagram', 'dest_path').format(self.year, self.month)
+            self.parts = self._conf.get('instagram', 'src_parts_path')
 
 
         host = self._conf.get('mongo', 'host')
