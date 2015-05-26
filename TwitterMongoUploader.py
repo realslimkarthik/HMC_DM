@@ -20,7 +20,6 @@ class TwitterMongoUploader(object):
         Attributes:
             year: Year in which the data was fetched
             month: Month in which data was fetched
-            monthDict: Mapping of abbreviated month to month index
             _conf: ConfigParser object for some control information
             _rules: Dictionary that provides Rule to Rule Index mapping
             _max_rule: Current largest Rule Index
@@ -39,9 +38,7 @@ class TwitterMongoUploader(object):
 
     def __init__(self, year, month):
         self.year = str(year)
-        self.month = month.lower()
-        
-        self.monthDict = {v.lower(): str(k).zfill(2) for (k, v) in enumerate(calendar.month_abbr)}
+        self.month = str(month).zfill(2)
 
         self._conf = ConfigParser.ConfigParser()
         self._conf.read('config\\config.cfg')
@@ -68,8 +65,8 @@ class TwitterMongoUploader(object):
         with open(self._conf.get('twitter', 'fields_mongo')) as fieldsToMongoFile:
             self.mongoConf = json.loads(fieldsToMongoFile.read())
         
-        self.src = self._conf.get('twitter', 'prod_src_path').format(self.year + self.monthDict[self.month])
-        self.dest = self._conf.get('twitter', 'prod_dest_path').format(self.year + self.monthDict[self.month], 'CSVRULES')
+        self.src = self._conf.get('twitter', 'prod_src_path').format(self.year + self.month)
+        self.dest = self._conf.get('twitter', 'prod_dest_path').format(self.year + self.month, 'CSVRULES')
 
 
         host = self._conf.get('mongo', 'host')
@@ -81,7 +78,7 @@ class TwitterMongoUploader(object):
         mongoClient.twitter.authenticate(username, password, source=authDB)
         self.db = mongoClient['twitter']
 
-        self.collName = tuple(self.month.title() + self.year[2:] + '_' + str(i) for i in range(1, 7))
+        self.collName = tuple(self.year + self.month + '_' + str(i) for i in range(1, 7))
         logs = self._conf.get("conf", "prod_log_path")
         logging.basicConfig(level=logging.INFO,
                             filename=logs.format('prodUpload' + self.collName[0].split('_')[0] +'.log'), 
