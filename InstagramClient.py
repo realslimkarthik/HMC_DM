@@ -225,7 +225,6 @@ class InstagramClient(object):
 
         ruleIndex = []
         tagIndex = set()
-        print newRecord['mrv']
         for r in newRecord['mrv']:
             rule = r.lower()
             ruleIndex.append(self._rules[rule])
