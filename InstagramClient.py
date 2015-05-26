@@ -208,7 +208,6 @@ class InstagramClient(object):
 
 
     def populateMongo(self, inputTweet):
-        self.db = mongoClient['instagram']
         date = inputTweet['sourceupdated'].split('T')[0]
         collName = ''.join(date.split('-')[:2])
         collection = self.db[collName]
