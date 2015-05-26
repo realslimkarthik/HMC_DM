@@ -6,6 +6,18 @@ import sys
 if __name__ == "__main__":
     year = sys.argv[1]
     month = sys.argv[2]
-    uploader = Tmu.TwitterMongoUploader(year, month)
+    try:
+        server = sys.argv[3]
+    except IndexError:
+        server = True
+        
+    try:
+        proj = sys.argv[4]
+    except IndexError:
+        proj = ""
+
+    if server != True:
+        server = False
+    uploader = Tmu.TwitterMongoUploader(year, month, server, proj)
     uploader.updateRules()
     uploader.iterateOverFiles()
