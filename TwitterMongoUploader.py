@@ -18,27 +18,30 @@ class TwitterMongoUploader(object):
         Class that handles uploading data into Mongo, Object has the following properties:
 
         Attributes:
-            year: Year in which the data was fetched
-            month: Month in which data was fetched
+            _server: Denotes if the class is being used on the server or not
+            _year: Year in which the data was fetched
+            _month: Month in which data was fetched
+            _proj: The specific name of the project whose files are being uploaded (mainly for path modification)
             _conf: ConfigParser object for some control information
             _rules: Dictionary that provides Rule to Rule Index mapping
             _max_rule: Current largest Rule Index
             _tags: Dictionary that provides Tag to Tag Index mapping
             _max_tag: Current largest Tag Index
             _rules_tags: Dictionary that provides Rule to Tag mapping
-            fields: List of fields that we keep from raw JSON and their corresponding mapping to new field names
-            mongoConf: Mapping of fields from generated keys to optimized keys for Mongo Collections
-            src: Path to where the input Source files are to be read from
-            dest: Path to the Destination where the output files are to be written
-            db: MongoDB Database in which to write into/read from
-            collName: Name(s) of the collection to which data is to be uploaded
+            _db: MongoDB Database in which to write into/read from
+            _fields: List of fields that we keep from raw JSON and their corresponding mapping to new field names
+            _mongoConf: Mapping of fields from generated keys to optimized keys for Mongo Collections
+            _src: Path to where the input Source files are to be read from
+            _dest: Path to the Destination where the output files are to be written
 
     """
 
 
     def __init__(self, year, month, server, proj):
-        self.year = str(year)
-        self.month = str(month).zfill(2)
+        self._server = server
+        self._year = str(year)
+        self._month = str(month).zfill(2)
+        self._proj = proj
 
         self._conf = ConfigParser.ConfigParser()
         self._conf.read('config\\config.cfg')
@@ -60,10 +63,10 @@ class TwitterMongoUploader(object):
         rules_tags_file.close()
 
         with open(self._conf.get('twitter', 'fields')) as fieldsFile:
-            self.fields = json.loads(fieldsFile.read())
+            self._fields = json.loads(fieldsFile.read())
 
         with open(self._conf.get('twitter', 'fields_mongo')) as fieldsToMongoFile:
-            self.mongoConf = json.loads(fieldsToMongoFile.read())
+            self._mongoConf = json.loads(fieldsToMongoFile.read())
         
         host = self._conf.get('mongo', 'host')
         port = int(self._conf.get('mongo', 'port'))
@@ -72,30 +75,107 @@ class TwitterMongoUploader(object):
         authDB = self._conf.get('mongo', 'authDB')
         mongoClient = MongoClient(host, port)
         mongoClient.twitter.authenticate(username, password, source=authDB)
-        self.db = mongoClient['twitter']
+        self._db = mongoClient['twitter']
 
-        if proj == "":
-            if server:
-                self.src = self._conf.get('twitter', 'prod_src_path').format(self.year + self.month)
-                self.dest = self._conf.get('twitter', 'prod_dest_path').format(self.year + self.month, 'CSVRULES')
-            else:
-                self.src = self._conf.get('twitter', 'src_path').format(self.year + self.month)
-                self.dest = self._conf.get('twitter', 'dest_path').format(self.year + self.month, 'CSVRULES')
-        else:
-            if server:
-                self.src = self._conf.get('twitter', 'prod_spl_src_path').format(self.year + self.month, proj)
-                self.dest = self._conf.get('twitter', 'prod_spl_dest_path').format(self.year + self.month, proj, 'CSVRULES')
-            else:
-                self.src = self._conf.get('twitter', 'spl_src_path').format(self.year + self.month, proj)
-                self.dest = self._conf.get('twitter', 'spl_dest_path').format(self.year + self.month, proj, 'CSVRULES')
+        self._updatePaths()
 
-
-
-        self.collName = tuple(self.year + self.month + '_' + str(i) for i in range(1, 7))
         logs = self._conf.get("conf", "prod_log_path")
         logging.basicConfig(level=logging.INFO,
-                            filename=logs.format('prodUpload' + self.collName[0].split('_')[0] +'.log'),
+                            filename=logs.format('prodUpload' + self._year + self._month +'.log'),
                             format='%(asctime)s : %(levelname)s - %(message)s')
+
+
+    @property
+    def server(self):
+        return self._server
+
+    @property
+    def year(self):
+        return self._year
+
+    @year.setter
+    def year(self, yr):
+        self._year = yr
+        self._updatePaths
+
+    @property
+    def month(self):
+        return self._month
+
+    @month.setter
+    def month(self, mon):
+        self._month = mon
+        self._updatePaths
+    
+    @property
+    def proj(self):
+        return self._proj
+
+    @proj.setter
+    def project(self, project):
+        self._proj = project
+        self._updatePaths
+    
+    @property
+    def conf(self):
+        return self._conf
+
+    @property
+    def rules(self):
+        return self._rules
+
+    @property
+    def max_rule(self):
+        return self._max_rule
+
+    @property
+    def tags(self):
+        return self._tags
+
+    @property
+    def max_tag(self):
+        return self._max_tag
+    
+    @property
+    def rules_tags(self):
+        return self._rules_tags
+
+    @property
+    def db(self):
+        return self._db
+
+    @property
+    def fields(self):
+        return self._fields
+    
+    @property
+    def mongoConf(self):
+        return self._mongoConf
+    
+    @property
+    def src(self):
+        return self._src
+
+    @property
+    def dest(self):
+        return self._dest
+        
+    
+    def _updatePaths(self):
+        if self._proj == "":
+            if self._server:
+                self._src = self._conf.get('twitter', 'prod_src_path').format(self._year + self.month)
+                self._dest = self._conf.get('twitter', 'prod_dest_path').format(self._year + self.month, 'CSVRULES')
+            else:
+                self._src = self._conf.get('twitter', 'src_path').format(self._year + self.month)
+                self._dest = self._conf.get('twitter', 'dest_path').format(self._year + self.month, 'CSVRULES')
+        else:
+            if self._server:
+                self._src = self._conf.get('twitter', 'prod_spl_src_path').format(self._year + self.month, self._proj)
+                self._dest = self._conf.get('twitter', 'prod_spl_dest_path').format(self._year + self.month, self._proj, 'CSVRULES')
+            else:
+                self._src = self._conf.get('twitter', 'spl_src_path').format(self._year + self.month, self._proj)
+                self._dest = self._conf.get('twitter', 'spl_dest_path').format(self._year + self.month, self._proj, 'CSVRULES')
 
 
     def fixByMonth(self):
@@ -204,18 +284,18 @@ class TwitterMongoUploader(object):
         for line in jsonfile:
             myline = string.strip(line)
             if myline != "":
-                #For each tweet in the file, decode the weird characters without complaining
+                # For each tweet in the file, decode the weird characters without complaining
                 myline = myline.decode("utf-8", "ignore")
                 
-                #Remove new lines from within the tweet
+                # Remove new lines from within the tweet
                 myline = myline.replace('\\n', ' ')
-                #Remove carriage returns from within the tweet
+                # Remove carriage returns from within the tweet
                 myline = myline.replace('\\r', ' ')
-                #Remove problematic \s
+                # Remove problematic \s
                 myline = myline.replace('\\\\', ' ')
                 myline = myline.replace('\\ ', ' ')
 
-                #Create a dictionary using the JSON processor
+                # Create a dictionary using the JSON processor
                 try:
                     tweet = json.loads(myline)
                 except ValueError as e:
@@ -224,18 +304,19 @@ class TwitterMongoUploader(object):
                     else:
                         print e
                 else:
-                    #Find the summary count
+                    # Find the summary count
                     if "Replay Request Completed" in myline:
                         print tweet['info']['activity_count']
                     else:
-                        #Create an empty dictionary
+                        # Create an empty dictionary
                         tweetObj = {}
-                        #Send the JSON dictionary, the empty dictionary, and the list of all keys
+                        # Send the JSON dictionary, the empty dictionary, and the list of all keys
                         self.extract(tweet, tweetObj, mykeys)
-                        #Add the output dictionary to the list
-                        self.populateMongo(tweetObj)
+                        mongoObj = self.preprocessFHTweet(tweet)
+                        # Add the output dictionary to the list
+                        self.populateMongo(mongoObj[0], mongoObj[1])
                         
-        #Print the number of tweets processed
+        # Print the number of tweets processed
         jsonfile.close()
         print "Finished populating json file ", jsonfilename
 
@@ -310,9 +391,8 @@ class TwitterMongoUploader(object):
                 for value in rawTweet:
                     self.extract(value, finalTweet, keys, nestedKey=nestedKey)
 
-    
-    # Method to input tweet into Mongo Collection
-    def populateMongo(self, inputTweet):
+
+    def preprocessFHTweet(self, inputTweet):
         date = inputTweet['postedTime'].split('T')[0].split('-')
         # Generate collection name from the date in the Tweet
         collName = ''.join(date[0:2]) + '_'
@@ -330,12 +410,7 @@ class TwitterMongoUploader(object):
         elif day > 25:
             collName += '6'
 
-        # Obtaining a reference to the MongoDB Collection
-        collection = self.db[collName]
-
-        collection.ensure_index([("mrv", ASCENDING)])
-        collection.ensure_index([("mrt", ASCENDING)])
-        #packing the entitieshtagstext field into an array
+        # Packing the entitieshtagstext field into an array
         if 'entitieshtagstext' not in inputTweet:
             inputTweet['entitieshtagstext'] = []
 
@@ -359,9 +434,27 @@ class TwitterMongoUploader(object):
         dateObj = datetime.fromtimestamp(time.mktime(timeStruct))
         inputTweet['postedTime'] = dateObj
 
+        newRecord = {}
+        # Iterate through each of the keys in the original Dict
+        for (key, val) in inputTweet.iteritems():
+            # Get the new translated key from the mongoConf dict
+            newKey = self.mongoConf[key]
+            # create a new with translated field names to upload onto the corresponding Mongo Collection
+            newRecord[newKey] = val
+        return(collName, newRecord)
+
+
+    # Method to input tweet into Mongo Collection
+    def populateMongo(self, collName, inputTweet):
+        # Obtaining a reference to the MongoDB Collection
+        collection = self._db[collName]
+
+        collection.ensure_index([("mrv", ASCENDING)])
+        collection.ensure_index([("mrt", ASCENDING)])
+        
         # Mapping the rules into integers from the rules
         ruleIndex = []
-        for j in inputTweet['matchingrulesvalue']:
+        for j in inputTweet['mrv']:
             try:
                 ruleIndex.append(int(self._rules[j.strip()]))
             except KeyError:
@@ -370,7 +463,7 @@ class TwitterMongoUploader(object):
                 print "Invalid rule fetched via GNIP with _id=" + inputTweet['_id'] + " with rule=" + j.strip()
 
         tagIndex = set()
-        for j in inputTweet['matchingrulestag']:
+        for j in inputTweet['mrt']:
             if j.strip() == 'lcc':
                 tag = 'cigar/cigarillo'
             else:
@@ -378,34 +471,25 @@ class TwitterMongoUploader(object):
             try:
                 tagIndex.add(int(self._tags[tag]))
             except KeyError:
-                logging.warning("Invalid tag fetched via GNIP with _id=" + inputTweet['_id'] + " with tag=" + j.strip())
+                logging.warning("Invalid tag fetched with _id=" + inputTweet['_id'] + " with tag=" + j.strip())
                 logging.debug(str(inputTweet))
-                print "Invalid tag fetched via GNIP with _id=" + inputTweet['_id'] + " with tag=" + j.strip()
+                print "Invalid tag fetched with _id=" + inputTweet['_id'] + " with tag=" + j.strip()
 
-        # Remove the former matchingrulesvalue key
-        inputTweet['matchingrulesvalue'] = ruleIndex
-        inputTweet['matchingrulestag'] = list(tagIndex)
-        # Initialize a new Dict to hold the record that needs to be uploaded into the corresponding Mongo Collection
-        newRecord = {}
-        
-        # Iterate through each of the keys in the original Dict
-        for (key, val) in inputTweet.iteritems():
-            # Get the new translated key from the mongoConf dict
-            newKey = self.mongoConf[key]
-            # create a new with translated field names to upload onto the corresponding Mongo Collection
-            newRecord[newKey] = val
+        # Remove the former mrv key
+        inputTweet['mrv'] = ruleIndex
+        inputTweet['mrt'] = list(tagIndex)
 
         # Attempt to insert record into the collection. If it fails, do an update
         try:
-            collection.insert(newRecord)
+            collection.insert(inputTweet)
         except errors.DuplicateKeyError:
-            oldRecord = collection.find({'_id': newRecord['_id']})
+            oldRecord = collection.find({'_id': inputTweet['_id']})
             for i in oldRecord:
-                mrv = set(newRecord['mrv'] + i['mrv'])
+                mrv = set(inputTweet['mrv'] + i['mrv'])
                 if i['mrt'] is not None:
-                    mrt = set(newRecord['mrt'] + i['mrt'])
+                    mrt = set(inputTweet['mrt'] + i['mrt'])
                 else:
-                    mrt = set(newRecord['mrt'])
-            newRecord['mrv'] = list(mrv)
-            newRecord['mrt'] = list(mrt)
-            collection.save(newRecord)
+                    mrt = set(inputTweet['mrt'])
+            inputTweet['mrv'] = list(mrv)
+            inputTweet['mrt'] = list(mrt)
+            collection.save(inputTweet)
