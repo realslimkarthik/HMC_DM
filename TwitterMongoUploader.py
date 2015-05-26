@@ -36,7 +36,7 @@ class TwitterMongoUploader(object):
     """
 
 
-    def __init__(self, year, month):
+    def __init__(self, year, month, server, proj):
         self.year = str(year)
         self.month = str(month).zfill(2)
 
@@ -65,10 +65,6 @@ class TwitterMongoUploader(object):
         with open(self._conf.get('twitter', 'fields_mongo')) as fieldsToMongoFile:
             self.mongoConf = json.loads(fieldsToMongoFile.read())
         
-        self.src = self._conf.get('twitter', 'prod_src_path').format(self.year + self.month)
-        self.dest = self._conf.get('twitter', 'prod_dest_path').format(self.year + self.month, 'CSVRULES')
-
-
         host = self._conf.get('mongo', 'host')
         port = int(self._conf.get('mongo', 'port'))
         username = self._conf.get('mongo', 'username')
@@ -78,10 +74,27 @@ class TwitterMongoUploader(object):
         mongoClient.twitter.authenticate(username, password, source=authDB)
         self.db = mongoClient['twitter']
 
+        if proj == "":
+            if server:
+                self.src = self._conf.get('twitter', 'prod_src_path').format(self.year + self.month)
+                self.dest = self._conf.get('twitter', 'prod_dest_path').format(self.year + self.month, 'CSVRULES')
+            else:
+                self.src = self._conf.get('twitter', 'src_path').format(self.year + self.month)
+                self.dest = self._conf.get('twitter', 'dest_path').format(self.year + self.month, 'CSVRULES')
+        else:
+            if server:
+                self.src = self._conf.get('twitter', 'prod_spl_src_path').format(self.year + self.month, proj)
+                self.dest = self._conf.get('twitter', 'prod_spl_dest_path').format(self.year + self.month, proj, 'CSVRULES')
+            else:
+                self.src = self._conf.get('twitter', 'spl_src_path').format(self.year + self.month, proj)
+                self.dest = self._conf.get('twitter', 'spl_dest_path').format(self.year + self.month, proj, 'CSVRULES')
+
+
+
         self.collName = tuple(self.year + self.month + '_' + str(i) for i in range(1, 7))
         logs = self._conf.get("conf", "prod_log_path")
         logging.basicConfig(level=logging.INFO,
-                            filename=logs.format('prodUpload' + self.collName[0].split('_')[0] +'.log'), 
+                            filename=logs.format('prodUpload' + self.collName[0].split('_')[0] +'.log'),
                             format='%(asctime)s : %(levelname)s - %(message)s')
 
 
@@ -176,23 +189,11 @@ class TwitterMongoUploader(object):
                 # Extract the date of the corresponding file from it's name
                 fileDate = int(j.split('_')[-1].split('.')[0])
                 logging.info("Started uploading " + j)
-                # Upload to the corresponding Mongo Collection based on the date extracted from the file
-                if fileDate < 6:
-                    self.dictFromTwitterJSON(self.src + j, self.collName[0])
-                elif fileDate > 5 and  fileDate < 11:
-                    self.dictFromTwitterJSON(self.src + j, self.collName[1])
-                elif fileDate > 10 and fileDate < 16:
-                    self.dictFromTwitterJSON(self.src + j, self.collName[2])
-                elif fileDate > 15 and fileDate < 21:
-                    self.dictFromTwitterJSON(self.src + j, self.collName[3])
-                elif fileDate > 20 and fileDate < 26:
-                    self.dictFromTwitterJSON(self.src + j, self.collName[4])
-                elif fileDate > 25 and fileDate < 32:
-                    self.dictFromTwitterJSON(self.src + j, self.collName[5])
+                self.dictFromTwitterJSON(self.src + j)
 
 
     # Generates an array of dicts from json files
-    def dictFromTwitterJSON(self, jsonfilename, collName, errorfile=None):
+    def dictFromTwitterJSON(self, jsonfilename, errorfile=None):
         jsonfile = open(jsonfilename, 'r')
         # List to hold a dictionary for each processed tweet
         tweetList = []
@@ -232,7 +233,7 @@ class TwitterMongoUploader(object):
                         #Send the JSON dictionary, the empty dictionary, and the list of all keys
                         self.extract(tweet, tweetObj, mykeys)
                         #Add the output dictionary to the list
-                        self.populateMongo(tweetObj, collName) # , configData)
+                        self.populateMongo(tweetObj)
                         
         #Print the number of tweets processed
         jsonfile.close()
@@ -311,7 +312,24 @@ class TwitterMongoUploader(object):
 
     
     # Method to input tweet into Mongo Collection
-    def populateMongo(self, inputTweet, collName):
+    def populateMongo(self, inputTweet):
+        date = inputTweet['postedTime'].split('T')[0].split('-')
+        # Generate collection name from the date in the Tweet
+        collName = ''.join(date[0:2]) + '_'
+        day = int(date[2])
+        if day < 6:
+            collName += '1'
+        elif day > 5 and  day < 11:
+            collName += '2'
+        elif day > 10 and day < 16:
+            collName += '3'
+        elif day > 15 and day < 21:
+            collName += '4'
+        elif day > 20 and day < 26:
+            collName += '5'
+        elif day > 25:
+            collName += '6'
+
         # Obtaining a reference to the MongoDB Collection
         collection = self.db[collName]
 
