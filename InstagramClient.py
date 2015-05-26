@@ -105,7 +105,7 @@ class InstagramClient(object):
             if len(i.split('_')) == 4:
                 print i
                 data = self.getData(self.src + i)
-                fileName = dest + i.split('.')[0] + '.csv'
+                # fileName = dest + i.split('.')[0] + '.csv'
                 for i in data:
                     self.populateMongo(i)
 
