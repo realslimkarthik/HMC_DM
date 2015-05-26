@@ -222,14 +222,14 @@ class InstagramClient(object):
             newKey = fieldsToMongo[key]
             newRecord[newKey] = val
 
-        ruleIndex = []
+        ruleIndex = set()
         tagIndex = set()
         for r in newRecord['mrv']:
             rule = r.lower()
-            ruleIndex.append(self._rules[rule])
+            ruleIndex.add(self._rules[rule])
             tag = self._rules_tags[rule]
             tagIndex.add(self._tags[tag])
-        newRecord['mrv'] = ruleIndex
+        newRecord['mrv'] = list(ruleIndex)
         newRecord['mrt'] = list(tagIndex)
 
         try:
