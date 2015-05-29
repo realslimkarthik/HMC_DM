@@ -1,3 +1,7 @@
+# Switched to XML on Feb 6th 2015
+
+
+
 import os
 import string
 import dm_rules
@@ -327,13 +331,12 @@ def processBackfill(backfillFile):
     rawData = {}
     processedData = {}
 
-# TO DO: write code to automate this for a bunch of months so that we can leave it running over the weekend
+# python DM_facebook_k.py <info|comments> 2015 02
 
 if __name__ == "__main__":
     op = sys.argv[1].lower()
     year = sys.argv[2]
     month = sys.argv[3]
-    outputType = sys.argv[4].lower()
     conf = ConfigParser.ConfigParser()
     conf.read("config\config.cfg")
     conf_path = conf.get("conf", "conf_path")
@@ -356,9 +359,6 @@ if __name__ == "__main__":
             fanpages = [i.strip() for i in f.readlines()]
         comment_list_file = open(dest + 'fanpage_to_user_id.csv', 'wb')
         comment_list_file.write('Fanpage, Comment_Id\n')
-        if outputType == 'single':
-            outputFile = open(dest + year + str(month).zfill(2) + '.csv', "wb")
-            headers = True
 
         for i in commentsFileList:
             print i
@@ -371,6 +371,6 @@ if __name__ == "__main__":
             df.to_csv(outputComments, sep=',', index=False)
             outputComments.close()
         comment_list_file.close()
-    elif op == "backfill":
-        backfillSrc = conf.get("facebook", "prod_backfill_path")
-        fileList = os.listdir(backfillSrc)
+    # elif op == "backfill":
+    #     backfillSrc = conf.get("facebook", "prod_backfill_path")
+    #     fileList = os.listdir(backfillSrc)
