@@ -10,8 +10,9 @@ db.coll_name.find({'mrv': {'$in': [22, 23]}})
 
 // Query for finding all tweets that have a tag 7 (Ecig):
 db.coll_name.find({'mrt': {'$in': [7]}})
-// fields
 
+
+// Twitter Fields
 // _id     =   Idpost
 // bp      =   bodypost
 // rc      =   retweetCount
@@ -71,6 +72,27 @@ db.coll_name.find({'mrt': {'$in': [7]}})
 // gplg    =   gniplocgeocoordinates
 // gu      =   gnipurl
 // geu     =   gnipexpandedurl
+
+// Instagram Fields
+// _id     =   id
+// u       =   updated
+// p       =   published
+// t       =   title
+// la      =   linkalternate
+// ls      =   linkself
+// le      =   linkenclosure
+// lp      =   linkpreview
+// su      =   sourceupdated
+// aot     =   actobjactobjtype
+// aoc     =   actobjcontent
+// aogp    =   actobjgeopoint
+// aoct    =   actobjcategoryterm
+// aogs    =   actobjfavcount
+// an      =   authname
+// au      =   authuri
+// mrv     =   matchingrulesvalue
+// mrt     =   matchingrulestag
+
 
 // Function to initialize all the collection names. Add more as and when needed.
 function initMonths() {
