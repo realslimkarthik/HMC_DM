@@ -1,5 +1,6 @@
-# Hard coded months in line number 9. Add/Remove months and maintain the format of 'Month': 'zeroPaddedNumOfMonth'. Eg: 'March': '03'
-# Change the year on lines 16 and 17 to the corresponding 4 digit year of that month.
+# Command to execute this file
+# python countTweets.py <year|month|special> <4 digit year> <2 digit month>
+# Example: python countTweets.py month 2015 01
 
 import ConfigParser
 import os
@@ -156,9 +157,6 @@ def countTweetsSearch(src_path, dest_path):
 months = map(lambda x: str(x).zfill(2), range(1, 13))
 delim = ','
 
-# Command to execute this file
-# python countTweets.py <year|month|special> <4 digit year> <2 digit month>
-# Example: python countTweets.py month 2015 01
 
 if __name__ == "__main__":
     op = sys.argv[1]
