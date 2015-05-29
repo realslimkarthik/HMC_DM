@@ -15,5 +15,6 @@
     "aogs": "actobjfavcount",
     "an": "authname",
     "au": "authuri",
-    "mrv": "matchingrulesvalue"
+    "mrv": "matchingrulesvalue",
+    "mrt": "matchingrulestag"
 }
