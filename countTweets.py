@@ -6,7 +6,7 @@ import os
 import json
 import sys
 import re
-from utility import CSVUnicodeWriter
+from utility import CSVUnicodeWriter, mkdir_p
 
 def countTweetsIndividual(src_path, dest_path):
     fileList = os.listdir(src_path)
@@ -53,7 +53,7 @@ def countTweets(src_path, dest_path, month):
     fileList = os.listdir(src_path)
     ruleCount = []
     for j in fileList:
-        if len(j.split('-')) == 3 and 'json' in j:
+        if len(j.split('_')) == 3 and 'json' in j:
             print j
             f = open(src_path + j)
             f.seek(0, 0)
@@ -78,12 +78,12 @@ def countTweets(src_path, dest_path, month):
     printCSV(ruleCount, month)
 
 def printCSV(ruleCount, month=-1, splString='ruleCount_fullMonth_'):
-    r = open(conf_path.format("tw_rules.json"))
-    rules = json.loads(r.read())
-    r.close()
-    r = open(conf_path.format("tw_rules_tags.json"))
-    rulesToTags = json.loads(r.read())
-    r.close()
+    with open(conf.get("twitter", "rules")) as r:
+        rules = json.loads(r.read())
+        
+    with open(conf.get("twitter", "rules_tags")) as rt:
+        rulesToTags = json.loads(rt.read())
+    
     ruleCSV = open(dest_path + splString + month + '.csv', 'w')
     # writer = CSVUnicodeWriter(ruleCSV)
     # writer.writerow(['Rule', 'Rule Id', 'Tag', 'Count', 'Date', 'Month'])
@@ -100,7 +100,7 @@ def printCSV(ruleCount, month=-1, splString='ruleCount_fullMonth_'):
                 except KeyError:
                     print k
                     continue
-                ruleCSV.write(k + delim + rId + delim + rTag + delim + str(v) + delim + date + delim + month + '\n')
+                ruleCSV.write(k + delim + str(rId) + delim + rTag + delim + str(v) + delim + date + delim + month + '\n')
     ruleCSV.close()
             
 
@@ -135,12 +135,12 @@ def countTweetsSearch(src_path, dest_path):
                 ruleCount[key] = ruleFreq
             print key
 
-    r = open(conf_path.format("tw_rules.json"))
-    rules = json.loads(r.read())
-    r.close()
-    r = open(conf_path.format("tw_rules_tags.json"))
-    rulesToTags = json.loads(r.read())
-    r.close()
+    with open(conf.get("twitter", "rules")) as r:
+        rules = json.loads(r.read())
+    
+    with open(conf.get("twitter", "rules_tags")) as rt:
+        rulesToTags = json.loads(rt.read())
+
     csv = open(dest_path + 'goldilocks_search.csv', 'wb')
     writer = CSVUnicodeWriter(csv)
     writer.writerow(['Rule', 'Rule Id', 'Tag', 'Count', 'Date', 'Month'])
@@ -166,16 +166,18 @@ if __name__ == "__main__":
     conf = ConfigParser.ConfigParser()
     conf.read('config\\config.cfg')
     conf_path = conf.get("conf", "conf_path")
-
+    
     if op == "year":
         for i in months:
             src_path = conf.get('twitter', 'prod_src_path').format(year + i)
             dest_path = conf.get('twitter', 'prod_dest_path').format(year + i, 'COUNTS')
+            mkdir_p(dest_path)
             countTweets(src_path, dest_path, i)
     elif op == "month":
         month = sys.argv[3]
         src_path = conf.get('twitter', 'prod_src_path').format(year + month)
         dest_path = conf.get('twitter', 'prod_dest_path').format(year + month, 'COUNTS')
+        mkdir_p(dest_path)
         countTweets(src_path, dest_path, month)
     elif op == "special":
         proj_name = sys.argv[3]
@@ -183,4 +185,5 @@ if __name__ == "__main__":
         # dest_path = conf.get('twitter', 'prod_dest_path').format(year + month + '_' + proj_name, 'COUNTS')
         src_path = "H:\\Data\\RawData\\TwitterPublic\\TwitterSearch\\goldilocks\\"
         dest_path = "H:\\Data\\RawData\\TwitterPublic\\TwitterSearch\\goldilocks\\"
+        mkdir_p(dest_path)
         countTweetsSearch(src_path, dest_path)
