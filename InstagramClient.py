@@ -195,7 +195,6 @@ class InstagramClient(object):
                     data[newKey] = item
             elif isinstance(val, str):
                 item = [i.get_text() for i in part_xml.find_all(val)]
-                print item
                 newKey = key
                 newKey = re.sub('[:-]', '', newKey)
                 data[newKey] = [re.sub('[\r\n]', ' ', i) for i in item]
@@ -231,7 +230,11 @@ class InstagramClient(object):
         tagIndex = set()
         for r in newRecord['mrv']:
             rule = r.lower()
-            ruleIndex.add(self._rules[rule])
+            try:
+                ruleIndex.add(self._rules[rule])
+            except KeyError:
+                print rule
+                return
             tag = self._rules_tags[rule]
             tagIndex.add(self._tags[tag])
         newRecord['mrv'] = list(ruleIndex)

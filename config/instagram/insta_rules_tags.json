@@ -764,5 +764,7 @@
     "rillo": "cigar/cigarillo",
     "marlboro": "cigarette",
     "captainblacks": "cigar/cigarillo",
-    "truth": "legacy campaign"
+    "truth": "legacy campaign",
+    "dutchmastersweets": "cigar/cigarillo",
+    "lilcigars": "cigar/cigarillo"
 }

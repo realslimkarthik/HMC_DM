@@ -76,6 +76,8 @@ def getStatsCounts(fileList, key, src, dest):
         f.close()
     outputFile.close()
 
+# python countRulesYT.py <yearly|interval|stats> year (start_month) (end_month)
+# Example: python countRulesYT.py interval 2014 07 09
 
 if __name__ == "__main__":
     op = sys.argv[1]
@@ -107,8 +109,8 @@ if __name__ == "__main__":
                     with open(dest + filename + "_rules" + ".csv", "wb") as ruleCsvfile:
                         writeCounts(overallCounts[1], ruleCsvfile, "Rules")
     elif op == "interval":
-        start_month = sys.argv[3]
-        end_month = sys.argv[4]
+        start_month = sys.argv[3].zfill(2)
+        end_month = sys.argv[4].zfill(2)
         for i in range(int(start_month), int(end_month) + 1):
             src = src_path.format(year, str(i).zfill(2))
             dest = dest_path.format(year, str(i).zfill(2)) + 'COUNTS\\'

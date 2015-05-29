@@ -1,3 +1,8 @@
+# Command to run the script
+# python DM_Youtube.py [yearly/interval] <Four digit year> <Two numbers denoting the two interval months (optional)>
+# Example python DM_Youtube.py interval 2014 8 10
+# Example python DM_Youtube.py yearly 2014
+
 import sys
 import ConfigParser
 import json
@@ -138,7 +143,7 @@ def processBackfill(backfillFile, raw_file, csv_file):
             line += i
             dataLine = extract(line, fields[getFileType(fileType)])
             if dataLine is not None:
-                date = dataLine['updated'].split('T')[0]
+                date = dataLine['sourceupdated'].split('T')[0]
                 if date in processedData:
                     processedData[date].append(dataLine)
                 else:
@@ -175,6 +180,7 @@ def iterate(src_path, dest_path, month):
     for j in fileList:
         if "xml" in j and "error" not in j and ("v3" in j or "comments" in j):
             print j
+            # Returns XML data as a dictionary
             data = getData(src + j)
             df = pd.DataFrame(data)
             filename = j.split('.')[0] + '.csv'
@@ -182,10 +188,6 @@ def iterate(src_path, dest_path, month):
                 df.to_csv(csvfile, sep=',', index=False)
             # printCSV(dest + filename, data)
 
-
-# Command to run the script
-# python DM_Youtube.py [yearly/interval] <Four digit year> <Two numbers denoting the two interval months (optional)>
-# Example python DM_Youtube.py interval 2014 8 10
 
 if __name__ == "__main__":
     op = sys.argv[1]

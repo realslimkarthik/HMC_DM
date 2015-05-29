@@ -10,9 +10,12 @@ from datetime import datetime
 import time
 import logging
 import calendar
+from pympler import asizeof
+import pandas as pd
+from utility import mkdir_p, dump
 
 
-class TwitterMongoUploader(object):
+class TwitterClient(object):
 
     """
         Class that handles uploading data into Mongo, Object has the following properties:
@@ -24,6 +27,7 @@ class TwitterMongoUploader(object):
             _proj: The specific name of the project whose files are being uploaded (mainly for path modification)
             _conf: ConfigParser object for some control information
             _rules: Dictionary that provides Rule to Rule Index mapping
+            _ruleLines: Means to get a reverse mapping of the dictionary
             _max_rule: Current largest Rule Index
             _tags: Dictionary that provides Tag to Tag Index mapping
             _max_tag: Current largest Tag Index
@@ -48,12 +52,14 @@ class TwitterMongoUploader(object):
         
         rules_file = open(self._conf.get('twitter', 'rules'))
         self._rules = json.loads(rules_file.read())
+        self._invertedRules = {v: k for k, v in self._rules.items()}
         rules_file.close()
 
         self._max_rule = max(v for k, v in self._rules.iteritems())
 
         tags_file = open(self._conf.get('twitter', 'tags'))
         self._tags = json.loads(tags_file.read())
+        self._invertedTags = {v: k for k, v in self._tags.items()}
         tags_file.close()
 
         self._max_tag = max(v for k, v in self._tags.iteritems())
@@ -67,6 +73,9 @@ class TwitterMongoUploader(object):
 
         with open(self._conf.get('twitter', 'fields_mongo')) as fieldsToMongoFile:
             self._mongoConf = json.loads(fieldsToMongoFile.read())
+
+        with open(self._conf.get('twitter', 'mongo_fields')) as mongoToFieldsFile:
+            self._mongo_fields = json.loads(mongoToFieldsFile.read())
         
         host = self._conf.get('mongo', 'host')
         port = int(self._conf.get('mongo', 'port'))
@@ -125,6 +134,10 @@ class TwitterMongoUploader(object):
         return self._rules
 
     @property
+    def invertedRules(self):
+        return self._invertedRules
+
+    @property
     def max_rule(self):
         return self._max_rule
 
@@ -132,6 +145,10 @@ class TwitterMongoUploader(object):
     def tags(self):
         return self._tags
 
+    @property
+    def invertedTags(self):
+        return self._invertedTags
+    
     @property
     def max_tag(self):
         return self._max_tag
@@ -151,6 +168,10 @@ class TwitterMongoUploader(object):
     @property
     def mongoConf(self):
         return self._mongoConf
+
+    @property
+    def mongo_fields(self):
+        return self._mongo_fields
     
     @property
     def src(self):
@@ -236,6 +257,8 @@ class TwitterMongoUploader(object):
         
         master_rules_file.close()
 
+        self._invertedRules = {v: k for k, v in self._rules.items()}
+        self._invertedTags = {v: k for k, v in self._tags.items()}
         # Once the file is fully iterated through, dump the _rules and _rules_tags and _tags dict to their corresponding files
         with open(self._conf.get('twitter', 'rules'), 'w') as rule_file:
             rule_file.write(json.dumps(self._rules))
@@ -245,18 +268,6 @@ class TwitterMongoUploader(object):
 
         with open(self._conf.get('twitter', 'tags'), 'w') as tag_file:
             tag_file.write(json.dumps(self._tags))
-
-
-    # Function to pretty print a json object into a given file name
-    def prettyPrint(jsonObj, jsonFileName):
-        # Obtain a list of tuples sorted by the val
-        sortedJsonObj = sorted((v, k) for (k, v) in jsonObj.iteritems())
-        # Iterate through the list of tuples and print the data as required
-        with open(jsonFileName, 'w') as jsonFile:
-            jsonFile.write('{\n')
-            for i in sortedJsonObj:
-                jsonFile.write('\t' + i[1] + ': ' + i[0] + ',\n')
-            jsonFile.write('}')
 
 
     # Method to go over individual files in the directory to go through the data to upload to Mongo
@@ -493,3 +504,92 @@ class TwitterMongoUploader(object):
             inputTweet['mrv'] = list(mrv)
             inputTweet['mrt'] = list(mrt)
             collection.save(inputTweet)
+
+
+    def queryDB(self, filterRule):
+        coll_names = set()
+        # Generate Collection names, i.e. MonYY_x, where x is in range(1, 7)
+        collName = self._year + self._month
+        mkdir_p(self.dest)
+        # Initialize a list to hold all the data queried from the Database
+        dataSet = []
+        for j in range(1, 7):
+            coll_names.add(collName + '_' + str(j))
+        # Maintain counter to track the file number of the corresponding rule file
+        counter = 1
+        # For each of the collections
+        for i in coll_names:
+            coll = self._db[i]
+            # Query to find all records of a particular rule
+            data = coll.find({'mrv': {'$in': [int(filterRule)]}})
+            # For each record returned by the query
+            for k in data:
+                print k['_id']
+                modifiedObj = {}
+                # Translate field names
+                for (key, val) in k.iteritems():
+                    modifiedObj[self.mongo_fields[key]] = val
+
+                # Add extra fields for Posted Time
+                if 'postedTime' in modifiedObj:
+                    date = modifiedObj['postedTime']
+                    modifiedObj['Year'] = date.strftime("%Y")
+                    modifiedObj['Month'] = date.strftime("%b")
+                    modifiedObj['Day'] = date.strftime("%d")
+                    modifiedObj['Time'] = date.strftime("%H:%M:%S")
+                # If actorutcOffset is None, then initialize field with a '.'
+                if modifiedObj['actorutcOffset'] is None:
+                    modifiedObj['actorutcOffset'] = '.'
+                # Unroll all the arrays
+                index = 1
+                if 'entitieshtagstext' in modifiedObj:
+                    for i in modifiedObj['entitieshtagstext']:
+                        modifiedObj['entitieshtagstext' + str(index).zfill(2)] = i
+                        index += 1
+                    del(modifiedObj['entitieshtagstext'])
+                    index = 1
+                if 'entitiesusrmentions' in modifiedObj:
+                    for i in modifiedObj['entitiesusrmentions']:
+                        modifiedObj['entitiesusrmentionsidstr' + str(index).zfill(2)] = i['is']
+                        modifiedObj['entitiesusrmentionsname' + str(index).zfill(2)] = i['n']
+                        modifiedObj['entitiesusrmentionssname' + str(index).zfill(2)] = i['sn']
+                        index += 1
+                    del(modifiedObj['entitiesusrmentions'])
+                    index = 1
+                # Translated and unroll matchingrulestag array
+                if 'matchingrulestag' in modifiedObj:
+                    translatedTags = []
+                    for i in modifiedObj['matchingrulestag']:
+                        tag = self._invertedTags[int(i)]
+                        modifiedObj['matchingrulestag' + str(index).zfill(2)] = tag
+                        index += 1
+                    del(modifiedObj['matchingrulestag'])
+                    index = 1
+                # Unroll matchingrulesvalue array and create a new field to hold all the translated matchingrulesvalues
+                if 'matchingrulesvalue' in modifiedObj:
+                    translatedRules = []
+                    for i in modifiedObj['matchingrulesvalue']:
+                        modifiedObj['matchingrulesvalue' + str(index).zfill(2)] = i
+                        index += 1
+                        rule = self._invertedRules[int(i)]
+                        translatedRules.append(rule)
+                    modifiedObj['matchingrulesvalues'] = ';'.join(translatedRules)
+                    del(modifiedObj['matchingrulesvalue'])
+                    index = 1
+                # Add the record to the dataset list
+                dataSet.append(modifiedObj)
+                # If the size of the dataSet list exceeds a certain threshold, write to a file
+                if asizeof.asizeof(dataSet) > 104857600:
+                    print "\nWriting to File...\n"
+                    # Create a new DataFrame and write to a csv file
+                    df = pd.DataFrame(dataSet)
+                    with open(self._dest + month + str(filterRule) + '_' + str(counter) + '.csv', 'wb') as csvfile:
+                        df.to_csv(csvfile, sep=',', index=False)
+                    counter += 1
+
+        print "\nWriting to File...\n"
+        # Create a new DataFrame and write to a csv file
+        df = pd.DataFrame(dataSet)
+        with open(self._dest + self.year + self.month + '_' + str(filterRule) + '_' + str(counter) + '.csv', 'wb') as csvfile:
+            df.to_csv(csvfile, sep=',', index=False)
+        counter += 1
