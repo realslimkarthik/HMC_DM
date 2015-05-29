@@ -161,155 +161,168 @@ function monthlyCounts(coll_names, ruleOrTag, rules) {
     }
 }
 
-// Query to change mrv values into ints from strings:
-db.coll_name.find().forEach(function(doc) {
-    id = doc._id;
-    a = [];
-    doc.mrv.forEach(function(e) {
-        a.push(parseInt(e));
-    });
-    db.coll_name.update(
-        {"_id": id},
-        {"$set": {"mrv": a}
-    });
-    print(id);
-    print(a);
-})
-
-// Query to delete records entered into the wrong collections:
-db.coll_name.find().forEach(function(doc) {
-    id = doc._id;
-    db.coll_name.remove({"_id": id});
-    print(id);
-})
-
-// Query to change su, u and p values into ISODates from strings (Instagram):
-db.getCollection('201408').find().forEach(function(doc) {     
-    id = doc['_id'];
-    suObj = doc['su'];
-    uObj = doc['u'];
-    pObj = doc['p'];
-    print(id);
-    if(typeof doc['su'] == 'string') {
-        d = doc['su'].split('T');         
-        time = d[1].split('-');
-        if (time.length != 3) {
-            time = d[1].split(':');
-        }
-        suObj = new Date(d[0] + ' ' + time[0] + ':' + time[1] + ':' + time[2].slice(0, -1));
-    }
-    if(typeof doc['u'] == 'string') {
-        d = doc['u'].split('T');         
-        time = d[1].split(':');
-        if (time.length != 3) {
-            time = d[1].split('-');
-        }
-        uObj = new Date(d[0] + ' ' + time[0] + ':' + time[1] + ':' + time[2].slice(0, -1));
-    }
-    if(typeof doc['p'] == 'string') {
-        d = doc['p'].split('T');         
-        time = d[1].split(':');
-        if (time.length != 3) {
-            time = d[1].split('-');
-        }
-        pObj = new Date(d[0] + ' ' + time[0] + ':' + time[1] + ':' + time[2].slice(0, -1));
-    }
-    db.getCollection('201408').update({'_id':id},
-        {'$set':{'su': suObj, 'u': uObj, 'p': pObj}});
-})
-
-// Query to convert date strings into ISO dates
-db.coll_name.find().forEach(function(doc) {
-    db.coll_name.update({'_id':doc._id}, {'$set':{'su':new Date(doc.su)}});
-})
 
 
-// Query to change pt values into ISODates from strings:
-db.coll_name.find().forEach(function(doc) {
-    var id = doc._id;
-    var d;
-    if(typeof doc.pt == "string") {
-        d = doc.pt.split('T');
-        time = d[1].split(':');
-        dateObj = Date.parse(d[0] + ' ' + time[0] + ':' + time[1] + ':' time[2]);
-        print(id);
-        print(d);
-    }
-})
 
-// Query to convert date strings into ISO dates
-db.coll_name.find().forEach(function(doc) {
-    db.coll_name.update({'_id':doc._id},{'$set':{'pt':new Date(doc.pt)}});
-})
 
-// Query to convert hashtags field to a list instead of a ';' delimited string
-db.coll_name.find().forEach(function(doc) {
-    if (typeof doc['eumh'] == 'string') {
-        print('changed!');
-        db.coll_name.update({'_id': doc._id}, {'$set': {'eumh': doc['eumh'].split(';')}});
-    }
-})
 
-// Data Structures and Code to index Tags
-tags = {"antismoking": 1, "cdc tips ii": 2, "cessation product": 3, "chew": 4,
-        "cigar/cigarillo": 5, "cigarette": 6, "ecig": 7, "general": 8,
-        "hookah": 9, "marijuana": 10, "pipe": 11, "state public health": 12,
-        "legacy campaign": 13, "goldilocks": 14
-};
 
-function indexTags(coll_name) {
-    db[coll_name].ensureIndex({'mrtI': 1});
-    db[coll_name].find().forEach(function(doc) {
-        t = doc['mrt'].split(';');
-        newTags = [];
-        t.forEach(function(e) {
-            element = e.toLowerCase().trim();
-            tag = tags[element];
-            if(tag == undefined)
-                {print("undefined" + element);}
-            else {
-                if (element == "legacy caompaign") {element = "legacy campaign";}
-                if (newTags.indexOf(tag) == -1)
-                    {newTags.push(tag);}
-            }
-        });
-        db[coll_name].update({'_id': doc._id}, {'$set': {'mrtI': newTags}});
-        print(newTags);
-    });
-}
 
-function indexTags(coll_name) {
-    db[coll_name].find().forEach(function(doc) {
-        print(coll_name + doc.mrt.toString());
-        db[coll_name].update({'_id': doc._id}, {'$set':{'mrt': doc.mrtI}});
-    });
-}
 
-function getLocationFraction(gnip) {
-    yearCount = 0;
-    totalYear = 0;
-    year.forEach(function(m) {
-        monthlyCount = 0;
-        totalMonth = 0;
-        m.forEach(function(c) {
-            totalMonth = db[c].count();
-            if (gnip == true) {
-                monthlyCount += db[c].count({'gplg': {$exists: true}});
-            } else {
-                monthlyCount += db[c].count({'': {$exists: true}});
-            }
-        });
-        yearCount += monthlyCount;
-        totalYear += totalMonth;
-        if (gnip) {
-            print('for the month of ' + m + ': ' + monthlyCount/totalMonth + '% of tweets have gnip location data');
-        } else {
-            print('for the month of ' + m + ': ' + monthlyCount/totalMonth + '% of tweets have location data');
-        }
-    });
-    if (gnip == true) {
-        print('The year of 2014 has ' + yearCount/totalYear + '% of tweets with gnip location data');
-    } else {
-        print('The year of 2014 has ' + yearCount/totalYear + '% of tweets with location data');
-    }
-}
+
+
+
+
+// =================================================================== DANGER ========================================================
+// // Query to change mrv values into ints from strings:
+// db.coll_name.find().forEach(function(doc) {
+//     id = doc._id;
+//     a = [];
+//     doc.mrv.forEach(function(e) {
+//         a.push(parseInt(e));
+//     });
+//     db.coll_name.update(
+//         {"_id": id},
+//         {"$set": {"mrv": a}
+//     });
+//     print(id);
+//     print(a);
+// })
+
+// // Query to delete records entered into the wrong collections:
+// db.coll_name.find().forEach(function(doc) {
+//     id = doc._id;
+//     db.coll_name.remove({"_id": id});
+//     print(id);
+// })
+
+// // Query to change su, u and p values into ISODates from strings (Instagram):
+// db.getCollection('201408').find().forEach(function(doc) {     
+//     id = doc['_id'];
+//     suObj = doc['su'];
+//     uObj = doc['u'];
+//     pObj = doc['p'];
+//     print(id);
+//     if(typeof doc['su'] == 'string') {
+//         d = doc['su'].split('T');         
+//         time = d[1].split('-');
+//         if (time.length != 3) {
+//             time = d[1].split(':');
+//         }
+//         suObj = new Date(d[0] + ' ' + time[0] + ':' + time[1] + ':' + time[2].slice(0, -1));
+//     }
+//     if(typeof doc['u'] == 'string') {
+//         d = doc['u'].split('T');         
+//         time = d[1].split(':');
+//         if (time.length != 3) {
+//             time = d[1].split('-');
+//         }
+//         uObj = new Date(d[0] + ' ' + time[0] + ':' + time[1] + ':' + time[2].slice(0, -1));
+//     }
+//     if(typeof doc['p'] == 'string') {
+//         d = doc['p'].split('T');         
+//         time = d[1].split(':');
+//         if (time.length != 3) {
+//             time = d[1].split('-');
+//         }
+//         pObj = new Date(d[0] + ' ' + time[0] + ':' + time[1] + ':' + time[2].slice(0, -1));
+//     }
+//     db.getCollection('201408').update({'_id':id},
+//         {'$set':{'su': suObj, 'u': uObj, 'p': pObj}});
+// })
+
+// // Query to convert date strings into ISO dates
+// db.coll_name.find().forEach(function(doc) {
+//     db.coll_name.update({'_id':doc._id}, {'$set':{'su':new Date(doc.su)}});
+// })
+
+
+// // Query to change pt values into ISODates from strings:
+// db.coll_name.find().forEach(function(doc) {
+//     var id = doc._id;
+//     var d;
+//     if(typeof doc.pt == "string") {
+//         d = doc.pt.split('T');
+//         time = d[1].split(':');
+//         dateObj = Date.parse(d[0] + ' ' + time[0] + ':' + time[1] + ':' time[2]);
+//         print(id);
+//         print(d);
+//     }
+// })
+
+// // Query to convert date strings into ISO dates
+// db.coll_name.find().forEach(function(doc) {
+//     db.coll_name.update({'_id':doc._id},{'$set':{'pt':new Date(doc.pt)}});
+// })
+
+// // Query to convert hashtags field to a list instead of a ';' delimited string
+// db.coll_name.find().forEach(function(doc) {
+//     if (typeof doc['eumh'] == 'string') {
+//         print('changed!');
+//         db.coll_name.update({'_id': doc._id}, {'$set': {'eumh': doc['eumh'].split(';')}});
+//     }
+// })
+
+// // Data Structures and Code to index Tags
+// tags = {"antismoking": 1, "cdc tips ii": 2, "cessation product": 3, "chew": 4,
+//         "cigar/cigarillo": 5, "cigarette": 6, "ecig": 7, "general": 8,
+//         "hookah": 9, "marijuana": 10, "pipe": 11, "state public health": 12,
+//         "legacy campaign": 13, "goldilocks": 14
+// };
+
+// function indexTags(coll_name) {
+//     db[coll_name].ensureIndex({'mrtI': 1});
+//     db[coll_name].find().forEach(function(doc) {
+//         t = doc['mrt'].split(';');
+//         newTags = [];
+//         t.forEach(function(e) {
+//             element = e.toLowerCase().trim();
+//             tag = tags[element];
+//             if(tag == undefined)
+//                 {print("undefined" + element);}
+//             else {
+//                 if (element == "legacy caompaign") {element = "legacy campaign";}
+//                 if (newTags.indexOf(tag) == -1)
+//                     {newTags.push(tag);}
+//             }
+//         });
+//         db[coll_name].update({'_id': doc._id}, {'$set': {'mrtI': newTags}});
+//         print(newTags);
+//     });
+// }
+
+// function indexTags(coll_name) {
+//     db[coll_name].find().forEach(function(doc) {
+//         print(coll_name + doc.mrt.toString());
+//         db[coll_name].update({'_id': doc._id}, {'$set':{'mrt': doc.mrtI}});
+//     });
+// }
+
+// function getLocationFraction(gnip) {
+//     yearCount = 0;
+//     totalYear = 0;
+//     year.forEach(function(m) {
+//         monthlyCount = 0;
+//         totalMonth = 0;
+//         m.forEach(function(c) {
+//             totalMonth = db[c].count();
+//             if (gnip == true) {
+//                 monthlyCount += db[c].count({'gplg': {$exists: true}});
+//             } else {
+//                 monthlyCount += db[c].count({'': {$exists: true}});
+//             }
+//         });
+//         yearCount += monthlyCount;
+//         totalYear += totalMonth;
+//         if (gnip) {
+//             print('for the month of ' + m + ': ' + monthlyCount/totalMonth + '% of tweets have gnip location data');
+//         } else {
+//             print('for the month of ' + m + ': ' + monthlyCount/totalMonth + '% of tweets have location data');
+//         }
+//     });
+//     if (gnip == true) {
+//         print('The year of 2014 has ' + yearCount/totalYear + '% of tweets with gnip location data');
+//     } else {
+//         print('The year of 2014 has ' + yearCount/totalYear + '% of tweets with location data');
+//     }
+// }
