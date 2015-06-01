@@ -320,10 +320,10 @@ class TwitterClient(object):
                         print tweet['info']['activity_count']
                     else:
                         # Create an empty dictionary
-                        tweetObj = {}
+                        finalTweet = {}
                         # Send the JSON dictionary, the empty dictionary, and the list of all keys
-                        self.extract(tweet, tweetObj, mykeys)
-                        mongoObj = self.preprocessFHTweet(tweet)
+                        self.extract(tweet, finalTweet, mykeys)
+                        mongoObj = self.preprocessFHTweet(finalTweet)
                         # Add the output dictionary to the list
                         self.populateMongo(mongoObj[0], mongoObj[1])
                         
