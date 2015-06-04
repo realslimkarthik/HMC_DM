@@ -521,7 +521,7 @@ class TwitterClient(object):
         for i in coll_names:
             coll = self._db[i]
             # Query to find all records of a particular rule
-            data = coll.find({'mrv': {'$in': [int(filterRule)]}})
+            data = coll.find({'mrv': {'$in': [int(filterRule)]}}, no_cursor_timeout=True)
             # For each record returned by the query
             for k in data:
                 print k['_id']
@@ -586,6 +586,7 @@ class TwitterClient(object):
                     with open(self._dest + month + str(filterRule) + '_' + str(counter) + '.csv', 'wb') as csvfile:
                         df.to_csv(csvfile, sep=',', index=False)
                     counter += 1
+            data.close()
 
         print "\nWriting to File...\n"
         # Create a new DataFrame and write to a csv file
