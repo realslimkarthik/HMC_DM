@@ -571,7 +571,10 @@ class TwitterClient(object):
                     for i in modifiedObj['matchingrulesvalue']:
                         modifiedObj['matchingrulesvalue' + str(index).zfill(2)] = i
                         index += 1
-                        rule = self._invertedRules[int(i)]
+                        try:
+                            rule = self._invertedRules[int(i)]
+                        except KeyError:
+                            continue
                         translatedRules.append(rule)
                     modifiedObj['matchingrulesvalues'] = ';'.join(translatedRules)
                     del(modifiedObj['matchingrulesvalue'])
