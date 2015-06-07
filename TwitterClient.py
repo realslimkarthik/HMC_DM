@@ -583,9 +583,10 @@ class TwitterClient(object):
                     print "\nWriting to File...\n"
                     # Create a new DataFrame and write to a csv file
                     df = pd.DataFrame(dataSet)
-                    with open(self._dest + month + str(filterRule) + '_' + str(counter) + '.csv', 'wb') as csvfile:
+                    with open(self._dest + self.year + self.month + '_' + str(filterRule) + '_' + str(counter) + '.csv', 'wb') as csvfile:
                         df.to_csv(csvfile, sep=',', index=False)
                     counter += 1
+                    dataSet = []
             data.close()
 
         print "\nWriting to File...\n"
