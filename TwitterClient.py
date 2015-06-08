@@ -428,7 +428,7 @@ class TwitterClient(object):
         # Renaming id field
         inputTweet['_id'] = inputTweet['Idpost'].split(':')[2]
         # Remove the former id key
-        inputTweet.pop('Idpost', None)
+        inputTweet.pop('id', None)
         # packing the matchingrulesvalue field into an array
         if isinstance(inputTweet['matchingrulesvalue'], unicode) or isinstance(inputTweet['matchingrulesvalue'], str):
             inputTweet['matchingrulesvalue'] = inputTweet['matchingrulesvalue'].split(';')
