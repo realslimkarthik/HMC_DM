@@ -25,10 +25,10 @@
 				</div>
 				<div class="no-move"></div>
 			</div>
+            <input type="file" id="fileUpload">
 			<div id="toggleMe" class="box-content">
 			</div>
-			<div class="col-xs-1"><span class="bar"></span></div>
-			<div class="box-content no-padding table-responsive">
+			<div id="uppertable-3" class="box-content no-padding table-responsive">
 				<table class="table table-bordered table-striped table-hover table-heading table-datatable" id="datatable-3">  
 					<thead>
                     </thead>
@@ -55,25 +55,31 @@ function MakeSelect2(){
 	});
 }
 $(document).ready(function() {
-	$('#toggleMe').append('Toggle column: ' + toggleHeader);
-	$('#datatable-3 > thead').append('<tr>' + colheader + '</tr>');//The TRs need to be here (for some reason), and this needs to be before the footer line otherwise the TO_CSV will not have a header line
-	$('#datatable-3 > thead').append('<tr>' + colfooter + '</tr>');
-	//$('#datatable-3 > tfoot').append('<tr>' + colfooter + '</tr>');//Not needed now
-	$('#datatable-3 > tbody').append(datafields);
+	//$('#toggleMe').append('Toggle column: ' + toggleHeader);
+	// $('#datatable-3 > thead').append('<tr>' + colheader + '</tr>');//The TRs need to be here (for some reason), and this needs to be before the footer line otherwise the TO_CSV will not have a header line
+	// $('#datatable-3 > thead').append('<tr>' + colfooter + '</tr>');
+	// //$('#datatable-3 > tfoot').append('<tr>' + colfooter + '</tr>');//Not needed now
+	// $('#datatable-3 > tbody').append(datafields);
 
 	// Load Datatables and run plugin on tables 
 	LoadDataTablesScripts(AllTables);
 
-	// Load spark-line
-	var datainput = [10, 9, 15, 1, 6];
-	$('.bar').each(function(){
-		$(this).sparkline(datainput, {type: 'bar', barWidth: 5, highlightColor: '#000', barSpacing: 2, height: 30, stackedBarColor: '#6AA6D6'});
-		console.log(datainput);
-	});
+	//Load Sparkline
+	//LoadSparkLineScript(SparkLineSetup);
 	// Add Drag-n-Drop feature
-	WinMove();
+	//WinMove();
+
 });
 
+function SparkLineSetup(){
+	// Load spark-line
+	var datainput = [10, 9, 15, 1, 6];
+    SparkLineDrawBarGraph($('#sparkline-1'),datainput);
+	// $('#sparkline-1').each(function(){
+	// 	console.log(datainput);
+	// 	$(this).sparkline(datainput, {type: 'bar', barWidth: 5, highlightColor: '#777', barSpacing: 2, height: 30, stackedBarColor: '#6AA6D6'});
+	// });
+}
 
 // var libraries = [
 

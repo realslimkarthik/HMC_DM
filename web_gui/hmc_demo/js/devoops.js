@@ -93,7 +93,11 @@ function LoadDataTablesScripts(callback){
 		$.getScript('plugins/datatables/jquery.dataTables.js', function(){
 			$.getScript('plugins/datatables/ZeroClipboard.js', function(){
 				$.getScript('plugins/datatables/TableTools.js', function(){
-					$.getScript('plugins/datatables/dataTables.bootstrap.js', callback);
+					$.getScript('plugins/datatables/dataTables.colReorder.min.js', function(){
+						//$.getScript('plugins/datatables/dataTables.colVis.min.js', function(){
+							$.getScript('plugins/datatables/dataTables.bootstrap.js', callback);
+						//});
+					});
 				});
 			});
 		});
@@ -1659,85 +1663,225 @@ function TestTable2(){
 //
 function TestTable3(){
 	var asInitVals = [];
-	var asInitValsColumns = [];
+	// var asInitValsColumns = [];
 
-	var header_inputs = $("#datatable-3 thead input");//must be before dataTable created
-	var totalColumns = header_inputs.length;
-	var oTable = $('#datatable-3').dataTable( {
-		"aaSorting": [[ 0, "asc" ]],
-		"sDom": "T<'box-content'<'col-sm-6'f><'col-sm-6 text-right'l><'clearfix'>>rt<'box-content'<'col-sm-6'i><'col-sm-6 text-right'p><'clearfix'>>",
-		"sPaginationType": "bootstrap",
-		"oLanguage": {
-			"sSearch": "",
-			"sLengthMenu": '_MENU_'
-		},
-		"sScrollX" : "100%", //for some reason this is messing up the column specific searching
-		"oTableTools": {
-			"sSwfPath": "plugins/datatables/copy_csv_xls_pdf.swf",
-			"aButtons": ["csv"]
-		}
-	});
+	// var header_inputs = $("#datatable-3 thead input");//must be before dataTable created
+	// var totalColumns = header_inputs.length;
+	// var allNonViselem = [];
+	// for(var i=3; i<totalColumns;i++) {allNonViselem.push(i);}
+	var oTable;
+	// var oTable = $('#datatable-3').dataTable( {
+	// 	"aaSorting": [[ 0, "asc" ]],
+	// 	"sDom": "TR<'box-content'<'col-sm-6'f><'col-sm-6 text-right'l><'clearfix'>>rt<'box-content'<'col-sm-6'i><'col-sm-6 text-right'p><'clearfix'>>",
+	// 	"aoColumnDefs": [
+	// 		{"bVisible":false, "aTargets":[2]},
+	// 		{"bVisible":false, "aTargets":allNonViselem}//only show first 2 columns
+	// 	],
+	// 	"sPaginationType": "bootstrap",
+	// 	"oLanguage": {
+	// 		"sSearch": "",
+	// 		"sLengthMenu": '_MENU_'
+	// 	},
+	// 	"sScrollX" : "100%", 
+	// 	"oTableTools": {
+	// 		"sSwfPath": "plugins/datatables/copy_csv_xls_pdf.swf",
+	// 		"aButtons": [
+	// 			{
+	// 				"sExtends": "csv",
+	// 				"sButtonText": "Save to CSV"
+	// 			}
+	// 		]
+	// 	},
+	// 	"iDisplayLength":5,//initial display number
+	// 	"aLengthMenu":[5,10,20,50,100],
+	// 	"bStateSave": false //save the state of the personal configuration of displaying table
+	// });
 
-	$('a.toggle-vis').on( 'click', function (e) {
-        e.preventDefault();
- 
-        // // Get the column API object
-        // var column = oTable.mColumns( $(this).attr('data-column') );
- 
-        // // Toggle the visibility
-        // column.visible( ! column.visible() );
-        var idx = $.inArray($(this).attr('data-column'), asInitValsColumns);
-        if( idx >= 0) {
-        	oTable.fnSetColumnVis($(this).attr('data-column'),true);
-        	asInitValsColumns.splice(idx,1);
-        } else {
+	
 
-        	oTable.fnSetColumnVis($(this).attr('data-column'),false);
-        	asInitValsColumns.push($(this).attr('data-column'));
+
+    //Setup Upload
+    var fileUpload = document.getElementById("fileUpload");
+
+    fileUpload.addEventListener('change', function(e) {
+        var file = fileUpload.files[0];
+        var reader = new FileReader();
+
+
+        reader.onload = function(e) {
+	        console.log("Finished upload");
+            //Save off first row
+            var headerrow = [];
+            var headerdata = [];
+            var dataSet = $.csv.toArrays(e.target.result);
+            var headerdata = dataSet[0];
+            var colheader = "";
+            var colfooter = "";
+			var toggleHeader = "";
+            //$('#uppertable-3').html("");
+			//$('#uppertable-3').html('<table class="table table-bordered table-striped table-hover table-heading table-datatable" id="datatable-4"><thead></thead><tbody></tbody><tfoot></tfoot>');
+            //var rows = e.target.result.split("\n");
+            if(headerdata.length > 0) {
+                for(var i = 0; i<headerdata.length; i++) {
+                    var onecolumn = {'sTitle' : headerdata[i]};
+                    headerrow.push(onecolumn);
+				    var val = "search_" + headerdata[i];
+				    var name = "Search " + headerdata[i];
+				    colheader += '<th><label><input type="text" name="' + val + '" value="' + name + '" class="search_init" /></label></th>';
+     				colfooter += '<th>' + headerdata[i] + "</th>\n"
+
+				     if(i > 0) { toggleHeader += ' - ';}
+				     toggleHeader += '<a class="toggle-vis" data-column="' + i + '">' + headerdata[i] + '</a>';
+                }
+            }
+			toggleHeader += ' - <a class="toggle-allvis">SHOW-ALL</a>';
+			toggleHeader += ' - <a class="toggle-allhide">HIDE-ALL</a>';
+			//$('#toggleMe').html("");
+			$('#toggleMe').append('Toggle column: ' + toggleHeader);
+			$('#datatable-3 > thead').append('<tr>' + colheader + '</tr>');//The TRs need to be here (for some reason), and this needs to be before the footer line otherwise 
+			$('#datatable-3 > thead').append('<tr>' + colfooter + '</tr>');
+			//$('#datatable-3 > thead').className = null;
+            dataSet.shift();//remove header row
+
+			var datafields = "";
+			dataSet.forEach(function(l){
+				var rowfields = "";
+			    l.forEach(function(val){ 
+			            rowfields += '<td>' + val + '</td>\n';
+			    });
+			    datafields += '<tr>\n' + rowfields + '</tr>\n';
+			});
+
+			//$('#datatable-3 > tbody').html("");
+			//$('#datatable-3 > tbody').append(datafields);
+			//$('#datatable-3 > tbody').className = null;
+
+			var header_inputs = $("#datatable-3 thead input");//must be before dataTable created
+			header_inputs.on('keyup', function(){
+				/* Filter on the column (the index) of this element */
+				oTable.fnFilter( this.value, header_inputs.index(this) );
+			})
+			.on('focus', function(){
+				if ( this.className == "search_init" ){
+					this.className = "";
+					this.value = "";
+				}
+			})
+			.on('blur', function (i) {
+				if ( this.value == "" ){
+					this.className = "search_init";
+					this.value = asInitVals[header_inputs.index(this)];
+				}
+			});
+			header_inputs.each( function (i) {
+				asInitVals[i] = this.value;
+			});
+
+			// //Refresh DOM
+			// $('#uppertable-3').hide();
+			// $('#uppertable-3').get(0).offsetHeight;
+			// $('#uppertable-3').show();
+
+   //          //Reset Header and Data
+
+			// asInitVals = [];
+			// asInitValsColumns = [];
+
+			var totalColumns = headerdata.length;
+			//oTable.fnClearTable();
+			var allNonViselem = [];
+			var allelem = [];
+			for(var i=2; i<totalColumns;i++) {allNonViselem.push(i);}
+			for(var i=0; i<totalColumns;i++) {allelem.push(i);}
+			// if (oTable != undefined) {
+   //  			oTable.fnClearTable();
+   //  			console.log("Clearing datatable");
+			// };
+			// oTable = null;
+
+			oTable = $('#datatable-3').dataTable( {
+				"aaSorting": [[ 0, "asc" ]],
+				"sDom": "TR<'box-content'<'col-sm-6'f><'col-sm-6 text-right'l><'clearfix'>>rt<'box-content'<'col-sm-6'i><'col-sm-6 text-right'p><'clearfix'>>",
+				 "aoColumnDefs": [
+				 	{"bVisible":true, "aTargets":[0, 1]},
+				 	{"bVisible":false, "aTargets":allNonViselem}//only show first 2 columns
+				 ],
+				"aaData": dataSet,
+				//"aoColumns": headerrow, //DO NOT NEED
+				"sPaginationType": "bootstrap",
+				"oLanguage": {
+					"sSearch": "",
+					"sLengthMenu": '_MENU_'
+				},
+				"sScrollX" : "100%", 
+				"oTableTools": {
+					"sSwfPath": "plugins/datatables/copy_csv_xls_pdf.swf",
+					"aButtons": [
+						{
+							"sExtends": "csv",
+							"sButtonText": "Save to CSV"
+						}
+					]
+				},
+				"iDisplayLength":5,//initial display number
+				"aLengthMenu":[5,10,20,50,100],
+				//"bStateSave": false //save the state of the personal configuration of displaying table
+				"bFilter":false, //disable filters
+				"bDestroy": true //delete previous table
+			});
+			console.log("Recreated datatable");
+
+			//Re-establish filters
+			LoadSelect2Script(MakeSelect2);
+
+			$('a.toggle-vis').on( 'click', function (e) {
+		        e.preventDefault();
+		 
+		        // // Get the column API object
+		        // var column = oTable.mColumns( $(this).attr('data-column') );
+		 
+		        // // Toggle the visibility
+		        // column.visible( ! column.visible() );
+		        var bVis = oTable.fnSettings().aoColumns[$(this).attr('data-column')].bVisible;
+		        oTable.fnSetColumnVis( $(this).attr('data-column'), bVis ? false : true );
+		        // var idx = $.inArray($(this).attr('data-column'), asInitValsColumns);
+		        // if( idx >= 0) {
+		        // 	oTable.fnSetColumnVis($(this).attr('data-column'),true);
+		        // 	asInitValsColumns.splice(idx,1);
+		        // } else {
+
+		        // 	oTable.fnSetColumnVis($(this).attr('data-column'),false);
+		        // 	asInitValsColumns.push($(this).attr('data-column'));
+		        // }
+		    } );
+		    $('a.toggle-allvis').on('click',function(e) {
+		    	//show everything
+		    	e.preventDefault();
+
+		    	//asInitValsColumns = [];
+		    	for(var ii = 0; ii<totalColumns; ++ii)
+		    	{
+		        	oTable.fnSetColumnVis(ii,true);
+		    	}
+
+		    });
+		    $('a.toggle-allhide').on('click',function(e) {
+		    	//hide everything
+		    	e.preventDefault();
+
+		    	for(var ii = 0; ii<totalColumns; ++ii)
+		    	{
+		    		//asInitValsColumns.push(ii.toString());
+		        	oTable.fnSetColumnVis(ii,false);
+		    	}
+
+		    });
+
         }
-    } );
-    $('a.toggle-allvis').on('click',function(e) {
-    	//show everything
-    	e.preventDefault();
 
-    	asInitValsColumns = [];
-    	for(var ii = 0; ii<totalColumns; ++ii)
-    	{
-        	oTable.fnSetColumnVis(ii,true);
-    	}
-
+        console.log("Starting upload");
+        reader.readAsText(file);
     });
-    $('a.toggle-allhide').on('click',function(e) {
-    	//hide everything
-    	e.preventDefault();
-
-    	for(var ii = 0; ii<totalColumns; ++ii)
-    	{
-    		asInitValsColumns.push(ii);
-        	oTable.fnSetColumnVis(ii,false);
-    	}
-
-    });
-
-	header_inputs.on('keyup', function(){
-		/* Filter on the column (the index) of this element */
-		oTable.fnFilter( this.value, header_inputs.index(this) );
-	})
-	.on('focus', function(){
-		if ( this.className == "search_init" ){
-			this.className = "";
-			this.value = "";
-		}
-	})
-	.on('blur', function (i) {
-		if ( this.value == "" ){
-			this.className = "search_init";
-			this.value = asInitVals[header_inputs.index(this)];
-		}
-	});
-	header_inputs.each( function (i) {
-		asInitVals[i] = this.value;
-	});
 }
 /*-------------------------------------------
 	Functions for Dashboard page (dashboard.html)
@@ -1786,7 +1930,7 @@ function RedrawKnob(elem){
 // Draw 3 Sparkline plot in Dashboard header
 //
 function SparklineLoop(){
-	SparkLineDrawBarGraph($('#sparkline-1'), sparkline_arr_1.map(SmallChangeVal));
+	SparkLineDrawBarGraph($('#sparkline-1'), [10, 15, 6, 8]);
 	SparkLineDrawBarGraph($('#sparkline-2'), sparkline_arr_2.map(SmallChangeVal), '#7BC5D3');
 	SparkLineDrawBarGraph($('#sparkline-3'), sparkline_arr_3.map(SmallChangeVal), '#B25050');
 }
@@ -1900,9 +2044,30 @@ function FileUpload(){
 			endpoint: 'server/handleUploads'
 		},
 		validation: {
-			allowedExtensions: ['jpeg', 'jpg', 'gif', 'png']
+			allowedExtensions: ['jpeg', 'jpg', 'gif', 'png', 'csv']
 		}
 	});
+}
+
+function AdHocFileUpload() {
+    var fileUpload = document.getElementById("fileUpload");
+
+    fileUpload.onload = function (e) {
+	    var table = document.createElement("table");
+	    var rows = e.target.result.split("\n");
+	    for (var i = 0; i < rows.length; i++) {
+	        var row = table.insertRow(-1);
+	        var cells = rows[i].split(",");
+	        for (var j = 0; j < cells.length; j++) {
+	           var cell = row.insertCell(-1);
+	           cell.innerHTML = cells[j];
+	        }
+	    }
+	    var dvCSV = document.getElementById("dvCSV");
+	    dvCSV.innerHTML = "";
+	    dvCSV.appendChild(table);
+	}
+
 }
 /*-------------------------------------------
 	Function for OpenStreetMap page (maps.html)
