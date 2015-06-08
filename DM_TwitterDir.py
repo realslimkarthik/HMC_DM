@@ -1,3 +1,8 @@
+
+# Command to run the script
+# python DM_TwitterDir.py [byday/full] <Capitalized 3 digit month name> <Four digit year> <project name as in directory (optional>
+# Eg - python DM_TwitterDir.py byday Oct 2014 LCC
+
 import string
 import json
 import sys

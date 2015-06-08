@@ -320,10 +320,10 @@ class TwitterClient(object):
                         print tweet['info']['activity_count']
                     else:
                         # Create an empty dictionary
-                        tweetObj = {}
+                        finalTweet = {}
                         # Send the JSON dictionary, the empty dictionary, and the list of all keys
-                        self.extract(tweet, tweetObj, mykeys)
-                        mongoObj = self.preprocessFHTweet(tweet)
+                        self.extract(tweet, finalTweet, mykeys)
+                        mongoObj = self.preprocessFHTweet(finalTweet)
                         # Add the output dictionary to the list
                         self.populateMongo(mongoObj[0], mongoObj[1])
                         
@@ -521,7 +521,7 @@ class TwitterClient(object):
         for i in coll_names:
             coll = self._db[i]
             # Query to find all records of a particular rule
-            data = coll.find({'mrv': {'$in': [int(filterRule)]}})
+            data = coll.find({'mrv': {'$in': [int(filterRule)]}}, no_cursor_timeout=True)
             # For each record returned by the query
             for k in data:
                 print k['_id']
@@ -571,7 +571,10 @@ class TwitterClient(object):
                     for i in modifiedObj['matchingrulesvalue']:
                         modifiedObj['matchingrulesvalue' + str(index).zfill(2)] = i
                         index += 1
-                        rule = self._invertedRules[int(i)]
+                        try:
+                            rule = self._invertedRules[int(i)]
+                        except KeyError:
+                            continue
                         translatedRules.append(rule)
                     modifiedObj['matchingrulesvalues'] = ';'.join(translatedRules)
                     del(modifiedObj['matchingrulesvalue'])
@@ -583,9 +586,11 @@ class TwitterClient(object):
                     print "\nWriting to File...\n"
                     # Create a new DataFrame and write to a csv file
                     df = pd.DataFrame(dataSet)
-                    with open(self._dest + month + str(filterRule) + '_' + str(counter) + '.csv', 'wb') as csvfile:
+                    with open(self._dest + self.year + self.month + '_' + str(filterRule) + '_' + str(counter) + '.csv', 'wb') as csvfile:
                         df.to_csv(csvfile, sep=',', index=False)
                     counter += 1
+                    dataSet = []
+            data.close()
 
         print "\nWriting to File...\n"
         # Create a new DataFrame and write to a csv file
