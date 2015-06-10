@@ -788,11 +788,18 @@ RegExp.escape= function(s) {
         throw new Error('not implemented');
       }
 
-      var output = [];
-      for(i in arrays) {
-        output.push(arrays[i]);
+      var output = "";
+      
+      for(var idx=0; idx< arrays.length; idx++) {
+        for(var subidx=0; subidx < arrays[idx].length; subidx++) {
+          output += config.delimiter + arrays[idx][subidx] + config.delimiter;
+          if(subidx < arrays[idx].length -1) {
+              output += config.separator;
+          }
+        }
+        output += "\n";
       }
-
+      
       // push the value to a callback if one is defined
       if(!config.callback) {
         return output;

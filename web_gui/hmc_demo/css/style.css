@@ -412,6 +412,11 @@ a.show-sidebar:hover {
   padding: 0 10px;
   font-size: 14px;
 }
+.box-icons a.beauty-table-to-csv {
+  width: auto;
+  padding: 0 10px;
+  font-size: 14px;
+}
 .box-icons a:hover {
   box-shadow:inset 0 0 1px 0 #CECECE;
 }

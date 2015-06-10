@@ -1,131 +1,65 @@
 <style>
-	.allow_scroll {overflow-x : auto};
-	.allow_scroll_table {width : auto};
+    .allow_scroll {overflow-x : auto};
+    .allow_scroll_table {width : auto};
 </style>
 <div class="row">
-	<div id="breadcrumb" class="col-md-12">
-		<ol class="breadcrumb">
-			<li><a href="#">Dashboard</a></li>
-			<li><a href="#">Tables</a></li>
-			<li><a href="#">Data Tables</a></li>
-		</ol>
-	</div>
+    <div id="breadcrumb" class="col-md-12">
+        <ol class="breadcrumb">
+            <li><a href="#">Dashboard</a></li>
+            <li><a href="#">Tables</a></li>
+            <li><a href="#">Data Tables</a></li>
+        </ol>
+    </div>
 </div>
 <div class="row">
-	<div class="col-xs-12">
-		<div class="box allow_scroll">
-			<div class="box-header">
-				<div class="box-name">
-					<span>Dummy Data</span>
-				</div>
-				<div class="box-icons">
-					<a class="collapse-link">
-						<i class="fa fa-chevron-up"></i>
-					</a>
-				</div>
-				<div class="no-move"></div>
-			</div>
+    <div class="col-xs-12">
+        <div class="box allow_scroll">
+            <div class="box-header">
+                <div class="box-name">
+                    <span>Filter Data</span>
+                </div>
+                <div class="box-icons">
+                    <a class="collapse-link">
+                        <i class="fa fa-chevron-up"></i>
+                    </a>
+                </div>
+                <div class="no-move"></div>
+            </div>
             <input type="file" id="fileUpload">
-			<div id="toggleMe" class="box-content">
-			</div>
-			<div id="uppertable-3" class="box-content no-padding table-responsive">
-				<table class="table table-bordered table-striped table-hover table-heading table-datatable" id="datatable-3">  
-					<thead>
+            <div id="toggleMe" class="box-content">
+            </div>
+            <div id="uppertable-3" class="box-content no-padding table-responsive">
+                <table class="table table-bordered table-striped table-hover table-heading table-datatable" id="datatable-3">  
+                    <thead>
                     </thead>
                     <tbody>
                     </tbody>
                     <tfoot>
                     </tfoot>
-				</table>
-			</div>
-		</div>
-	</div>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
-<script src="input/testdata.js"></script>
+
 <script type="text/javascript">
 // Run Datables plugin and create 3 variants of settings
 function AllTables(){
-	TestTable3();
-	LoadSelect2Script(MakeSelect2);
+    TestTable3();
 }
 function MakeSelect2(){
-	$('select').select2();
-	$('.dataTables_filter').each(function(){
-		$(this).find('label input[type=text]').attr('placeholder', 'Search');
-	});
+    $('select').select2();
+    $('.dataTables_filter').each(function(){
+        $(this).find('label input[type=text]').attr('placeholder', 'Search');
+    });
 }
 $(document).ready(function() {
-	//$('#toggleMe').append('Toggle column: ' + toggleHeader);
-	// $('#datatable-3 > thead').append('<tr>' + colheader + '</tr>');//The TRs need to be here (for some reason), and this needs to be before the footer line otherwise the TO_CSV will not have a header line
-	// $('#datatable-3 > thead').append('<tr>' + colfooter + '</tr>');
-	// //$('#datatable-3 > tfoot').append('<tr>' + colfooter + '</tr>');//Not needed now
-	// $('#datatable-3 > tbody').append(datafields);
+    // Load Datatables and run plugin on tables 
+    LoadDataTablesScripts(AllTables);
 
-	// Load Datatables and run plugin on tables 
-	LoadDataTablesScripts(AllTables);
+    // Add Drag-n-Drop feature
+    //WinMove();//DO NOT NEED
 
-	//Load Sparkline
-	//LoadSparkLineScript(SparkLineSetup);
-	// Add Drag-n-Drop feature
-	//WinMove();
-
-});
-
-function SparkLineSetup(){
-	// Load spark-line
-	var datainput = [10, 9, 15, 1, 6];
-    SparkLineDrawBarGraph($('#sparkline-1'),datainput);
-	// $('#sparkline-1').each(function(){
-	// 	console.log(datainput);
-	// 	$(this).sparkline(datainput, {type: 'bar', barWidth: 5, highlightColor: '#777', barSpacing: 2, height: 30, stackedBarColor: '#6AA6D6'});
-	// });
-}
-
-// var libraries = [
-
-//     { 'ID': 'A' , name: 'Backbone.js', url: 'http://documentcloud.github.io/backbone/'},
-//     { 'ID': 'A' , name: 'AngularJS', url: 'https://angularjs.org/'},
-//     { 'ID': 'A' , name: 'jQuery', url: 'http://jquery.com/'},
-//     { 'ID': 'A' , name: 'Prototype', url: 'http://www.prototypejs.org/'},
-//     { 'ID': 'A' , name: 'React', url: 'http://facebook.github.io/react/'},
-//     { 'ID': 'A' , name: 'Ember', url: 'http://emberjs.com/'},
-//     { 'ID': 'A' , name: 'Knockout.js', url: 'http://knockoutjs.com/'},
-//     { 'ID': 'A' , name: 'Dojo', url: 'http://dojotoolkit.org/'},
-//     { 'ID': 'A' , name: 'Mootools', url: 'http://mootools.net/'},
-//     { 'ID': 'A' , name: 'Underscore', url: 'http://documentcloud.github.io/underscore/'},
-//     { 'ID': 'A' , name: 'Lodash', url: 'http://lodash.com/'},
-//     { 'ID': 'A' , name: 'Moment', url: 'http://momentjs.com/'},
-//     { 'ID': 'A' , name: 'Express', url: 'http://expressjs.com/'},
-//     { 'ID': 'A' , name: 'Koa', url: 'http://koajs.com/'},
-
-// ];
-
-var toggleHeader = "";
-
-var allcol = Object.keys(libraries[0]);
-var colheader = "";
-var colfooter = "";
-allcol.forEach(function(l,i){
-     var val = "search_" + l;
-     var name = "Search " + l;
-     colheader += '<th><label><input type="text" name="' + val + '" value="' + name + '" class="search_init" /></label></th>';
-     colfooter += '<th>' + l + "</th>\n"
-     if(i > 0) { toggleHeader += ' - ';}
-     toggleHeader += '<a class="toggle-vis" data-column="' + i + '">' + l + '</a>';
-});
-
-toggleHeader += ' - <a class="toggle-allvis">SHOW-ALL</a>';
-toggleHeader += ' - <a class="toggle-allhide">HIDE-ALL</a>';
-var datafields = "";
-libraries.forEach(function(i,l){
-	var rowfields = "";
-    for(field in i){ 
-            var val = i[field];
-            rowfields += '<td>' + val + '</td>\n';
-            //rowfields += '<td><input type="text" value="' + val + '"/></td>\n';//Used for edit text (combine with table-beauty and you can move around inside highlights)
-            //console.log(i + ":" + field + "=" +val);
-    }
-    datafields += '<tr>\n' + rowfields + '</tr>\n';
 });
 
 </script>
