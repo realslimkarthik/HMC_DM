@@ -41,6 +41,129 @@
     <canvas id="canvas"></canvas>
     <i class="fa fa-lock" id="screen_unlock"></i>
 </div>
+<div id="overlay"></div>
+<script type="text/javascript">
+function addLabelAnswer() {
+    var option = document.createElement("option");
+    option.text=document.labelForm.answer_text.value;
+    document.labelForm.label_data.add(option);
+    document.labelForm.answer_text.value = "";
+};
+function sortLabel(isUp) {
+    if(document.labelForm.label_data.selectedIndex >= 0)
+    {
+        // get all options
+        var shippingOptions = $('select[name=label_data] option');
+        var firstidx = document.labelForm.label_data.selectedIndex;
+        var secondidx;
+        if(isUp)
+        {
+            //swap places with above one
+            if(0 <= firstidx - 1)
+            {
+                secondidx = firstidx - 1;
+            } else {
+                //Do not need to shift
+                return;
+            }
+        } else {
+            //swap places with below one
+            if(shippingOptions.length > firstidx + 1)
+            {
+                secondidx = firstidx + 1;
+            } else {
+                //Do not need to shift
+                return;
+            }
+        }
+        var optiontemp = shippingOptions[firstidx];
+        shippingOptions[firstidx] = shippingOptions[secondidx]; 
+        shippingOptions[secondidx] = optiontemp; 
+        
+        
+        // update the select with the new option order
+        $('select[name=label_data]').append(shippingOptions);
+    }
+};
+function removeLabel() {
+    if(document.labelForm.label_data.selectedIndex >= 0)
+    {
+        document.labelForm.label_data.remove(document.labelForm.label_data.selectedIndex);
+    }
+};
+
+function checkLabelAnswer(event) {
+    
+    if (event.keyCode == 13) {
+        event.preventDefault();
+        addLabelAnswer();
+    }
+};
+function setLabelForm(question,answerset) {
+    document.labelForm.question_text.value = question;
+    
+    for(var i=0; i<answerset.length; i++)
+    {
+        var option = document.createElement("option");
+        option.text=answerset[i];
+        document.labelForm.label_data.add(option);
+    }
+    
+};
+function clearLabelForm() {
+    document.labelForm.question_text.value = "";
+    document.labelForm.answer_text.value = "";
+    
+    //Clear select
+    var i;
+    for(i=document.labelForm.label_data.options.length-1;i>=0;i--)
+    {
+        document.labelForm.label_data.remove(i);
+    }
+};
+</script>
+<div id="specialBox">
+    <form name="labelForm">
+    <h4>Label attributes</h4>
+    Question:&nbsp;<input id="question_text" type="text" name="question_text" size="40"/><br>
+    <hr width=100% align=left color=black>
+    <table width=100%>
+        <tr style="padding: 50px">
+            <td style="vertical-align: top" >
+                <div title="Hit enter to add answer"><input onkeydown='checkLabelAnswer(event)' type="text" name="answer_text" size="40"/></div>
+            </td>
+            <td>
+                <button type="button" class="btn btn-primary btn-lg" onmousedown='addLabelAnswer()'>Add Answer</button>                    
+            </td>
+        </tr>
+    </table>
+    Answer List:
+    <table width=100% align=center>
+        <tr style="padding: 10px">
+            <td valign=center align=center style="padding: 10px">
+                <a onclick="sortLabel(true)"><i class="fa fa-arrow-up"></i></a><br>
+                <a onclick="removeLabel()"><i class="fa fa-times"></i></a><br>
+                <a onclick="sortLabel(false)"><i class="fa fa-arrow-down"></i></a><br>
+            </td>
+            <td>
+                <select size=5 name="label_data" style="width: 300px">
+                </select>
+            </td>
+        </tr>
+    </table>
+    <hr width=100% align=left color=black>
+    <table width=500>
+        <tr>
+            <td width=50% align=center>
+                <button type="button" class="btn btn-primary btn-lg" onmousedown="addLabel()">Apply</button>
+            </td>
+            <td width=50% align=center>
+                <button type="button" class="btn btn-primary btn-lg" onmousedown="toggleOverlay()">Cancel</button>
+            </td>
+        </tr>
+    </table>
+    </form>
+</div>
 <div id="modalbox">
     <div class="devoops-modal">
         <div class="devoops-modal-header">
@@ -250,6 +373,37 @@
                     <div class="box">
                         <div class="box-header">
                             <div class="box-name">
+                                <span>Setup Labels</span>
+                            </div>
+                            <div class="box-icons">
+                                <a class="label-to-csv">
+                                    <i class="fa fa-floppy-o"></i>&nbsp;Save to CSV
+                                </a>
+                                <a class="collapse-link">
+                                    <i class="fa fa-chevron-up"></i>
+                                </a>
+                            </div>
+                            <div class="no-move"></div>
+                        </div>
+                        <div class="box-content">
+                            <h4 class="page-header">Labels</h4>
+                            <div class="row form-group">
+                                <div class="col-sm-12">
+                                    <a onmousedown="openLabel(-1)"><i class="fa fa-plus"></i>&nbsp;Add Label</a>&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <a class="remove-label"><i class="fa fa-times"></i>&nbsp;Remove Label</a>&nbsp;&nbsp;&nbsp;<i>(double-click to edit)</i>
+                                    <div title="Double-click to edit"><select id="label-list" ondblclick="editLabel()" class="form-control" size="5">
+                                    </select></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="box">
+                        <div class="box-header">
+                            <div class="box-name">
                                 <span>Information</span>
                             </div>
                             <div class="box-icons">
@@ -305,7 +459,7 @@
                             </div>
                             <div class="box-icons">
                                 <a class="beauty-table-to-csv">
-                                    Save to CSV
+                                    <i class="fa fa-floppy-o"></i>&nbsp;Save to CSV
                                 </a>
                                 <a class="collapse-link">
                                     <i class="fa fa-chevron-up"></i>
@@ -329,20 +483,156 @@
             
             <script type="text/javascript">
             function MakeSelect2(){
-                $('select').select2();
+                //$('select').select2();
                 $('.dataTables_filter').each(function(){
                     $(this).find('label input[type=text]').attr('placeholder', 'Search');
                 });
             }
+            
+            //Global labelData
+            var labelData = [];
+            
+            //Currently editing label index in labelData
+            var currentEditLabel = -1;
+            
+            //Update the list based on labelData
+            function updateLabelList(){
+                //remove all remaining list items
+                //Clear select
+                var i;
+                for(i=document.getElementById('label-list').options.length-1;i>=0;i--)
+                {
+                    document.getElementById('label-list').remove(i);
+                }
+
+                var newoptions = [];
+                var oneopt;
+                var i;
+                for(i=0; i<labelData.length; i++)
+                {
+                    var str = labelData[i]["question"] + "? (";
+                    for(j=0; j<labelData[i]["answerset"].length; j++)
+                    {
+                        if(j>0) {str+=", ";}
+                        str += labelData[i]["answerset"][j];
+                    }
+                    oneopt = document.createElement("option");
+                    oneopt.text=str + ")";
+                    //newoptions.push(oneopt);
+                    document.getElementById('label-list').add(oneopt);
+                }
+                
+            };
+            
+            //Submit Add/Edit label defined in label set (might already be editted)
+            function addLabel(){
+                //pull all options into an array
+                var shippingOptions = document.labelForm.label_data.options;
+                
+                //Convert option array to text array
+                var textoptions = [];
+                for(var i=0; i<shippingOptions.length; i++)
+                {
+                    textoptions[i] = shippingOptions[i].text;
+                }
+                
+                var question = document.labelForm.question_text.value;
+                
+                if(currentEditLabel >= 0)
+                {
+                    //replace
+                    labelData[currentEditLabel] = { "question" : question,
+                                              "answerset" : textoptions};
+                } else {
+                    //Add new
+                    labelData[labelData.length] = { "question" : question,
+                                                    "answerset" : textoptions};
+                }
+                
+                //call update of select based on labelData
+                updateLabelList();
+                
+                toggleOverlay();
+                
+            };
+            
+            //Open label add/edit display
+            function openLabel(editNumber) {
+                
+                clearLabelForm();
+                
+                if(editNumber >= 0 && labelData.length > editNumber)
+                {
+                    currentEditLabel = editNumber;
+                    setLabelForm(labelData[editNumber]["question"],labelData[editNumber]["answerset"]);
+                } else {
+                    currentEditLabel = -1;
+                }
+                
+                toggleOverlay();
+                
+                //Focus after update
+                setTimeout ( function () {
+                    /* show the cursor */
+                    $('#question_text').focus();
+                }, 100);
+            };
+
+            //Edit label
+            function editLabel() {
+                if(document.getElementById('label-list').selectedIndex >= 0)
+                {
+                    openLabel(document.getElementById('label-list').selectedIndex);
+                }
+            }
+            $('.edit-label').on('click', editLabel);
+            
+            //Remove label
+            $('.remove-label').on('click', function(){
+                if(document.getElementById('label-list').selectedIndex >= 0)
+                {
+                     var removeidx = document.getElementById('label-list').selectedIndex;
+
+                    //remove from array
+                    labelData.splice(removeidx,1);
+                }
+                
+                //Update display to match
+                updateLabelList();
+            });
+            
+
             $(document).ready(function() {
                 // Load Datatables and run plugin on tables 
                 TestTable3(true);//true means Label
                 
                 // Add Drag-n-Drop feature
                 WinMove();
+                
+                
+                
+                //DOWNLOAD BUTTON
+                $('.label-to-csv').on('click', function(e){
+                    e.preventDefault();
+                    
+                    var result_json = JSON.stringify(labelData);
+                    OpenModalBox('Table to JSON values', result_json);
+//                     
+//                     //Add Header row
+//                     var alldata = [headerdata].concat(data);
+//                     var csvdata = $.csv.fromArrays(alldata,{'experimental':true});
+//                     var blob = new Blob([csvdata], {type: "text/csv;charset=utf-8"});
+//                     saveAs(blob, file.name);
+                });
+                
             });
             window.no_ajax = true;
             </script>
+            <style>
+            .hidden {
+              display:none;
+            }
+            </style>
             <script src='plugins/datatables/jquery.dataTables.js'></script>
             <script src='plugins/datatables/ZeroClipboard.js'></script>
             <script src='plugins/datatables/TableTools.js'></script>

@@ -768,24 +768,29 @@ function CloseModalBox(){
         this.on('keydown', function(event) {
             var target = event.target;
             var tr = $(target).closest("tr");
+            var input = $(target).closest("input");
             var col = $(target).closest("td");
             var findstr = "td.editable";
             if (target.tagName.toUpperCase() == 'INPUT'){
                 if (event.shiftKey === true){
                     switch(event.keyCode) {
                         case 37: // left arrow  $('#datatable-3 tbody td.editable')
+                            input.trigger("submit");
                             col.prev().click().focus();//.children(findstr)
                             break;
                         case 39: // right arrow
+                            input.trigger("submit");
                             col.next().click().focus();//.children(findstr)
                             break;
                         case 40: // down arrow
                             if (string_fill==false){
+                                input.trigger("submit");
                                 tr.next().find('td:eq('+col.index()+')').click().focus();// + findstr
                             }
                             break;
                         case 38: // up arrow
                             if (string_fill==false){
+                                input.trigger("submit");
                                 tr.prev().find('td:eq('+col.index()+')').click().focus();// + findstr
                             }
                             break;
@@ -803,20 +808,23 @@ function CloseModalBox(){
 //                              break;
                      case 40: // down arrow
                          if (string_fill==false){
+                            input.trigger("submit");
                              table.find('tr:last-child td:eq('+col.index()+')').click().focus();// + findstr
                          }
                          break;
                      case 38: // up arrow
                          if (string_fill==false){
+                            input.trigger("submit");
                              table.find('tr:eq(2) td:eq('+col.index()+')').click().focus();// + findstr
                          }
                          break;
                      }
                  }
                 //keyCode == 13 : DO NOT NEED - handled in submit for jeditable
-                if (/*event.keyCode == 13 || */ event.keyCode == 9 ) {
+                if (event.keyCode == 13 || event.keyCode == 9 ) {
                     event.preventDefault();
                     if (string_fill==false){
+                        input.trigger("submit");
                         tr.next().find('td:eq('+col.index()+') ').click().focus();
                     }
                 }
@@ -1762,12 +1770,44 @@ function TestTable3(isLabel){
             //Save off first row
             var headerrow = [];
             dataSet = $.csv.toArrays(e.target.result);
-            var headerdata = dataSet[0];
+            if(dataSet.length == 0)
+            {
+                //No data, so return
+                return;
+            }
+            //Add labels to header data
+            if(labelData.length > 0)
+            {
+                var maxcol = dataSet[0].length;
+                for(var lblidx = 0; lblidx<labelData.length; lblidx++)
+                {
+                    var doNotAdd = false;
+                    //Check if Label already exists:
+                    for(var jj=0; jj<dataSet[0].length; jj++)
+                    {
+                        if(dataSet[0][jj] == 'LABEL_' + labelData[lblidx]["question"])
+                        {
+                            doNotAdd = true;
+                            break;
+                        }
+                    }
+                    if(!doNotAdd)
+                    {
+                        dataSet[0][maxcol+lblidx] = 'LABEL_' + labelData[lblidx]["question"];
+                        for(var i=1; i<dataSet.length; i++)
+                        {
+                            dataSet[i][maxcol+lblidx] = "";
+                        }
+                    }
+                }
+            }
+            var headerdata = dataSet[0];            
             var colheader = "";
             var colfooter = "";
             var toggleHeader = "";
             var labelColumns = [];
             var isLabelFont = "";
+            
             if(headerdata.length > 0) {
                 for(var i = 0; i<headerdata.length; i++) {
                     isLabelFont = "";
@@ -1783,17 +1823,19 @@ function TestTable3(isLabel){
                     colheader += '<th><label><input type="text" name="' + val + '" value="' + name + '" class="search_init" /></label></th>';
                     colfooter += '<th>' + headerdata[i] + "</th>\n";
 
-                    if(i > 0) { toggleHeader += ' - ';}
-                    toggleHeader += '<a class="toggle-vis" ' + isLabelFont + ' data-column="' + i + '">' + headerdata[i] + '</a>';
+                    if(i == 0) { toggleHeader += '&nbsp;';}
+                    toggleHeader += '<li><a class="toggle-vis" ' + isLabelFont + ' data-column="' + i + '">&nbsp;' + headerdata[i] + '&nbsp;</a></li>';
                     
                 }
             }
-            toggleHeader += ' - <a class="toggle-allvis">SHOW-ALL</a>';
-            toggleHeader += ' - <a class="toggle-allhide">HIDE-ALL</a>';
+            toggleHeader += '<li><a class="toggle-allvis">SHOW-ALL</a></li>';
+            toggleHeader += '<li><a class="toggle-allhide">HIDE-ALL</a></li>';
 
+            var toggleStart = '<form><input id="search-text" placeholder="Filter columns..."></form><ul class="list-inline" id="list">';
+            var toggleEnd = '</ul>';
         
             $('#toggleMe').html("");
-            $('#toggleMe').append('Toggle column by clicking: ' + toggleHeader);
+            $('#toggleMe').append('Toggle column by clicking: ' + toggleStart + toggleHeader + toggleEnd);
             $('#datatable-3 > thead').append('<tr>' + colheader + '</tr>');//The TRs need to be here (for some reason), and this needs to be before the footer line otherwise 
             $('#datatable-3 > thead').append('<tr>' + colfooter + '</tr>');
             dataSet.shift();//remove header row
@@ -1881,10 +1923,11 @@ function TestTable3(isLabel){
                             
                             oTable.fnUpdate(sValue,idxdata[0],idxdata[2]);
                             
-                            //Select the next object
-                            var tr = $(this).closest("tr");
-                            var col = $(this).closest("td");
-                            tr.next().find('td:eq('+col.index()+') ').click().focus();
+                            //DO NOT NEED - was done elsewhere: Select the next object
+                            //var tr = $(this).closest("tr");
+                            //var col = $(this).closest("td");
+                            //tr.next().find('td:eq('+col.index()+') ').click().focus();
+                            
                             editableOn(false);
                         },
                         "height": "14px",
@@ -1994,8 +2037,10 @@ function TestTable3(isLabel){
                 }
 
                 if(data.length == 0) {
-                    //No filtered data, so get all original data
-                    data = dataSet;
+                    //No filtered data, so get entire current data
+                    for ( var i=0, iLen=oSettings.aoData.length ; i<iLen ; i++ ) {
+                        data.push(oSettings.aoData[i]._aData);
+                    }
                 }
 
                 //Add Header row
@@ -2037,6 +2082,49 @@ function TestTable3(isLabel){
             //Initialize values for de-focus
             header_inputs.each( function (i) {
                 asInitVals[i] = this.value;
+            });
+            
+            //we want this function to fire whenever the user types in the search-box
+              $("#search-text").keyup(function () {
+              
+                //first we create a variable for the value from the search-box
+                var searchTerm = $("#search-text").val();
+            
+                //then a variable for the list-items (to keep things clean)
+                var listItem = $('#list').children('li');
+                
+                //extends the default :contains functionality to be case insensitive
+                //if you want case sensitive search, just remove this next chunk
+                $.extend($.expr[':'], {
+                  'containsi': function(elem, i, match, array)
+                  {
+                    return (elem.textContent || elem.innerText || '').toLowerCase()
+                    .indexOf((match[3] || "").toLowerCase()) >= 0;
+                  }
+                });//end of case insensitive chunk
+            
+            
+                //this part is optional
+                //here we are replacing the spaces with another :contains
+                //what this does is to make the search less exact by searching all words and not full strings
+                var searchSplit = searchTerm.replace(/ /g, "'):containsi('")
+                
+                
+                //here is the meat. We are searching the list based on the search terms
+                $("#list li").not(":containsi('" + searchSplit + "')").each(function(e)   {
+            
+                      //add a "hidden" class that will remove the item from the list
+                      $(this).addClass('hidden');
+            
+                });
+                
+                //this does the opposite -- brings items back into view
+                $("#list li:containsi('" + searchSplit + "')").each(function(e) {
+            
+                      //remove the hidden class (reintroduce the item to the list)
+                      $(this).removeClass('hidden');
+            
+                });
             });
 
         }
@@ -2210,27 +2298,6 @@ function FileUpload(){
         }
     });
 }
-
-function AdHocFileUpload() {
-    var fileUpload = document.getElementById("fileUpload");
-
-    fileUpload.onload = function (e) {
-        var table = document.createElement("table");
-        var rows = e.target.result.split("\n");
-        for (var i = 0; i < rows.length; i++) {
-            var row = table.insertRow(-1);
-            var cells = rows[i].split(",");
-            for (var j = 0; j < cells.length; j++) {
-               var cell = row.insertCell(-1);
-               cell.innerHTML = cells[j];
-            }
-        }
-        var dvCSV = document.getElementById("dvCSV");
-        dvCSV.innerHTML = "";
-        dvCSV.appendChild(table);
-    }
-
-}
 /*-------------------------------------------
     Function for OpenStreetMap page (maps.html)
 ---------------------------------------------*/
@@ -2260,6 +2327,23 @@ function LoadTestMap(){
         }
     );
 }
+/*-------------------------------------------
+    Function for Toggling an overlay
+---------------------------------------------*/
+
+function toggleOverlay(){
+    var overlay = document.getElementById('overlay');
+    var specialBox = document.getElementById('specialBox');
+    overlay.style.opacity = .8;
+    if(overlay.style.display == "block"){
+        overlay.style.display = "none";
+        specialBox.style.display = "none";
+    } else {
+        overlay.style.display = "block";
+        specialBox.style.display = "block";
+    }
+}
+
 /*-------------------------------------------
     Function for Fullscreen Map page (map_fullscreen.html)
 ---------------------------------------------*/
