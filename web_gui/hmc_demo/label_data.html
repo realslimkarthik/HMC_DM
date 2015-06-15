@@ -387,6 +387,7 @@ function clearLabelForm() {
                         </div>
                         <div class="box-content">
                             <h4 class="page-header">Labels</h4>
+                            <input type="file" id="fileUploadLabel" />
                             <div class="row form-group">
                                 <div class="col-sm-12">
                                     <a onmousedown="openLabel(-1)"><i class="fa fa-plus"></i>&nbsp;Add Label</a>&nbsp;&nbsp;&nbsp;&nbsp;
@@ -615,6 +616,7 @@ function clearLabelForm() {
                 $('.label-to-csv').on('click', function(e){
                     e.preventDefault();
                     
+                    //Temporary solution - change to save to CSV and load CSV
                     var result_json = JSON.stringify(labelData);
                     OpenModalBox('Table to JSON values', result_json);
 //                     
@@ -625,6 +627,25 @@ function clearLabelForm() {
 //                     saveAs(blob, file.name);
                 });
                 
+                
+                
+                //Setup Upload
+                var fileUpload = document.getElementById("fileUpload");
+            
+                fileUpload.addEventListener('change', function(e) {
+                    var file = fileUpload.files[0];
+                    var reader = new FileReader();
+            
+            
+                    reader.onload = function(e) {
+                        fileUpload.disabled = true;
+                        //console.log("Finished upload");
+                    });
+        
+                }
+        
+                //console.log("Starting upload");
+                reader.readAsText(file);
             });
             window.no_ajax = true;
             </script>
