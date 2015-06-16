@@ -2821,7 +2821,7 @@ $(document).ready(function () {
     }
     //Temporary Special check for prototype
     //Default isLabel to false
-    if(typeof window.no_ajax == 'undefined')
+    if(window.no_ajax == undefined)
     {
         window.no_ajax = false;
     }
