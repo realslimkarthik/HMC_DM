@@ -1753,8 +1753,6 @@ function TestTable3(isLabel){
         var isLabel = false;
     }
     
-    var asInitVals = [];
-    var dataSet = [];
 
     //Setup Upload
     var fileUpload = document.getElementById("fileUpload");
@@ -1767,139 +1765,160 @@ function TestTable3(isLabel){
         reader.onload = function(e) {
             fileUpload.disabled = true;
             //console.log("Finished upload");
-            //Save off first row
-            var headerrow = [];
-            dataSet = $.csv.toArrays(e.target.result);
-            if(dataSet.length == 0)
-            {
-                //No data, so return
-                return;
-            }
-            //Add labels to header data
-            if(labelData.length > 0)
-            {
-                var maxcol = dataSet[0].length;
-                for(var lblidx = 0; lblidx<labelData.length; lblidx++)
-                {
-                    var doNotAdd = false;
-                    //Check if Label already exists:
-                    for(var jj=0; jj<dataSet[0].length; jj++)
-                    {
-                        if(dataSet[0][jj] == 'LABEL_' + labelData[lblidx]["question"])
-                        {
-                            doNotAdd = true;
-                            break;
-                        }
-                    }
-                    if(!doNotAdd)
-                    {
-                        dataSet[0][maxcol+lblidx] = 'LABEL_' + labelData[lblidx]["question"];
-                        for(var i=1; i<dataSet.length; i++)
-                        {
-                            dataSet[i][maxcol+lblidx] = "";
-                        }
-                    }
-                }
-            }
-            var headerdata = dataSet[0];            
-            var colheader = "";
-            var colfooter = "";
-            var toggleHeader = "";
-            var labelColumns = [];
-            var isLabelFont = "";
+            var dataSet = $.csv.toArrays(e.target.result);
             
-            if(headerdata.length > 0) {
-                for(var i = 0; i<headerdata.length; i++) {
-                    isLabelFont = "";
-                    if(headerdata[i].indexOf("LABEL") > -1 && isLabel) {
-                        //Label header
-                        labelColumns.push(i);
-                        isLabelFont = "style='font-weight:bold'";
-                    }
-                    var onecolumn = {'sTitle' : headerdata[i]};
-                    headerrow.push(onecolumn);
-                    var val = "search_" + headerdata[i];
-                    var name = "Search " + headerdata[i];
-                    colheader += '<th><label><input type="text" name="' + val + '" value="' + name + '" class="search_init" /></label></th>';
-                    colfooter += '<th>' + headerdata[i] + "</th>\n";
-
-                    if(i == 0) { toggleHeader += '&nbsp;';}
-                    toggleHeader += '<li><a class="toggle-vis" ' + isLabelFont + ' data-column="' + i + '">&nbsp;' + headerdata[i] + '&nbsp;</a></li>';
-                    
-                }
-            }
-            toggleHeader += '<li><a class="toggle-allvis">SHOW-ALL</a></li>';
-            toggleHeader += '<li><a class="toggle-allhide">HIDE-ALL</a></li>';
-
-            var toggleStart = '<form><input id="search-text" placeholder="Filter columns..."></form><ul class="list-inline" id="list">';
-            var toggleEnd = '</ul>';
+            setupDataTable(dataSet,file.name,[]);
+        };
         
-            $('#toggleMe').html("");
-            $('#toggleMe').append('Toggle column by clicking: ' + toggleStart + toggleHeader + toggleEnd);
-            $('#datatable-3 > thead').append('<tr>' + colheader + '</tr>');//The TRs need to be here (for some reason), and this needs to be before the footer line otherwise 
-            $('#datatable-3 > thead').append('<tr>' + colfooter + '</tr>');
-            dataSet.shift();//remove header row
 
-            var datafields = "";
-            dataSet.forEach(function(l){
-                var rowfields = "";
-                var idx = 0;
-                l.forEach(function(val){
-                        if($.inArray(idx,labelColumns) > -1) {
-                            rowfields += '<td><input type="text" value="' + val + '"></td>\n';
-                        } else {
-                            rowfields += '<td>' + val + '</td>\n';
-                        }
-                        idx++;
-                });
-                datafields += '<tr>\n' + rowfields + '</tr>\n';
-            });
+        //console.log("Starting upload");
+        reader.readAsText(file);
+    });
 
-            //DO NOT NEED - datafields added directly by data variable
-            //$('#datatable-3 > tbody').html("");
-            //$('#datatable-3 > tbody').append(datafields);
+}
 
-            var header_inputs = $("#datatable-3 thead input");//must be before dataTable created
+function setupDataTable(dataSet,filename,viscol) {
 
-
-            var totalColumns = headerdata.length;
-            var allNonViselem = [];
-            var allelem = [];
-            var allVisElem = [0, 1];
-            allVisElem = allVisElem.concat(labelColumns);//Add label columns too
-            for(var i=2; i<totalColumns;i++) {if($.inArray(i,labelColumns) == -1) {allNonViselem.push(i);}}//remove label columns
-            for(var i=0; i<totalColumns;i++) {allelem.push(i);}
-
-            var editableOnPrev = false;
-            //Used for resize update of table - to delay it if in the middle of editing
-            var editableOn = function(val) {
-                if(val != editableOnPrev && editableOnPrev && redrawDelay) {
-                    resizeTable();
-                    redrawDelay = false;
+    window.notLoadedDataTable = false;//not allow to load again
+    var asInitVals = [];
+    var isLabel = true;//default to true right now
+    //Save off first row
+    var headerrow = [];
+    if(dataSet.length == 0)
+    {
+        //No data, so return
+        return;
+    }
+    //Add labels to header data
+    if(labelData.length > 0)
+    {
+        var maxcol = dataSet[0].length;
+        for(var lblidx = 0; lblidx<labelData.length; lblidx++)
+        {
+            var doNotAdd = false;
+            //Check if Label already exists:
+            for(var jj=0; jj<dataSet[0].length; jj++)
+            {
+                if(dataSet[0][jj] == 'LABEL_' + labelData[lblidx]["question"])
+                {
+                    doNotAdd = true;
+                    break;
                 }
-                editableOnPrev = val;
             }
-            var redrawDelay = false;
+            if(!doNotAdd)
+            {
+                dataSet[0][maxcol+lblidx] = 'LABEL_' + labelData[lblidx]["question"];
+                for(var i=1; i<dataSet.length; i++)
+                {
+                    dataSet[i][maxcol+lblidx] = "";
+                }
+            }
+        }
+    }
+    var headerdata = dataSet[0];            
+    var colheader = "";
+    var colfooter = "";
+    var toggleHeader = "";
+    var labelColumns = [];
+    var isLabelFont = "";
+    
+    if(headerdata.length > 0) {
+        for(var i = 0; i<headerdata.length; i++) {
+            isLabelFont = "";
+            if(headerdata[i].indexOf("LABEL") > -1 && isLabel) {
+                //Label header
+                labelColumns.push(i);
+                isLabelFont = "style='font-weight:bold'";
+            }
+            var onecolumn = {'sTitle' : headerdata[i]};
+            headerrow.push(onecolumn);
+            var val = "search_" + headerdata[i];
+            var name = "Search " + headerdata[i];
+            colheader += '<th><label><input type="text" name="' + val + '" value="' + name + '" class="search_init" /></label></th>';
+            colfooter += '<th>' + headerdata[i] + "</th>\n";
 
-            var oTable = $('#datatable-3').dataTable( {
-                "aaSorting": [[ 0, "asc" ]],
-                "sDom": "R<'box-content'<'col-sm-6'f><'col-sm-6 text-right'l><'clearfix'>>rt<'box-content'<'col-sm-6'i><'col-sm-6 text-right'p><'clearfix'>>",
-                //"sDom": "TR<'box-content'<'col-sm-6'f><'col-sm-6 text-right'l><'clearfix'>>rt<'box-content'<'col-sm-6'i><'col-sm-6 text-right'p><'clearfix'>>", //DO NOT NEED - adds Save To
-                 "aoColumnDefs": [
-                     {"bVisible":true, "aTargets":allVisElem},
-                     {"bVisible":false, "aTargets":allNonViselem},//only show first 2 columns
-                     {"sClass" : "editable", "aTargets" : labelColumns}
-                 ],
-                "aaData": dataSet,
-                //"aoColumns": headerrow, //DO NOT NEED
-                "bAutoWidth":true,
-                "sPaginationType": "bootstrap",
-                "oLanguage": {
-                    "sSearch": "",
-                    "sLengthMenu": '_MENU_'
-                },
-                "sScrollX" : "100%", 
-                //DO NOT NEED: Already have another implementation of download that works on client-side
+            if(i == 0) { toggleHeader += '&nbsp;';}
+            toggleHeader += '<li><a class="toggle-vis" ' + isLabelFont + ' data-column="' + i + '">&nbsp;' + headerdata[i] + '&nbsp;</a></li>';
+            
+        }
+    }
+    toggleHeader += '<li><a class="toggle-allvis">SHOW-ALL</a></li>';
+    toggleHeader += '<li><a class="toggle-allhide">HIDE-ALL</a></li>';
+
+    var toggleStart = '<form><input id="search-text" placeholder="Filter columns..."></form><ul class="list-inline" id="list">';
+    var toggleEnd = '</ul>';
+
+    $('#toggleMe').html("");
+    $('#toggleMe').append('Toggle column by clicking: ' + toggleStart + toggleHeader + toggleEnd);
+    $('#datatable-3 > thead').append('<tr>' + colheader + '</tr>');//The TRs need to be here (for some reason), and this needs to be before the footer line otherwise 
+    $('#datatable-3 > thead').append('<tr>' + colfooter + '</tr>');
+    dataSet.shift();//remove header row
+
+    var datafields = "";
+    dataSet.forEach(function(l){
+        var rowfields = "";
+        var idx = 0;
+        l.forEach(function(val){
+                if($.inArray(idx,labelColumns) > -1) {
+                    rowfields += '<td><input type="text" value="' + val + '"></td>\n';
+                } else {
+                    rowfields += '<td>' + val + '</td>\n';
+                }
+                idx++;
+        });
+        datafields += '<tr>\n' + rowfields + '</tr>\n';
+    });
+
+    //DO NOT NEED - datafields added directly by data variable
+    //$('#datatable-3 > tbody').html("");
+    //$('#datatable-3 > tbody').append(datafields);
+
+    var header_inputs = $("#datatable-3 thead input");//must be before dataTable created
+
+
+    var totalColumns = headerdata.length;
+    var allNonViselem = [];
+    var allelem = [];
+    var allVisElem = [0, 1];
+    //Allow custom visible
+    if(viscol.length > 0)
+    {
+        allVisElem = viscol;
+    }
+    allVisElem = allVisElem.concat(labelColumns);//Add label columns too
+    for(var i=0; i<totalColumns;i++) {if($.inArray(i,allVisElem) == -1) {allNonViselem.push(i);}}//remove label columns
+    for(var i=0; i<totalColumns;i++) {allelem.push(i);}
+
+    var editableOnPrev = false;
+    //Used for resize update of table - to delay it if in the middle of editing
+    var editableOn = function(val) {
+        if(val != editableOnPrev && editableOnPrev && redrawDelay) {
+            resizeTable();
+            redrawDelay = false;
+        }
+        editableOnPrev = val;
+    }
+    var redrawDelay = false;
+
+    var oTable = $('#datatable-3').dataTable( {
+        "aaSorting": [[ 0, "asc" ]],
+        "sDom": "R<'box-content'<'col-sm-6'f><'col-sm-6 text-right'l><'clearfix'>>rt<'box-content'<'col-sm-6'i><'col-sm-6 text-right'p><'clearfix'>>",
+        //"sDom": "TR<'box-content'<'col-sm-6'f><'col-sm-6 text-right'l><'clearfix'>>rt<'box-content'<'col-sm-6'i><'col-sm-6 text-right'p><'clearfix'>>", //DO NOT NEED - adds Save To
+         "aoColumnDefs": [
+             {"bVisible":true, "aTargets":allVisElem},
+             {"bVisible":false, "aTargets":allNonViselem},//only show first 2 columns
+             {"sClass" : "editable", "aTargets" : labelColumns}
+         ],
+        "aaData": dataSet,
+        //"aoColumns": headerrow, //DO NOT NEED
+        "bAutoWidth":true,
+        "sPaginationType": "bootstrap",
+        "oLanguage": {
+            "sSearch": "",
+            "sLengthMenu": '_MENU_'
+        },
+        "sScrollX" : "100%", 
+        //DO NOT NEED: Already have another implementation of download that works on client-side
 //                 "oTableTools": {
 //                     "sSwfPath": "plugins/datatables/copy_csv_xls_pdf.swf",
 //                     "aButtons": [
@@ -1909,74 +1928,74 @@ function TestTable3(isLabel){
 //                         }
 //                     ]
 //                 },
-                "iDisplayLength":5,//initial display number
-                "aLengthMenu":[[1,5,10,20,50,100,-1],[1,5,10,20,50,100,'ALL']],
-                "fnDrawCallback": function () {
-                    $('#datatable-3 tbody td.editable').editable( function(value,settings) {
-                        return(value);
-                    },
-                    {
-                        "placeholder" : "",
-                        "callback": function( sValue, y ) {
-                            /* Update the table from the new data set */
-                            var idxdata = oTable.fnGetPosition(this);
-                            
-                            oTable.fnUpdate(sValue,idxdata[0],idxdata[2]);
-                            
-                            //DO NOT NEED - was done elsewhere: Select the next object
-                            //var tr = $(this).closest("tr");
-                            //var col = $(this).closest("td");
-                            //tr.next().find('td:eq('+col.index()+') ').click().focus();
-                            
-                            editableOn(false);
-                        },
-                        "height": "14px",
-                        "cssclass" : "search_init",
-                        "tooltip" : "Click to edit...",
-                        "onedit" : function() {
-                            editableOn(true);
-                        },
-                        "onerror":function () {
-                            editableOn(false);
-                        },
-                        "onreset" : function () {
-                            editableOn(false);
-                        }
-                    } );
+        "iDisplayLength":5,//initial display number
+        "aLengthMenu":[[1,5,10,20,50,100,-1],[1,5,10,20,50,100,'ALL']],
+        "fnDrawCallback": function () {
+            $('#datatable-3 tbody td.editable').editable( function(value,settings) {
+                return(value);
+            },
+            {
+                "placeholder" : "",
+                "callback": function( sValue, y ) {
+                    /* Update the table from the new data set */
+                    var idxdata = oTable.fnGetPosition(this);
+                    
+                    oTable.fnUpdate(sValue,idxdata[0],idxdata[2]);
+                    
+                    //DO NOT NEED - was done elsewhere: Select the next object
+                    //var tr = $(this).closest("tr");
+                    //var col = $(this).closest("td");
+                    //tr.next().find('td:eq('+col.index()+') ').click().focus();
+                    
+                    editableOn(false);
+                },
+                "height": "14px",
+                "cssclass" : "search_init",
+                "tooltip" : "Click to edit...",
+                "onedit" : function() {
+                    editableOn(true);
+                },
+                "onerror":function () {
+                    editableOn(false);
+                },
+                "onreset" : function () {
+                    editableOn(false);
                 }
-                //DO NOT NEED - not needed now
-                //"bStateSave": false //save the state of the personal configuration of displaying table
-                //"bFilter":false, //disable filters
-                //"bDestroy": true //delete previous table
-            });
-            //console.log("Recreated datatable");
-            var resizeTable = function() {
-                //toggle visibility of first column back and forth to cause auto width
-                var bVis = oTable.fnSettings().aoColumns[0].bVisible;
-                oTable.fnSetColumnVis( 0, bVis ? false : true );
-                oTable.fnSetColumnVis( 0, bVis ? true : false );
-            }
-            $( window ).resize(function() {
-                if(editableOnPrev) {
-                    redrawDelay = true;
-                } else {
-                    //Redraw now
-                    resizeTable();
-                }
-            });
+            } );
+        }
+        //DO NOT NEED - not needed now
+        //"bStateSave": false //save the state of the personal configuration of displaying table
+        //"bFilter":false, //disable filters
+        //"bDestroy": true //delete previous table
+    });
+    //console.log("Recreated datatable");
+    var resizeTable = function() {
+        //toggle visibility of first column back and forth to cause auto width
+        var bVis = oTable.fnSettings().aoColumns[0].bVisible;
+        oTable.fnSetColumnVis( 0, bVis ? false : true );
+        oTable.fnSetColumnVis( 0, bVis ? true : false );
+    }
+    $( window ).resize(function() {
+        if(editableOnPrev) {
+            redrawDelay = true;
+        } else {
+            //Redraw now
+            resizeTable();
+        }
+    });
 
 
-            //Add table keys
-            $('.beauty-table-mod').each(function(){
-                // Run keyboard navigation in table
-                $(this).beautyTablesModified();
-            });
-            
-            //Re-establish filters
-            //LoadSelect2Script(MakeSelect2);//DO NOT NEED
-            MakeSelect2();
+    //Add table keys
+    $('.beauty-table-mod').each(function(){
+        // Run keyboard navigation in table
+        $(this).beautyTablesModified();
+    });
+    
+    //Re-establish filters
+    //LoadSelect2Script(MakeSelect2);//DO NOT NEED
+    MakeSelect2();
 
-            //DO NOT NEED - allows for selection in the future
+    //DO NOT NEED - allows for selection in the future
 //             $('#datatable-3 tbody').on( 'click', 'tr', function () {
 //                 $(this).toggleClass('selected');
 //             } );
@@ -1984,155 +2003,196 @@ function TestTable3(isLabel){
 //                 alert( table.rows('.selected').data().length +' row(s) selected' );
 //             } );
 
-            $('a.toggle-vis').on( 'click', function (e) {
-                e.preventDefault();
-                  
-                // // Toggle the visibility
-                var bVis = oTable.fnSettings().aoColumns[$(this).attr('data-column')].bVisible;
-                oTable.fnSetColumnVis( $(this).attr('data-column'), bVis ? false : true );
-            } );
-            //Show All
-            $('a.toggle-allvis').on('click',function(e) {
-                //show everything
-                e.preventDefault();
+    $('a.toggle-vis').on( 'click', function (e) {
+        e.preventDefault();
+          
+        // // Toggle the visibility
+        var bVis = oTable.fnSettings().aoColumns[$(this).attr('data-column')].bVisible;
+        oTable.fnSetColumnVis( $(this).attr('data-column'), bVis ? false : true );
+    } );
+    //Show All
+    $('a.toggle-allvis').on('click',function(e) {
+        //show everything
+        e.preventDefault();
 
-                var bVis;
-                for(var ii = 0; ii<totalColumns; ++ii)
-                {
-                    //Only make visible those that are not visible
-                    bVis = oTable.fnSettings().aoColumns[ii].bVisible;
-                    if(!bVis)
-                    {
-                        oTable.fnSetColumnVis(ii,true);
-                    }
-                }
-
-            });
-            //Hide all
-            $('a.toggle-allhide').on('click',function(e) {
-                //hide everything
-                e.preventDefault();
-
-                for(var ii = 0; ii<totalColumns; ++ii)
-                {
-                    bVis = oTable.fnSettings().aoColumns[ii].bVisible;
-                    if(bVis)
-                    {
-                        oTable.fnSetColumnVis(ii,false);
-                    }
-                }
-
-            });
-            //DOWNLOAD BUTTON
-            $('.beauty-table-to-csv').on('click', function(e){
-                e.preventDefault();
-                var oSettings = oTable.fnSettings();
-                //var alldata = [headerdata];
-
-                //Look at filter data
-                var filteredData = oSettings.aiDisplay;
-                var data = [];
-                for ( var i=0, iLen=filteredData.length ; i<iLen ; i++ ) {
-                    data.push(oSettings.aoData[filteredData[i]]._aData);
-                }
-
-                if(data.length == 0) {
-                    //No filtered data, so get entire current data
-                    for ( var i=0, iLen=oSettings.aoData.length ; i<iLen ; i++ ) {
-                        data.push(oSettings.aoData[i]._aData);
-                    }
-                }
-
-                //Add Header row
-                var alldata = [headerdata].concat(data);
-                var csvdata = $.csv.fromArrays(alldata,{'experimental':true});
-                var blob = new Blob([csvdata], {type: "text/csv;charset=utf-8"});
-                saveAs(blob, file.name);
-            });
-            
-            //Add filter hook-up for updating table
-            header_inputs.on('keyup', function(e){
-                /* Filter on the column (the index) of this element */
-                if(this.value.length > 0 && this.value.charAt(0) == '~') {
-                    if(e.which == 13) {
-                        e.preventDefault();
-                        var inputstring = this.value.substring(1);
-                        console.log('Doing regex = ' + inputstring);
-                        oTable.fnFilter( inputstring, header_inputs.index(this) , true, false, true, false);
-                    }
-                } else {
-                    oTable.fnFilter( this.value, header_inputs.index(this) , false, true, true, true);
-                    e.preventDefault();
-                }
-            })
-            //Add CSS change on focus
-            .on('focus', function(){
-                if ( this.className == "search_init" ){
-                    this.className = "";
-                    this.value = "";
-                }
-            })
-            //Add CSS change on defocus
-            .on('blur', function (i) {
-                if ( this.value == "" ){
-                    this.className = "search_init";
-                    this.value = asInitVals[header_inputs.index(this)];
-                }
-            });
-            //Initialize values for de-focus
-            header_inputs.each( function (i) {
-                asInitVals[i] = this.value;
-            });
-            
-            //we want this function to fire whenever the user types in the search-box
-              $("#search-text").keyup(function () {
-              
-                //first we create a variable for the value from the search-box
-                var searchTerm = $("#search-text").val();
-            
-                //then a variable for the list-items (to keep things clean)
-                var listItem = $('#list').children('li');
-                
-                //extends the default :contains functionality to be case insensitive
-                //if you want case sensitive search, just remove this next chunk
-                $.extend($.expr[':'], {
-                  'containsi': function(elem, i, match, array)
-                  {
-                    return (elem.textContent || elem.innerText || '').toLowerCase()
-                    .indexOf((match[3] || "").toLowerCase()) >= 0;
-                  }
-                });//end of case insensitive chunk
-            
-            
-                //this part is optional
-                //here we are replacing the spaces with another :contains
-                //what this does is to make the search less exact by searching all words and not full strings
-                var searchSplit = searchTerm.replace(/ /g, "'):containsi('")
-                
-                
-                //here is the meat. We are searching the list based on the search terms
-                $("#list li").not(":containsi('" + searchSplit + "')").each(function(e)   {
-            
-                      //add a "hidden" class that will remove the item from the list
-                      $(this).addClass('hidden');
-            
-                });
-                
-                //this does the opposite -- brings items back into view
-                $("#list li:containsi('" + searchSplit + "')").each(function(e) {
-            
-                      //remove the hidden class (reintroduce the item to the list)
-                      $(this).removeClass('hidden');
-            
-                });
-            });
-
+        var bVis;
+        for(var ii = 0; ii<totalColumns; ++ii)
+        {
+            //Only make visible those that are not visible
+            bVis = oTable.fnSettings().aoColumns[ii].bVisible;
+            if(!bVis)
+            {
+                oTable.fnSetColumnVis(ii,true);
+            }
         }
 
-        //console.log("Starting upload");
-        reader.readAsText(file);
     });
+    //Hide all
+    $('a.toggle-allhide').on('click',function(e) {
+        //hide everything
+        e.preventDefault();
+
+        for(var ii = 0; ii<totalColumns; ++ii)
+        {
+            bVis = oTable.fnSettings().aoColumns[ii].bVisible;
+            if(bVis)
+            {
+                oTable.fnSetColumnVis(ii,false);
+            }
+        }
+
+    });
+    //DOWNLOAD BUTTON
+    $('.beauty-table-to-csv').on('click', function(e){
+        e.preventDefault();
+        var oSettings = oTable.fnSettings();
+        //var alldata = [headerdata];
+
+        //Look at filter data
+        var filteredData = oSettings.aiDisplay;
+        var data = [];
+        for ( var i=0, iLen=filteredData.length ; i<iLen ; i++ ) {
+            data.push(oSettings.aoData[filteredData[i]]._aData);
+        }
+
+        if(data.length == 0) {
+            //No filtered data, so get entire current data
+            for ( var i=0, iLen=oSettings.aoData.length ; i<iLen ; i++ ) {
+                data.push(oSettings.aoData[i]._aData);
+            }
+        }
+
+        //Add Header row
+        var alldata = [headerdata].concat(data);
+        var csvdata = $.csv.fromArrays(alldata,{'experimental':true});
+        var blob = new Blob([csvdata], {type: "text/csv;charset=utf-8"});
+        saveAs(blob, filename);
+    });
+
+
+    //BROWSWER SAVE BUTTON
+    $('.beauty-table-to-save').on('click', function(e){
+        e.preventDefault();
+        var oSettings = oTable.fnSettings();
+        //var alldata = [headerdata];
+
+        //Look at filter data
+        var filteredData = oSettings.aiDisplay;
+        var data = [];
+        for ( var i=0, iLen=filteredData.length ; i<iLen ; i++ ) {
+            data.push(oSettings.aoData[filteredData[i]]._aData);
+        }
+
+        if(data.length == 0) {
+            //No filtered data, so get entire current data
+            for ( var i=0, iLen=oSettings.aoData.length ; i<iLen ; i++ ) {
+                data.push(oSettings.aoData[i]._aData);
+            }
+        }
+
+        //Add Header row
+        var alldata = [headerdata].concat(data);
+        var csvdata = $.csv.fromArrays(alldata,{'experimental':true});
+        var viscol = [];
+        
+        //Cycle through all columns and add what is visible
+        for(var ii = 0; ii<oTable.fnSettings().aoColumns.length; ++ii)
+        {
+            //Only add if not a label column
+            if($.inArray(ii,labelColumns) == -1)
+            {
+                if(oTable.fnSettings().aoColumns[ii].bVisible)
+                {
+                    viscol.push(ii);
+                }
+            }
+        } 
+        
+        localStorage.setItem('dataTable',csvdata);
+        localStorage.setItem('filename',filename);
+        localStorage.setItem('viscol',JSON.stringify(viscol));
+        console.log('Successfully saved dataTable');
+    });
+    
+    //Add filter hook-up for updating table
+    header_inputs.on('keyup', function(e){
+        /* Filter on the column (the index) of this element */
+        if(this.value.length > 0 && this.value.charAt(0) == '~') {
+            if(e.which == 13) {
+                e.preventDefault();
+                var inputstring = this.value.substring(1);
+                console.log('Doing regex = ' + inputstring);
+                oTable.fnFilter( inputstring, header_inputs.index(this) , true, false, true, false);
+            }
+        } else {
+            oTable.fnFilter( this.value, header_inputs.index(this) , false, true, true, true);
+            e.preventDefault();
+        }
+    })
+    //Add CSS change on focus
+    .on('focus', function(){
+        if ( this.className == "search_init" ){
+            this.className = "";
+            this.value = "";
+        }
+    })
+    //Add CSS change on defocus
+    .on('blur', function (i) {
+        if ( this.value == "" ){
+            this.className = "search_init";
+            this.value = asInitVals[header_inputs.index(this)];
+        }
+    });
+    //Initialize values for de-focus
+    header_inputs.each( function (i) {
+        asInitVals[i] = this.value;
+    });
+    
+    //we want this function to fire whenever the user types in the search-box
+      $("#search-text").keyup(function () {
+      
+        //first we create a variable for the value from the search-box
+        var searchTerm = $("#search-text").val();
+    
+        //then a variable for the list-items (to keep things clean)
+        var listItem = $('#list').children('li');
+        
+        //extends the default :contains functionality to be case insensitive
+        //if you want case sensitive search, just remove this next chunk
+        $.extend($.expr[':'], {
+          'containsi': function(elem, i, match, array)
+          {
+            return (elem.textContent || elem.innerText || '').toLowerCase()
+            .indexOf((match[3] || "").toLowerCase()) >= 0;
+          }
+        });//end of case insensitive chunk
+    
+    
+        //this part is optional
+        //here we are replacing the spaces with another :contains
+        //what this does is to make the search less exact by searching all words and not full strings
+        var searchSplit = searchTerm.replace(/ /g, "'):containsi('")
+        
+        
+        //here is the meat. We are searching the list based on the search terms
+        $("#list li").not(":containsi('" + searchSplit + "')").each(function(e)   {
+    
+              //add a "hidden" class that will remove the item from the list
+              $(this).addClass('hidden');
+    
+        });
+        
+        //this does the opposite -- brings items back into view
+        $("#list li:containsi('" + searchSplit + "')").each(function(e) {
+    
+              //remove the hidden class (reintroduce the item to the list)
+              $(this).removeClass('hidden');
+    
+        });
+    });
+
 }
+
 /*-------------------------------------------
     Functions for Dashboard page (dashboard.html)
 ---------------------------------------------*/

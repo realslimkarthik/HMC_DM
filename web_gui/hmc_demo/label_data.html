@@ -459,6 +459,12 @@ function clearLabelForm() {
                                 <span>Filter Data</span>
                             </div>
                             <div class="box-icons">
+                                <a class="beauty-table-to-load">
+                                    <i class="fa fa-floppy-o"></i>&nbsp;Temp Load
+                                </a>
+                                <a class="beauty-table-to-save">
+                                    <i class="fa fa-floppy-o"></i>&nbsp;Temp Save
+                                </a>
                                 <a class="beauty-table-to-csv">
                                     <i class="fa fa-floppy-o"></i>&nbsp;Save to CSV
                                 </a>
@@ -522,7 +528,8 @@ function clearLabelForm() {
                     //newoptions.push(oneopt);
                     document.getElementById('label-list').add(oneopt);
                 }
-                
+                //Save
+                saveToStorage();
             };
             
             //Submit Add/Edit label defined in label set (might already be editted)
@@ -601,6 +608,20 @@ function clearLabelForm() {
                 //Update display to match
                 updateLabelList();
             });
+
+            //Save the label setup to persistant location in browswer
+            function saveToStorage() {
+                localStorage.setItem('labelData',JSON.stringify(labelData));
+            };
+            
+            function loadFromStorage() {
+                if(!localStorage.getItem('labelData'))
+                {
+                } else {
+                    labelData = JSON.parse(localStorage.getItem('labelData'));
+                    updateLabelList();
+                }
+            };
             
 
             $(document).ready(function() {
@@ -610,6 +631,7 @@ function clearLabelForm() {
                 // Add Drag-n-Drop feature
                 WinMove();
                 
+                loadFromStorage();
                 
                 
                 //DOWNLOAD BUTTON
@@ -708,8 +730,32 @@ function clearLabelForm() {
                     reader.readAsText(file);
                 });
         
-            });
+                //BROWSWER LOAD BUTTON
+                $('.beauty-table-to-load').on('click', function(e){
+                    if(window.notLoadedDataTable)
+                    {
+                        
+                        if(!localStorage.getItem('dataTable'))
+                        {
+                            console.log('Tried to load, but no data');
+                        } else {
+                            var csvdata = localStorage.getItem('dataTable');
+                            var filename = localStorage.getItem('filename');
+                            var viscol = JSON.parse(localStorage.getItem('viscol'));
+                            setupDataTable($.csv.toArrays(csvdata),filename,viscol);
+                            console.log('Tried to load, with data');
+                            
+                            //Disable fileUpload to not load anything
+                            var fileUpload = document.getElementById("fileUpload");
+                            fileUpload.disabled = true;
+                            
+                        }
+                    }
+                });
+
+            });//end READY FUNCTION
             window.no_ajax = true;
+            window.notLoadedDataTable = true;
             </script>
             <style>
             .hidden {
