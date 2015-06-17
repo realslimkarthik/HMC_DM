@@ -1787,6 +1787,10 @@ function setupDataTable(dataSet,filename,viscol) {
     var isLabel = true;//default to true right now
     //Save off first row
     var headerrow = [];
+    if(typeof labelData == 'undefined')
+    {
+        var labelData = [];
+    }
     if(dataSet.length == 0)
     {
         //No data, so return

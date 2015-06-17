@@ -32,7 +32,6 @@
     <script src="plugins/jquery-csv/jquery.csv.js">/*cannot use .min*/</script>
     <script src="plugins/FileSaver/FileSaver.min.js"></script>
     <script src="plugins/jquery-jeditable/jquery.jeditable.mini.js"></script>
-    <script src="plugins/papa_parse/PapaParse-4.1.0/papaparse.min.js"></script>
     <!-- All functions for this theme + document.ready processing -->
     <script src="js/devoops.js"></script>
     </head>
@@ -251,7 +250,7 @@
                     <div class="box">
                         <div class="box-header">
                             <div class="box-name">
-                                <span>Toggle columns</span>
+                                <span>Setup Query</span>
                             </div>
                             <div class="box-icons">
                                 <a class="collapse-link">
@@ -260,7 +259,19 @@
                             </div>
                             <div class="no-move"></div>
                         </div>
-                        <div id="toggleMe" class="box-content">
+                        <div class="box-content">
+                            Query:<input type="text" id="query" size=100 /><br>
+                            <label class="col-sm-4 control-label">Date period</label>
+                            <div class="col-sm-4">
+                                <input type="text" class="form-control" id="date3_example" placeholder="Date period">
+                            </div>
+                            <div class="col-sm-4">
+                                <input type="text" class="form-control" id="date3-1_example" placeholder="Date period">
+                            </div>
+                            <button id="submitQuery" type="cancel" class="btn btn-default btn-label-left">
+                            <span><i class="fa fa-clock-o txt-danger"></i></span>
+                                Run
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -270,40 +281,16 @@
                     <div class="box">
                         <div class="box-header">
                             <div class="box-name">
-                                <span>Filter Data</span>
+                                <span>Query Results</span>
                             </div>
                             <div class="box-icons">
-                                <a class="beauty-table-to-load">
-                                    <i class="fa fa-cloud-download"></i>&nbsp;Temp Load
-                                </a>
-                                <a class="beauty-table-to-save">
-                                    <i class="fa fa-cloud-upload"></i>&nbsp;Temp Save All
-                                </a>
-                                <a class="beauty-table-to-load-csv">
-                                    <i class="fa fa-upload"></i>&nbsp;Load from CSV
-                                    <input type="file" id="fileUpload"  accept=".csv" style='display:none;'/>
-                                </a>                                
-                                <a class="beauty-table-to-csv">
-                                    <i class="fa fa-download"></i>&nbsp;Save filter to CSV
-                                </a>                                
-                                <a class="beauty-table-to-crop">
-                                    <i class="fa fa-crop"></i>&nbsp;Crop non-Filtered
-                                </a>                                
                                 <a class="collapse-link">
                                     <i class="fa fa-chevron-up"></i>
                                 </a>
                             </div>
                             <div class="no-move"></div>
                         </div>
-                        <div class="box-content no-padding table-responsive">
-                            <table class="table table-bordered table-striped table-hover table-heading table-datatable beauty-table-mod" id="datatable-3">  
-                                <thead>
-                                </thead>
-                                <tbody>
-                                </tbody>
-                                <tfoot>
-                                </tfoot>
-                            </table>
+                        <div id="response" class="box-content">
                         </div>
                     </div>
                 </div>
@@ -317,63 +304,83 @@
                 });
             }
                 
+            function setupDatePeriod()
+            {
+                $('#date3_example').datepicker({
+                    defaultDate: "+lw",
+                    changeMonth: true,
+                    numberOfMonths: 3,
+                    onClose: function( selectedDate ) {
+                        $( "#date3-1_example" ).datepicker( "option", "minDate", selectedDate );
+                    }
+                });
+                $('#date3-1_example').datepicker({
+                    defaultDate: "+lw",
+                    changeMonth: true,
+                    numberOfMonths: 3,
+                    onClose: function( selectedDate ) {
+                        $( "#date3_example" ).datepicker( "option", "maxDate", selectedDate );
+                    }
+                });
+            };
 
             $(document).ready(function() {
                 // Load Datatables and run plugin on tables 
-                TestTable3(false);//true means Label
+                //TestTable3(false);//true means Label
+                setupDatePeriod();
                 
                 // Add Drag-n-Drop feature
                 WinMove();
                 
-                
-                //BROWSWER LOAD BUTTON
-                $('.beauty-table-to-load-csv').on('click', function(e){
-                    if(window.notLoadedDataTable)
-                    {
-                        var fileUpload = document.getElementById("fileUpload");
-                        fileUpload.click();
-                    }
+                $('#submitQuery').on('click', function(e) {
+                    var querytext = $('#query').val();
+                    var datestart = $('#datestart').val();
+                    var dateend = $('#dateend').val();
+                    //convert all single ' to "
+                    var newtext = querytext.replace(/'/g,'"');
+                    var query = JSON.parse(newtext);
+                    countData(query,datestart,dateend);
                 });
                 
                 
                 
-                //Initially hide the options
-                $('.beauty-table-to-save').hide();
-                $('.beauty-table-to-csv').hide();
-                $('.beauty-table-to-crop').hide();
-
-                //Hide temp load if nothing to load
-                if(!localStorage.getItem('dataTable'))
-                {
-                   $('.beauty-table-to-load').hide();
-                }
+                
                 var searchtag = "matchingrulestag";
                 var searchrule = "matchingrulesvalue"; //by number
                 var dataColumns = ["Idpost","bodypost","retweetCount","generatordname","filterlevel","kloutscore","matchingrulestag1","matchingrulestag2","matchingrulestag3","matchingrulestag4","matchingrulestag5","matchingrulestag6","matchingrulesvalues","matchingrulesvalue1","matchingrulesvalue2","matchingrulesvalue3","matchingrulesvalue4","matchingrulesvalue5","matchingrulesvalue6","languagevalue","favoritesCount","objpostedTime","objsummary","objlink","objid","objobjType","bodyoriginal","actorpreferredusername","actorname","actorlinkshref","actorTimeZone","actorimage","actorverified","actorstatusuesCount","actorsummary","actorlanguages","actorutcOffset","actorlink","actorfollowersCount","actorfavoritesCount","actorfriendsCount","actorlistedCount","actorPostedTime","actorid","actorObjType","entitiesusrmentionsidstr1","entitiesusrmentionssname1","entitiesusrmentionsname1","entitiesusrmentionsidstr2","entitiesusrmentionssname2","entitiesusrmentionsname2","entitiesusrmentionsidstr3","entitiesusrmentionssname3","entitiesusrmentionsname3","entitiesusrmentionsidstr4","entitiesusrmentionssname4","entitiesusrmentionsname4","entitiesusrmentionsidstr5","entitiesusrmentionssname5","entitiesusrmentionsname5","entitieshtagstext1","entitieshtagstext2","entitieshtagstext3","entitieshtagstext4","entitieshtagstext5","entitiesurlexpandedurl","entitiesmdaexpandedurl","lang","postedTime","Year","Month","Day","Time","objgeotype","objlocdname","geotype","geocoordinates","verb","link","locdname","locname","loctwcountrycode","loccountrycode","locgeocoordinates","gniplocdname","gniploccountry","gniplocregion","gniploccounty","gniploclocality","gniplocgeocoordinates","gnipurl","gnipexpandedurl"];
                 var timeColumn = "postedTime";
                 
-                searchString();
+                //countData();
                 
-                function searchString(sTag,sRule,sTime)
-                {
-                    var filelocation = "file:///C:/Users/dsabin2/Documents/Dec25_1.csv";
-                    Papa.parse(filelocation, {
-                        download: true,
-                        stream: true,
-                        worker: true,
-                        chunk : function(results, parser) {//called on default every 10MB
-                            //results.data - array
-                            console.log("Received one chunk");
-                        },
-                        complete: function(results, file) {
-                            console.log("Parsing complete:", results, file);
+                function countData(query,datestart,dateend) /*sTag,sRule,sTimeStart,sTimeEnd,sSplice*/
+                {                    
+                    //var query = {};
+                    var timeRange = [];
+                    //query = {'mrt' : {'$ne': 7}};
+                    
+                    var newdate = new Date(datestart);
+                    //WORKING HERE
+                    //newdate.getFullYear() + newdate.getMonth();
+                    timeRange = [datestart, dateend];
+                    
+                    //var query = {"sTag":sTag,"sRule":sRule,"sTimeStart" :sTimeStart, "sTimeEnd":sTimeEnd, "sSplice":sSplice};
+                    var request = {"query":query,"timeRange":timeRange};
+                    var scriptLocation = "http://localhost:8000/cgi-bin/test_cgi.py";
+                    $('#response').append('<h4>Started query</h4> <button type="button" class="btn btn-danger btn-app-sm"><i class="fa fa-spinner fa-spin"></i></button>');
+                    $.ajax({
+                        url: scriptLocation,
+                        type: "post",
+                        data: JSON.stringify(request),
+                        dataType: "json",
+                        success: function(response) {
+                            $('#response').html("<h4>Results:</h4>");
+                            $('#response').append(JSON.stringify(response));
                         }
                     });
                 }
 
             });//end READY FUNCTION
             window.no_ajax = true;
-            window.notLoadedDataTable = true;
             </script>
             <style>
             .hidden {
@@ -386,6 +393,7 @@
             <script src='plugins/datatables/dataTables.colReorder.min.js'></script>
             <script src='plugins/datatables/dataTables.bootstrap.js'></script>
             <script src='plugins/select2/select2.min.js'></script>
+            <script src='plugins/jquery-ui-timepicker-addon/jquery-ui-timepicker-addon.min.js'></script>
         </div>
         <!--End Content-->
     </div>
