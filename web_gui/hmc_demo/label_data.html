@@ -376,8 +376,12 @@ function clearLabelForm() {
                                 <span>Setup Labels</span>
                             </div>
                             <div class="box-icons">
+                                <a class="label-to-load-csv">
+                                    <i class="fa fa-upload"></i>&nbsp;Append from CSV
+                                    <input type="file" id="fileUploadLabel" accept=".csv" style='display:none;'/>
+                                </a>                                
                                 <a class="label-to-csv">
-                                    <i class="fa fa-floppy-o"></i>&nbsp;Save to CSV
+                                    <i class="fa fa-download"></i>&nbsp;Save to CSV
                                 </a>
                                 <a class="collapse-link">
                                     <i class="fa fa-chevron-up"></i>
@@ -386,14 +390,14 @@ function clearLabelForm() {
                             <div class="no-move"></div>
                         </div>
                         <div class="box-content">
-                            <h4 class="page-header">Labels</h4>
-                            <input type="file" id="fileUploadLabel" accept=".csv" />
                             <div class="row form-group">
                                 <div class="col-sm-12">
                                     <a onmousedown="openLabel(-1)"><i class="fa fa-plus"></i>&nbsp;Add Label</a>&nbsp;&nbsp;&nbsp;&nbsp;
                                     <a class="remove-label"><i class="fa fa-times"></i>&nbsp;Remove Label</a>&nbsp;&nbsp;&nbsp;<i>(double-click to edit)</i>
-                                    <div title="Double-click to edit"><select id="label-list" ondblclick="editLabel()" class="form-control" size="5">
-                                    </select></div>
+                                    <div title="Double-click to edit">
+                                        <select id="label-list" ondblclick="editLabel()" class="form-control" size="5"></select>
+                                    </div>
+                                    <i>Note: Labels are automatically loaded/saved to Cloud</i>
                                 </div>
                             </div>
                         </div>
@@ -418,7 +422,6 @@ function clearLabelForm() {
                             <div class="no-move"></div>
                         </div>
                         <div class="box-content no-padding table-responsive">
-                            <input type="file" id="fileUpload"  accept=".csv" />
                             <h4>Select a file to load.</h4>
                             <h5>Column titles that include "LABEL" will be editable.</h5>
                             <h5>While editing the LABEL columns in the table you can use the keyboard to navigate cells, see below</h5>
@@ -460,14 +463,21 @@ function clearLabelForm() {
                             </div>
                             <div class="box-icons">
                                 <a class="beauty-table-to-load">
-                                    <i class="fa fa-floppy-o"></i>&nbsp;Temp Load
+                                    <i class="fa fa-cloud-download"></i>&nbsp;Temp Load
                                 </a>
                                 <a class="beauty-table-to-save">
-                                    <i class="fa fa-floppy-o"></i>&nbsp;Temp Save
+                                    <i class="fa fa-cloud-upload"></i>&nbsp;Temp Save All
                                 </a>
+                                <a class="beauty-table-to-load-csv">
+                                    <i class="fa fa-upload"></i>&nbsp;Load from CSV
+                                    <input type="file" id="fileUpload"  accept=".csv" style='display:none;'/>
+                                </a>                                
                                 <a class="beauty-table-to-csv">
-                                    <i class="fa fa-floppy-o"></i>&nbsp;Save to CSV
-                                </a>
+                                    <i class="fa fa-download"></i>&nbsp;Save filter to CSV
+                                </a>                                
+                                <a class="beauty-table-to-crop">
+                                    <i class="fa fa-crop"></i>&nbsp;Crop non-Filtered
+                                </a>                                
                                 <a class="collapse-link">
                                     <i class="fa fa-chevron-up"></i>
                                 </a>
@@ -682,7 +692,7 @@ function clearLabelForm() {
                 
                 
                 
-                //Setup Upload
+                //Setup Upload of Label
                 var fileUploadLabel = document.getElementById("fileUploadLabel");
             
                 fileUploadLabel.addEventListener('change', function(e) {
@@ -691,6 +701,7 @@ function clearLabelForm() {
             
             
                     reader.onload = function(e) {
+                        //DO NOT NEED:
                         //fileUploadLabel.disabled = true;
                         
                         var headerrow = [];
@@ -702,6 +713,7 @@ function clearLabelForm() {
                         }
                         var headerdata = dataSet[0];            
 
+                        //DO NOT NEED
 //                         if(headerdata.length > 0) {
 //                             for(var i = 0; i<headerdata.length; i++) {
 //                             }
@@ -739,20 +751,47 @@ function clearLabelForm() {
                         {
                             console.log('Tried to load, but no data');
                         } else {
-                            var csvdata = localStorage.getItem('dataTable');
+                            var jsondata = decodeURIComponent(localStorage.getItem('dataTable'));
                             var filename = localStorage.getItem('filename');
                             var viscol = JSON.parse(localStorage.getItem('viscol'));
-                            setupDataTable($.csv.toArrays(csvdata),filename,viscol);
+                            setupDataTable(JSON.parse(jsondata),filename,viscol);
                             console.log('Tried to load, with data');
                             
                             //Disable fileUpload to not load anything
                             var fileUpload = document.getElementById("fileUpload");
                             fileUpload.disabled = true;
-                            
+                            $('.beauty-table-to-load').hide();
+                            $('.beauty-table-to-load-csv').hide();
                         }
                     }
                 });
+                
+                //BROWSWER LOAD BUTTON
+                $('.beauty-table-to-load-csv').on('click', function(e){
+                    if(window.notLoadedDataTable)
+                    {
+                        var fileUpload = document.getElementById("fileUpload");
+                        fileUpload.click();
+                    }
+                });
+                
+                
+                //LABEL LOAD BUTTON
+                $('.label-to-load-csv').on('click', function(e){
+                    var fileUploadLabel = document.getElementById("fileUploadLabel");
+                    fileUploadLabel.click();
+                });
+                
+                //Initially hide the options
+                $('.beauty-table-to-save').hide();
+                $('.beauty-table-to-csv').hide();
+                $('.beauty-table-to-crop').hide();
 
+                //Hide temp load if nothing to load
+                if(!localStorage.getItem('dataTable'))
+                {
+                   $('.beauty-table-to-load').hide();
+                }
             });//end READY FUNCTION
             window.no_ajax = true;
             window.notLoadedDataTable = true;

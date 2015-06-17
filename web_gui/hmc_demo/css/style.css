@@ -422,12 +422,27 @@ a.show-sidebar:hover {
   padding: 0 10px;
   font-size: 14px;
 }
+.box-icons a.label-to-load-csv {
+  width: auto;
+  padding: 0 10px;
+  font-size: 14px;
+}
 .box-icons a.beauty-table-to-save {
   width: auto;
   padding: 0 10px;
   font-size: 14px;
 }
+.box-icons a.beauty-table-to-crop {
+  width: auto;
+  padding: 0 10px;
+  font-size: 14px;
+}
 .box-icons a.beauty-table-to-load {
+  width: auto;
+  padding: 0 10px;
+  font-size: 14px;
+}
+.box-icons a.beauty-table-to-load-csv {
   width: auto;
   padding: 0 10px;
   font-size: 14px;

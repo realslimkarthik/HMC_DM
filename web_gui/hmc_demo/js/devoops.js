@@ -768,6 +768,7 @@ function CloseModalBox(){
         this.on('keydown', function(event) {
             var target = event.target;
             var tr = $(target).closest("tr");
+            //var input = $(target).closest("input");
             var input = $(target).closest("input");
             var col = $(target).closest("td");
             var findstr = "td.editable";
@@ -1764,6 +1765,8 @@ function TestTable3(isLabel){
 
         reader.onload = function(e) {
             fileUpload.disabled = true;
+            $('.beauty-table-to-load-csv').hide();
+            $('.beauty-table-to-load').hide();
             //console.log("Finished upload");
             var dataSet = $.csv.toArrays(e.target.result);
             
@@ -1960,7 +1963,9 @@ function setupDataTable(dataSet,filename,viscol) {
                 },
                 "onreset" : function () {
                     editableOn(false);
-                }
+                },
+//                 "type" : "select",
+//                 "data" : ['','A','B']
             } );
         }
         //DO NOT NEED - not needed now
@@ -2043,6 +2048,7 @@ function setupDataTable(dataSet,filename,viscol) {
 
     });
     //DOWNLOAD BUTTON
+    $('.beauty-table-to-csv').show();
     $('.beauty-table-to-csv').on('click', function(e){
         e.preventDefault();
         var oSettings = oTable.fnSettings();
@@ -2064,35 +2070,28 @@ function setupDataTable(dataSet,filename,viscol) {
 
         //Add Header row
         var alldata = [headerdata].concat(data);
-        var csvdata = $.csv.fromArrays(alldata,{'experimental':true});
+        var csv = new csvWriter();
+        var csvdata = csv.arrayToCSV(alldata);
         var blob = new Blob([csvdata], {type: "text/csv;charset=utf-8"});
         saveAs(blob, filename);
     });
 
 
     //BROWSWER SAVE BUTTON
+    $('.beauty-table-to-save').show();
     $('.beauty-table-to-save').on('click', function(e){
         e.preventDefault();
         var oSettings = oTable.fnSettings();
-        //var alldata = [headerdata];
 
-        //Look at filter data
-        var filteredData = oSettings.aiDisplay;
+        //Always get entire current data
         var data = [];
-        for ( var i=0, iLen=filteredData.length ; i<iLen ; i++ ) {
-            data.push(oSettings.aoData[filteredData[i]]._aData);
-        }
-
-        if(data.length == 0) {
-            //No filtered data, so get entire current data
-            for ( var i=0, iLen=oSettings.aoData.length ; i<iLen ; i++ ) {
-                data.push(oSettings.aoData[i]._aData);
-            }
+        for ( var i=0, iLen=oSettings.aoData.length ; i<iLen ; i++ ) {
+            data.push(oSettings.aoData[i]._aData);
         }
 
         //Add Header row
         var alldata = [headerdata].concat(data);
-        var csvdata = $.csv.fromArrays(alldata,{'experimental':true});
+        var jsondata = JSON.stringify(alldata);
         var viscol = [];
         
         //Cycle through all columns and add what is visible
@@ -2108,11 +2107,52 @@ function setupDataTable(dataSet,filename,viscol) {
             }
         } 
         
-        localStorage.setItem('dataTable',csvdata);
+        localStorage.setItem('dataTable',encodeURIComponent(jsondata));
         localStorage.setItem('filename',filename);
         localStorage.setItem('viscol',JSON.stringify(viscol));
         console.log('Successfully saved dataTable');
+        
+        //Give positive Feed back to user
+        
+        OpenModalBox('Save Results', 'Save Successful');
     });
+    
+    //CROP BY FILTER DATA
+    $('.beauty-table-to-crop').show();
+    $('.beauty-table-to-crop').on('click', function(e){
+        e.preventDefault();
+        var oSettings = oTable.fnSettings();
+
+        //Look at filter data
+        var filteredData = oSettings.aiDisplay.splice(0);
+        
+        //Only crop if there is some filter
+        if(filteredData.length > 0)
+        {
+            var numberCropped = 0;
+            for ( var i=0, iLen=oSettings.aoData.length ; i<iLen ; i++ ) {
+                if($.inArray(i,filteredData) == -1)
+                {
+                    oTable.fnDeleteRow(i-numberCropped++);
+                }
+            }
+            //clear all filters and set them back to default:
+            header_inputs.val('').blur();
+            //clear main filter text and set back to default
+            $('#datatable-3_filter :input[type=text]').val('').blur();
+            
+            //Clear all internal table filters
+            for(var iCol = 0; iCol < oSettings.aoPreSearchCols.length; iCol++) {
+                oSettings.aoPreSearchCols[ iCol ].sSearch = '';
+            }
+            oSettings.oPreviousSearch.sSearch = '';
+            
+            //Redraw
+            oTable.fnDraw();
+        }
+        
+    });
+    
     
     //Add filter hook-up for updating table
     header_inputs.on('keyup', function(e){
@@ -2149,7 +2189,7 @@ function setupDataTable(dataSet,filename,viscol) {
     });
     
     //we want this function to fire whenever the user types in the search-box
-      $("#search-text").keyup(function () {
+    $("#search-text").keyup(function () {
       
         //first we create a variable for the value from the search-box
         var searchTerm = $("#search-text").val();
@@ -2192,7 +2232,6 @@ function setupDataTable(dataSet,filename,viscol) {
     });
 
 }
-
 /*-------------------------------------------
     Functions for Dashboard page (dashboard.html)
 ---------------------------------------------*/
@@ -3012,5 +3051,84 @@ $(document).ready(function () {
         OpenModalBox(header, form, button);
     });
 });
+
+//DO NOT NEED - just here as an example of how to use csvWriter below...
+// // Example
+// var csv = new csvWriter();
+// csv.del = '\t';
+// csv.enc = "'";
+// 
+// var nullVar;
+// var testStr = "The comma (,) pipe (|) single quote (') double quote (\") and tab (\t) are commonly used to tabulate data in plain-text formats.";
+// var testArr = [
+//     false,
+//     0,
+//     nullVar,
+//     // undefinedVar,
+//     '',
+//     {key:'value'},
+// ];
+// 
+// console.log(csv.escapeCol(testStr));
+// console.log(csv.arrayToRow(testArr));
+// console.log(csv.arrayToCSV([testArr, testArr, testArr]));
+
+/**
+ * Class for creating csv strings
+ * Handles multiple data types
+ * Objects are cast to Strings
+ **/
+
+function csvWriter(del, enc) {
+    this.del = del || ','; // CSV Delimiter
+    this.enc = enc || '"'; // CSV Enclosure
+    
+    // Convert Object to CSV column
+    this.escapeCol = function (col) {
+        if(isNaN(col)) {
+            // is not boolean or numeric
+            if (!col) {
+                // is null or undefined
+                col = '';
+            } else {
+                // is string or object
+                col = String(col);
+                if (col.length > 0) {
+                    // use regex to test for del, enc, \r or \n
+                    // if(new RegExp( '[' + this.del + this.enc + '\r\n]' ).test(col)) {
+                    
+                    // escape inline enclosure
+                    col = col.split( this.enc ).join( this.enc + this.enc );
+                
+                    // wrap with enclosure
+                    col = this.enc + col + this.enc;
+                }
+            }
+        }
+        return col;
+    };
+    
+    // Convert an Array of columns into an escaped CSV row
+    this.arrayToRow = function (arr) {
+        var arr2 = arr.slice(0);
+        
+        var i, ii = arr2.length;
+        for(i = 0; i < ii; i++) {
+            arr2[i] = this.escapeCol(arr2[i]);
+        }
+        return arr2.join(this.del);
+    };
+    
+    // Convert a two-dimensional Array into an escaped multi-row CSV 
+    this.arrayToCSV = function (arr) {
+        var arr2 = arr.slice(0);
+        
+        var i, ii = arr2.length;
+        for(i = 0; i < ii; i++) {
+            arr2[i] = this.arrayToRow(arr2[i]);
+        }
+        return arr2.join("\r\n");
+    };
+}
 
 

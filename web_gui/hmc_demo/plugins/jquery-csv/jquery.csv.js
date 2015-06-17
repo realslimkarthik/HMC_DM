@@ -792,7 +792,7 @@ RegExp.escape= function(s) {
       
       for(var idx=0; idx< arrays.length; idx++) {
         for(var subidx=0; subidx < arrays[idx].length; subidx++) {
-          output += config.delimiter + arrays[idx][subidx] + config.delimiter;
+          output += config.delimiter + JSON.stringify(arrays[idx][subidx]).slice(1, -1) + config.delimiter;
           if(subidx < arrays[idx].length -1) {
               output += config.separator;
           }
