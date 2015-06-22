@@ -4,6 +4,7 @@
 # Example python DM_Youtube.py yearly 2014
 
 import sys
+import re
 import ConfigParser
 import json
 import os, os.path
@@ -169,7 +170,7 @@ def processBackfill(backfillFile, raw_file, csv_file):
     print backfillFile + ' is done'
 
 
-def iterate(src_path, dest_path, month):
+def iterate(src_path, dest_path, month, year):
     src = src_path.format(year, str(i).zfill(2))
     dest = dest_path.format(year, str(i).zfill(2)) + 'CSV\\'
     try:
@@ -184,7 +185,7 @@ def iterate(src_path, dest_path, month):
             data = getData(src + j)
             df = pd.DataFrame(data)
             filename = j.split('.')[0] + '.csv'
-            with open(filename) as csvfile:
+            with open(dest + filename, 'w') as csvfile:
                 df.to_csv(csvfile, sep=',', index=False)
             # printCSV(dest + filename, data)
 
@@ -199,13 +200,13 @@ if __name__ == "__main__":
     dest_path = conf.get("youtube", "prod_dest_path")
     if op == "yearly":
         for i in range(1, 13):
-            iterate(src_path, dest_path, month)
+            iterate(src_path, dest_path, month, year)
                     
     elif op == "interval":
         start_month = sys.argv[3]
         end_month = sys.argv[4]
         for i in range(int(start_month), int(end_month) + 1):
-            iterate(src_path, dest_path, i)
+            iterate(src_path, dest_path, i, year)
 
     elif op == "backfill":
         backfill_src = conf.get("youtube", "prod_backfill_path")

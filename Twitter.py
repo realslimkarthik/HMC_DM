@@ -2,6 +2,8 @@
 import TwitterClient as TC
 import sys
 import json
+from datetime import datetime 
+from general_functions import Simplemovingaverage
 
 def upload(client,fixByMonth):
     if fixByMonth:
@@ -55,5 +57,12 @@ if __name__ == "__main__":
         with open('config\\twitter\\tw_rules.json') as r:
             rules = json.loads(r.read())
         max_rule = max(v for k, v in rules.items())
+        sma = Simplemovingaverage(50) #allow for 50 datapoints for running average
         for i in range(startidx, max_rule + 1):
+            print "---------------->Starting rule: " + str(i)
+            starttime = datetime.now()
             download(client, i)
+            endtime = datetime.now()
+            deltatime = endtime - starttime
+            print "================>Download time for " + str(i) + ": " + str(deltatime) 
+            print "================>Estimated completion in minutes: " + str(sma(deltatime.total_seconds())/60 * (max_rule - i))

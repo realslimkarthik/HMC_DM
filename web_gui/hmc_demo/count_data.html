@@ -260,13 +260,13 @@
                             <div class="no-move"></div>
                         </div>
                         <div class="box-content">
-                            Query:<input type="text" id="query" size=100 /><br>
+                            Query:<input type="text" id="query" size=100 value="{'mrt' : {'$ne': 7}}"/><br>
                             <label class="col-sm-4 control-label">Date period</label>
                             <div class="col-sm-4">
-                                <input type="text" class="form-control" id="date3_example" placeholder="Date period">
+                                <input type="text" class="form-control" id="datestart" placeholder="Date period">
                             </div>
                             <div class="col-sm-4">
-                                <input type="text" class="form-control" id="date3-1_example" placeholder="Date period">
+                                <input type="text" class="form-control" id="dateend" placeholder="Date period">
                             </div>
                             <button id="submitQuery" type="cancel" class="btn btn-default btn-label-left">
                             <span><i class="fa fa-clock-o txt-danger"></i></span>
@@ -306,20 +306,20 @@
                 
             function setupDatePeriod()
             {
-                $('#date3_example').datepicker({
+                $('#datestart').datepicker({
                     defaultDate: "+lw",
                     changeMonth: true,
                     numberOfMonths: 3,
                     onClose: function( selectedDate ) {
-                        $( "#date3-1_example" ).datepicker( "option", "minDate", selectedDate );
+                        $( "#dateend" ).datepicker( "option", "minDate", selectedDate );
                     }
                 });
-                $('#date3-1_example').datepicker({
+                $('#dateend').datepicker({
                     defaultDate: "+lw",
                     changeMonth: true,
                     numberOfMonths: 3,
                     onClose: function( selectedDate ) {
-                        $( "#date3_example" ).datepicker( "option", "maxDate", selectedDate );
+                        $( "#datestart" ).datepicker( "option", "maxDate", selectedDate );
                     }
                 });
             };
@@ -353,30 +353,119 @@
                 //countData();
                 
                 function countData(query,datestart,dateend) /*sTag,sRule,sTimeStart,sTimeEnd,sSplice*/
-                {                    
+                {                  
+                    var isTwitter = true;//temp  
+                    var currentCount = 0;
+                    var ajaxQuery;
                     //var query = {};
-                    var timeRange = [];
+                    var collectionRange = [];
+                    var collectionInc = -1;//Will be incremented on first call
                     //query = {'mrt' : {'$ne': 7}};
                     
-                    var newdate = new Date(datestart);
-                    //WORKING HERE
-                    //newdate.getFullYear() + newdate.getMonth();
-                    timeRange = [datestart, dateend];
-                    
+                    //collectionRange = [datestart, dateend];
+                    var increment = 1000;
+                    var step = -1;//Will be incremented on first call
                     //var query = {"sTag":sTag,"sRule":sRule,"sTimeStart" :sTimeStart, "sTimeEnd":sTimeEnd, "sSplice":sSplice};
-                    var request = {"query":query,"timeRange":timeRange};
+                    var request = {};
                     var scriptLocation = "http://localhost:8000/cgi-bin/test_cgi.py";
-                    $('#response').append('<h4>Started query</h4> <button type="button" class="btn btn-danger btn-app-sm"><i class="fa fa-spinner fa-spin"></i></button>');
-                    $.ajax({
-                        url: scriptLocation,
-                        type: "post",
-                        data: JSON.stringify(request),
-                        dataType: "json",
-                        success: function(response) {
-                            $('#response').html("<h4>Results:</h4>");
-                            $('#response').append(JSON.stringify(response));
-                        }
+                    $('#response').append('<h4>Started query</h4> <button type="button" id="endquery" class="btn btn-danger btn-app-sm" onclick="stopCount()"><i class="fa fa-spinner fa-spin"></i></button><br><h4 id="count"></h4>');
+                    
+                    //Setup query
+                    setupQuery(datestart,dateend);
+                    
+                    //Start the cycle
+                    nextQuery();
+                    
+                    
+                    
+                    $('#endquery').on('click',function ()
+                    {
+                        ajaxQuery.abort();
+                        $('#count').append("<br>CANCELLED");    
                     });
+                    
+                    //Update display of count
+                    function updateCount(finalUpdate)
+                    {
+                        if(finalUpdate)
+                        {
+                            $('#count').html("Final count = " + currentCount);
+                        } else {
+                            $('#count').html("Current count = " + currentCount);
+                        }
+                    };
+                    
+                    //Setup all query information
+                    function setupQuery(datestart,dateend) {
+                        
+                        var newStartDate = new Date(datestart);
+                        newStartDate.setDate(1);//make the 1st of the month so +1 on month works correctly
+                        var newEndDate = new Date(dateend);
+                        
+                        while(dates.compare(newStartDate,newEndDate) <= 0)
+                        {
+                            var strmonth = (newStartDate.getMonth() + 1).toString();
+                            if(strmonth.length < 2) { strmonth = '0' + strmonth;}
+                            strCollection = newStartDate.getFullYear().toString() + strmonth;
+                            
+                            if(isTwitter) {
+                                //Add 1-6 per month
+                                for(var k=1;k<7;k++)
+                                {
+                                     collectionRange.push(strCollection + '_' + k.toString());
+                                }   
+                            } else {                           
+                                collectionRange.push(strCollection);
+                            }
+                            
+                            //Increment one month
+                            newStartDate.setMonth(newStartDate.getMonth() + 1);
+                        }
+                    };
+                    
+                    //Handle breaking down the query into different collections
+                    function nextQuery() {
+                        collectionInc++;
+                        if(collectionRange.length > collectionInc)
+                        {
+                            step = -1;//reset Step - will be incremented later
+                            request = {"query":query,"collection":collectionRange[collectionInc],"increment":increment,"step":step};
+                            ajaxProcess();
+                        } else {
+                            //Complete
+                            updateCount(true);
+                        }
+                        
+                    };
+                    
+                    //Callback from success of AJAX call
+                    function process(response) {
+                        //{"success":'true', "totalcount" : totalcount};
+                        if(response['success'] == 'true')
+                        {
+                            currentCount = currentCount + response['totalcount'];
+                            updateCount(false);
+                        }
+                        if(response['totalcount'] > 0)
+                        {
+                            //Call again
+                            ajaxProcess();
+                        } else {
+                            nextQuery();
+                        }
+                    };
+                    
+                    //Cycle through steps until result total is 0
+                    function ajaxProcess() {
+                        request['step'] = request['step'] + 1;
+                        ajaxQuery = $.ajax({
+                            url: scriptLocation,
+                            type: "post",
+                            data: JSON.stringify(request),
+                            dataType: "json",
+                            success: process
+                        });
+                    };
                 }
 
             });//end READY FUNCTION
