@@ -1523,6 +1523,14 @@ td.beauty-hover {
 #ui-datepicker-div .ui-datepicker-buttonpane {
   margin: 0;
 }
+#ui-datepicker-div .ui-datepicker-month{
+  background: rgba(0, 0, 0, 0.7) !important;
+  border:0;
+}
+#ui-datepicker-div .ui-datepicker-year{
+  background: rgba(0, 0, 0, 0.7) !important;
+  border:0;
+}
 #ui-datepicker-div .ui-datepicker-group table {
   margin:0 auto !important;
 }

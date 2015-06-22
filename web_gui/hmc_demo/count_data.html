@@ -32,6 +32,8 @@
     <script src="plugins/jquery-csv/jquery.csv.js">/*cannot use .min*/</script>
     <script src="plugins/FileSaver/FileSaver.min.js"></script>
     <script src="plugins/jquery-jeditable/jquery.jeditable.mini.js"></script>
+    <script src="plugins/raphael/raphael-min.js"></script>
+    <script src="plugins/morris/morris.min.js"></script>
     <!-- All functions for this theme + document.ready processing -->
     <script src="js/devoops.js"></script>
     </head>
@@ -268,6 +270,15 @@
                             <div class="col-sm-4">
                                 <input type="text" class="form-control" id="dateend" placeholder="Date period">
                             </div>
+                            <div class="col-sm-2">
+                                <select id="timeSlice">
+                                    <option selected>All</option>
+                                    <option>Yearly</option>
+                                    <option>Monthly</option>
+                                    <option>Weekly</option>
+                                    <option>Daily</option>
+                                </select>
+                            </div>
                             <button id="submitQuery" type="cancel" class="btn btn-default btn-label-left">
                             <span><i class="fa fa-clock-o txt-danger"></i></span>
                                 Run
@@ -290,6 +301,7 @@
                             </div>
                             <div class="no-move"></div>
                         </div>
+                        <div id="morris-chart-1" style="height: 200px;"></div>
                         <div id="response" class="box-content">
                         </div>
                     </div>
@@ -309,6 +321,7 @@
                 $('#datestart').datepicker({
                     defaultDate: "+lw",
                     changeMonth: true,
+                    changeYear: true,
                     numberOfMonths: 3,
                     onClose: function( selectedDate ) {
                         $( "#dateend" ).datepicker( "option", "minDate", selectedDate );
@@ -317,6 +330,7 @@
                 $('#dateend').datepicker({
                     defaultDate: "+lw",
                     changeMonth: true,
+                    changeYear: true,
                     numberOfMonths: 3,
                     onClose: function( selectedDate ) {
                         $( "#datestart" ).datepicker( "option", "maxDate", selectedDate );
@@ -339,7 +353,8 @@
                     //convert all single ' to "
                     var newtext = querytext.replace(/'/g,'"');
                     var query = JSON.parse(newtext);
-                    countData(query,datestart,dateend);
+                    var timeslice = $('#timeSlice').val();
+                    countData(query,datestart,dateend,timeslice);
                 });
                 
                 
@@ -352,26 +367,33 @@
                 
                 //countData();
                 
-                function countData(query,datestart,dateend) /*sTag,sRule,sTimeStart,sTimeEnd,sSplice*/
+                function countData(query,datestart,dateend,timeslice) /*sTag,sRule,sTimeStart,sTimeEnd,sSplice*/
                 {                  
+                    var dddData = {};
                     var isTwitter = true;//temp  
                     var currentCount = 0;
                     var ajaxQuery;
                     //var query = {};
-                    var collectionRange = [];
+                    var collectionRanges = [];
+                    var collectionGroup = 0;
                     var collectionInc = -1;//Will be incremented on first call
                     //query = {'mrt' : {'$ne': 7}};
                     
                     //collectionRange = [datestart, dateend];
-                    var increment = 1000;
+                    var increment = 10000;
                     var step = -1;//Will be incremented on first call
                     //var query = {"sTag":sTag,"sRule":sRule,"sTimeStart" :sTimeStart, "sTimeEnd":sTimeEnd, "sSplice":sSplice};
                     var request = {};
                     var scriptLocation = "http://localhost:8000/cgi-bin/test_cgi.py";
-                    $('#response').append('<h4>Started query</h4> <button type="button" id="endquery" class="btn btn-danger btn-app-sm" onclick="stopCount()"><i class="fa fa-spinner fa-spin"></i></button><br><h4 id="count"></h4>');
+                    $('#response').append('<h4>Started query</h4> <button type="button" id="endquery" class="btn btn-danger btn-app-sm"><i class="fa fa-spinner fa-spin"></i></button><br><h4 id="count"></h4>');
+                    
+                    
                     
                     //Setup query
-                    setupQuery(datestart,dateend);
+                    setupQuery(datestart,dateend,timeslice);
+                    
+                    //Create plot after setup done
+                    plotData();
                     
                     //Start the cycle
                     nextQuery();
@@ -384,23 +406,45 @@
                         $('#count').append("<br>CANCELLED");    
                     });
                     
+                    //Plots the data
+                    function plotData()
+                    {                
+                        Morris.Bar({
+                            element: 'morris-chart-1',
+                            data: collectionRanges,
+                            xkey: 'slice',
+                            ykeys: ['tempresult', 'result'],
+                            labels: ['Updating # Tweets', 'Complete # Tweets'],
+                            hideHover: 'always',
+                            barColors: ['#A30000','#038C2C'],
+                            stacked: true,
+                            xLabelAngle: 60
+                        });
+                    };
+                    
                     //Update display of count
-                    function updateCount(finalUpdate)
+                    function updateCount(group,finalUpdate)
                     {
                         if(finalUpdate)
                         {
-                            $('#count').html("Final count = " + currentCount);
+                            collectionRanges[group]['result'] = currentCount;
+                            collectionRanges[group]['tempresult'] = 0;
+                            collectionRanges[group]['complete'] = true;
                         } else {
-                            $('#count').html("Current count = " + currentCount);
+                            collectionRanges[group]['tempresult'] = currentCount;
+                            plotData();
                         }
                     };
                     
                     //Setup all query information
-                    function setupQuery(datestart,dateend) {
+                    function setupQuery(datestart,dateend,timeslice) {
                         
+                        var collectionRange = [];
                         var newStartDate = new Date(datestart);
                         newStartDate.setDate(1);//make the 1st of the month so +1 on month works correctly
                         var newEndDate = new Date(dateend);
+                        var currentWeek = 0;
+                        var currentDay = 0;
                         
                         while(dates.compare(newStartDate,newEndDate) <= 0)
                         {
@@ -418,22 +462,99 @@
                                 collectionRange.push(strCollection);
                             }
                             
-                            //Increment one month
-                            newStartDate.setMonth(newStartDate.getMonth() + 1);
+                            //Perform timeslice split
+                            if(timeslice == 'All')
+                            {
+                                //Increment one month
+                                newStartDate.setMonth(newStartDate.getMonth() + 1);      
+                                if(dates.compare(newStartDate,newEndDate) <= 0)
+                                {
+                                    //all done:
+                                    collectionRanges.push({"range":collectionRange, "timequery":"", "slice":"All", "complete":false, "tempresult":0, "result":0});
+                                    collectionRange = [];
+                                }                      
+                            } else if(timeslice == 'Yearly')
+                            {
+                                //Increment one month
+                                newStartDate.setMonth(newStartDate.getMonth() + 1);   
+                                //Check for year roll-over
+                                if(newStartDate.getMonth == 1)
+                                {
+                                    //at end of year:
+                                    var sliceText = newStartDate.getFullYear().toString();
+                                    collectionRanges.push({"range":collectionRange, "timequery":"", "slice":sliceText, "complete":false, "tempresult":0, "result":0});
+                                    collectionRange = [];
+                                }                                    
+                            
+                            } else if(timeslice == 'Monthly')
+                            {
+                                var sliceText = (newStartDate.getMonth()+1) + "/" + newStartDate.getFullYear();
+                                collectionRanges.push({"range":collectionRange, "timequery":"", "slice":sliceText, "complete":false, "tempresult":0, "result":0});
+                                collectionRange = [];
+                                //Increment one month
+                                newStartDate.setMonth(newStartDate.getMonth() + 1);                  
+                            } else if(timeslice == 'Weekly')
+                            {
+                                var prevStartDate = new Date(newStartDate.getTime());
+                                var checkDate = new Date(newStartDate.getTime());
+                                var countShift = 0;
+                                //Cycle for 7 days, or until the end, or until the month changes
+                                while(dates.compare(checkDate,newEndDate) <= 0 && countShift < 8 && checkDate.getMonth() == newStartDate.getMonth())
+                                {
+                                    countShift++;
+                                    checkDate.setDate(checkDate.getDate() + 1);
+                                }
+                                if(countShift == 8)
+                                {
+                                    //Successfully counted 7 days to shift will not change month or go past end of compare time
+                                    newStartDate.setDate(newStartDate.getDate() + 7);
+                                } else {
+                                    //back up one day from countShift because that day failed a test
+                                    newStartDate.setDate(newStartDate.getDate() + countShift-1);                                    
+                                }
+                                var sliceText = prevStartDate.toLocaleDateString() + " to " + newStartDate.toLocaleDateString();
+                                var weekQuery = "{timeColumn:{'$gte': ISODate('" + prevStartDate.toISOString() +"'), '$lte': ISODate('" + newStartDate.toISOString() +"')}}" 
+                                collectionRanges.push({"range":collectionRange, "timequery":weekQuery, "slice":sliceText, "complete":false, "tempresult":0, "result":0});
+                                collectionRange = [];
+                                
+                                //Add one more day
+                                newStartDate.setDate(newStartDate.getDate() + 1);   
+                            } else if(timeslice == 'Daily')
+                            {
+                            
+                                var nextStartDate = new Date(newStartDate.getTime());
+                                nextStartDate.setDate(nextStartDate.getDate() + 1);
+                                nextStartDate.setSeconds(-1);//Back-up one minute, which should make it end of day
+                                
+                                var sliceText = newStartDate.toLocaleDateString();
+                                var weekQuery = "{timeColumn:{'$gte': ISODate('" + newStartDate.toISOString() +"'), '$lte': ISODate('" + nextStartDate.toISOString() +"')}}" 
+                                collectionRanges.push({"range":collectionRange, "timequery":weekQuery, "slice":sliceText, "complete":false, "tempresult":0, "result":0});
+                                collectionRange = [];
+                                
+                                //Add one more day
+                                newStartDate.setDate(newStartDate.getDate() + 1);  
+                            }
                         }
+                        
+                        
+                        
                     };
                     
                     //Handle breaking down the query into different collections
                     function nextQuery() {
-                        collectionInc++;
-                        if(collectionRange.length > collectionInc)
+                        if(collectionRanges.length > collectionGroup)
                         {
-                            step = -1;//reset Step - will be incremented later
-                            request = {"query":query,"collection":collectionRange[collectionInc],"increment":increment,"step":step};
-                            ajaxProcess();
-                        } else {
-                            //Complete
-                            updateCount(true);
+                            collectionInc++;
+                            if(collectionRanges[collectionGroup]['range'].length > collectionInc)
+                            {
+                                step = -1;//reset Step - will be incremented later
+                                request = {"query":query,"collection":collectionRanges[collectionGroup]['range'][collectionInc],"increment":increment,"step":step};
+                                ajaxProcess();
+                            } else {
+                                //Complete
+                                updateCount(collectionGroup,true);
+                                collectionGroup++;
+                            }
                         }
                         
                     };
@@ -444,7 +565,7 @@
                         if(response['success'] == 'true')
                         {
                             currentCount = currentCount + response['totalcount'];
-                            updateCount(false);
+                            updateCount(collectionGroup,false);
                         }
                         if(response['totalcount'] > 0)
                         {
