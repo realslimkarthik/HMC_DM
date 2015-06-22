@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>HMC Demo</title>
+        <meta name="description" content="description">
+        <meta name="author" content="HMC">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="plugins/bootstrap/bootstrap.css" rel="stylesheet">
+        <link href="plugins/jquery-ui/jquery-ui.min.css" rel="stylesheet">
+        <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+        <link href='http://fonts.googleapis.com/css?family=Righteous' rel='stylesheet' type='text/css'>
+        <link href="plugins/fancybox/jquery.fancybox.css" rel="stylesheet">
+        <link href="plugins/fullcalendar/fullcalendar.css" rel="stylesheet">
+        <link href="plugins/xcharts/xcharts.min.css" rel="stylesheet">
+        <link href="plugins/select2/select2.css" rel="stylesheet">
+        <link href="css/style.css" rel="stylesheet">
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+                <script src="http://getbootstrap.com/docs-assets/js/html5shiv.js"></script>
+                <script src="http://getbootstrap.com/docs-assets/js/respond.min.js"></script>
+        <![endif]-->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <!--<script src="http://code.jquery.com/jquery.js"></script>-->
+    <script src="plugins/jquery/jquery-2.1.0.min.js"></script>
+    <script src="plugins/jquery-ui/jquery-ui.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="plugins/bootstrap/bootstrap.min.js"></script>
+    <script src="plugins/justified-gallery/jquery.justifiedgallery.min.js"></script>
+    <script src="plugins/tinymce/tinymce.min.js"></script>
+    <script src="plugins/tinymce/jquery.tinymce.min.js"></script>
+    <script src="plugins/jquery-csv/jquery.csv.js">/*cannot use .min*/</script>
+    <script src="plugins/FileSaver/FileSaver.min.js"></script>
+    <script src="plugins/jquery-jeditable/jquery.jeditable.mini.js"></script>
+    <!-- All functions for this theme + document.ready processing -->
+    <script src="js/devoops.js"></script>
+    </head>
+<body>
+<!--Start Header-->
+<div id="screensaver">
+    <canvas id="canvas"></canvas>
+    <i class="fa fa-lock" id="screen_unlock"></i>
+</div>
+<div id="modalbox">
+    <div class="devoops-modal">
+        <div class="devoops-modal-header">
+            <div class="modal-header-name">
+                <span>Basic table</span>
+            </div>
+            <div class="box-icons">
+                <a class="close-link">
+                    <i class="fa fa-times"></i>
+                </a>
+            </div>
+        </div>
+        <div class="devoops-modal-inner">
+        </div>
+        <div class="devoops-modal-bottom">
+        </div>
+    </div>
+</div>
+<header class="navbar">
+    <div class="container-fluid expanded-panel">
+        <div class="row">
+            <div id="logo" class="col-xs-12 col-sm-2">
+                <a href="index.html"><img src="img/UIC-HealthMediaColab.jpg"></a>
+            </div>
+            <div id="top-panel" class="col-xs-12 col-sm-10">
+                <div class="row">
+                    <div class="col-xs-8 col-sm-4">
+                        <a href="#" class="show-sidebar">
+                          <i class="fa fa-bars"></i>
+                        </a>
+                        <div id="search">
+                            <input type="text" placeholder="search"/>
+                            <i class="fa fa-search"></i>
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-8 top-panel-right">
+                        <ul class="nav navbar-nav pull-right panel-menu">
+                            <li class="hidden-xs">
+                                <a href="index.html" class="modal-link">
+                                    <i class="fa fa-bell"></i>
+                                    <span class="badge">7</span>
+                                </a>
+                            </li>
+                            <li class="hidden-xs">
+                                <a class="ajax-link" href="ajax/calendar.html">
+                                    <i class="fa fa-calendar"></i>
+                                    <span class="badge">7</span>
+                                </a>
+                            </li>
+                            <li class="hidden-xs">
+                                <a href="ajax/page_messages.html" class="ajax-link">
+                                    <i class="fa fa-envelope"></i>
+                                    <span class="badge">7</span>
+                                </a>
+                            </li>
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle account" data-toggle="dropdown">
+                                    <div class="avatar">
+                                        <img src="img/avatar.jpg" class="img-rounded" alt="avatar" />
+                                    </div>
+                                    <i class="fa fa-angle-down pull-right"></i>
+                                    <div class="user-mini pull-right">
+                                        <span class="welcome">Welcome,</span>
+                                        <span>Jane Devoops</span>
+                                    </div>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a href="#">
+                                            <i class="fa fa-user"></i>
+                                            <span>Profile</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="ajax/page_messages.html" class="ajax-link">
+                                            <i class="fa fa-envelope"></i>
+                                            <span>Messages</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="ajax/gallery_simple.html" class="ajax-link">
+                                            <i class="fa fa-picture-o"></i>
+                                            <span>Albums</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="ajax/calendar.html" class="ajax-link">
+                                            <i class="fa fa-tasks"></i>
+                                            <span>Tasks</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#">
+                                            <i class="fa fa-cog"></i>
+                                            <span>Settings</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#">
+                                            <i class="fa fa-power-off"></i>
+                                            <span>Logout</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+<!--End Header-->
+<!--Start Container-->
+<div id="main" class="container-fluid">
+    <div class="row">
+        <div id="sidebar-left" class="col-xs-2 col-sm-2">
+            <ul class="nav main-menu">
+                <li>
+                    <a href="ajax/dashboard.html" class="active ajax-link">
+                        <i class="fa fa-dashboard"></i>
+                        <span class="hidden-xs">Dashboard</span>
+                    </a>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fa fa-bar-chart-o"></i>
+                        <span class="hidden-xs">Charts</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="ajax-link" href="ajax/charts_xcharts.html">xCharts</a></li>
+                        <li><a class="ajax-link" href="ajax/charts_flot.html">Flot Charts</a></li>
+                        <li><a class="ajax-link" href="ajax/charts_google.html">Google Charts</a></li>
+                        <li><a class="ajax-link" href="ajax/charts_morris.html">Morris Charts</a></li>
+                        <li><a class="ajax-link" href="ajax/charts_coindesk.html">CoinDesk realtime</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fa fa-table"></i>
+                         <span class="hidden-xs">Tables</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="ajax-link" href="ajax/tables_simple.html">Simple Tables</a></li>
+                        <li><a class="ajax-link" href="ajax/tables_datatables.html">Data Tables</a></li>
+                        <li><a class="ajax-link" href="ajax/tables_beauty.html">Beauty Tables</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fa fa-pencil-square-o"></i>
+                         <span class="hidden-xs">Forms</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="ajax-link" href="ajax/forms_elements.html">Elements</a></li>
+                        <li><a class="ajax-link" href="ajax/forms_layouts.html">Layouts</a></li>
+                        <li><a class="ajax-link" href="ajax/forms_file_uploader.html">File Uploader</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fa fa-desktop"></i>
+                         <span class="hidden-xs">UI Elements</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="ajax-link" href="ajax/ui_grid.html">Grid</a></li>
+                        <li><a class="ajax-link" href="ajax/ui_buttons.html">Buttons</a></li>
+                        <li><a class="ajax-link" href="ajax/ui_progressbars.html">Progress Bars</a></li>
+                        <li><a class="ajax-link" href="ajax/ui_jquery-ui.html">Jquery UI</a></li>
+                        <li><a class="ajax-link" href="ajax/ui_icons.html">Icons</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fa fa-list"></i>
+                         <span class="hidden-xs">Pages</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="ajax/page_login.html">Login</a></li>
+                        <li><a href="ajax/page_register.html">Register</a></li>
+                        <li><a id="locked-screen" class="submenu" href="ajax/page_locked.html">Locked Screen</a></li>
+                        <li><a class="ajax-link" href="ajax/page_contacts.html">Contacts</a></li>
+                        <li><a class="ajax-link" href="ajax/page_feed.html">Feed</a></li>
+                        <li><a class="ajax-link add-full" href="ajax/page_messages.html">Messages</a></li>
+                        <li><a class="ajax-link" href="ajax/page_pricing.html">Pricing</a></li>
+                        <li><a class="ajax-link" href="ajax/page_invoice.html">Invoice</a></li>
+                        <li><a class="ajax-link" href="ajax/page_search.html">Search Results</a></li>
+                        <li><a class="ajax-link" href="ajax/page_404.html">Error 404</a></li>
+                        <li><a href="ajax/page_500.html">Error 500</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <!--Start Content-->
+        <div id="content" class="col-xs-12 col-sm-10">
+            <div class="row">
+                <div id="breadcrumb" class="col-md-12">
+                    <ol class="breadcrumb">
+                        <li><a href="#">Dashboard</a></li>
+                        <li><a href="#">Tables</a></li>
+                        <li><a href="#">Filter Tables</a></li>
+                    </ol>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="box">
+                        <div class="box-header">
+                            <div class="box-name">
+                                <span>Setup Query</span>
+                            </div>
+                            <div class="box-icons">
+                                <a class="collapse-link">
+                                    <i class="fa fa-chevron-up"></i>
+                                </a>
+                            </div>
+                            <div class="no-move"></div>
+                        </div>
+                        <div class="box-content">
+                            Query:<input type="text" id="query" size=100 value="{'mrt' : {'$ne': 7}}"/><br>
+                            <label class="col-sm-4 control-label">Date period</label>
+                            <div class="col-sm-4">
+                                <input type="text" class="form-control" id="datestart" placeholder="Date period">
+                            </div>
+                            <div class="col-sm-4">
+                                <input type="text" class="form-control" id="dateend" placeholder="Date period">
+                            </div>
+                            <button id="submitQuery" type="cancel" class="btn btn-default btn-label-left">
+                            <span><i class="fa fa-clock-o txt-danger"></i></span>
+                                Run
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="box">
+                        <div class="box-header">
+                            <div class="box-name">
+                                <span>Query Results</span>
+                            </div>
+                            <div class="box-icons">
+                                <a class="collapse-link">
+                                    <i class="fa fa-chevron-up"></i>
+                                </a>
+                            </div>
+                            <div class="no-move"></div>
+                        </div>
+                        <div id="response" class="box-content">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <script type="text/javascript">
+            function MakeSelect2(){
+                //$('select').select2();
+                $('.dataTables_filter').each(function(){
+                    $(this).find('label input[type=text]').attr('placeholder', 'Search');
+                });
+            }
+                
+            function setupDatePeriod()
+            {
+                $('#datestart').datepicker({
+                    defaultDate: "+lw",
+                    changeMonth: true,
+                    numberOfMonths: 3,
+                    onClose: function( selectedDate ) {
+                        $( "#dateend" ).datepicker( "option", "minDate", selectedDate );
+                    }
+                });
+                $('#dateend').datepicker({
+                    defaultDate: "+lw",
+                    changeMonth: true,
+                    numberOfMonths: 3,
+                    onClose: function( selectedDate ) {
+                        $( "#datestart" ).datepicker( "option", "maxDate", selectedDate );
+                    }
+                });
+            };
+
+            $(document).ready(function() {
+                // Load Datatables and run plugin on tables 
+                //TestTable3(false);//true means Label
+                setupDatePeriod();
+                
+                // Add Drag-n-Drop feature
+                WinMove();
+                
+                $('#submitQuery').on('click', function(e) {
+                    var querytext = $('#query').val();
+                    var datestart = $('#datestart').val();
+                    var dateend = $('#dateend').val();
+                    //convert all single ' to "
+                    var newtext = querytext.replace(/'/g,'"');
+                    var query = JSON.parse(newtext);
+                    countData(query,datestart,dateend);
+                });
+                
+                
+                
+                
+                var searchtag = "matchingrulestag";
+                var searchrule = "matchingrulesvalue"; //by number
+                var dataColumns = ["Idpost","bodypost","retweetCount","generatordname","filterlevel","kloutscore","matchingrulestag1","matchingrulestag2","matchingrulestag3","matchingrulestag4","matchingrulestag5","matchingrulestag6","matchingrulesvalues","matchingrulesvalue1","matchingrulesvalue2","matchingrulesvalue3","matchingrulesvalue4","matchingrulesvalue5","matchingrulesvalue6","languagevalue","favoritesCount","objpostedTime","objsummary","objlink","objid","objobjType","bodyoriginal","actorpreferredusername","actorname","actorlinkshref","actorTimeZone","actorimage","actorverified","actorstatusuesCount","actorsummary","actorlanguages","actorutcOffset","actorlink","actorfollowersCount","actorfavoritesCount","actorfriendsCount","actorlistedCount","actorPostedTime","actorid","actorObjType","entitiesusrmentionsidstr1","entitiesusrmentionssname1","entitiesusrmentionsname1","entitiesusrmentionsidstr2","entitiesusrmentionssname2","entitiesusrmentionsname2","entitiesusrmentionsidstr3","entitiesusrmentionssname3","entitiesusrmentionsname3","entitiesusrmentionsidstr4","entitiesusrmentionssname4","entitiesusrmentionsname4","entitiesusrmentionsidstr5","entitiesusrmentionssname5","entitiesusrmentionsname5","entitieshtagstext1","entitieshtagstext2","entitieshtagstext3","entitieshtagstext4","entitieshtagstext5","entitiesurlexpandedurl","entitiesmdaexpandedurl","lang","postedTime","Year","Month","Day","Time","objgeotype","objlocdname","geotype","geocoordinates","verb","link","locdname","locname","loctwcountrycode","loccountrycode","locgeocoordinates","gniplocdname","gniploccountry","gniplocregion","gniploccounty","gniploclocality","gniplocgeocoordinates","gnipurl","gnipexpandedurl"];
+                var timeColumn = "postedTime";
+                
+                //countData();
+                
+                function countData(query,datestart,dateend) /*sTag,sRule,sTimeStart,sTimeEnd,sSplice*/
+                {                  
+                    var isTwitter = true;//temp  
+                    var currentCount = 0;
+                    var ajaxQuery;
+                    //var query = {};
+                    var collectionRange = [];
+                    var collectionInc = -1;//Will be incremented on first call
+                    //query = {'mrt' : {'$ne': 7}};
+                    
+                    //collectionRange = [datestart, dateend];
+                    var increment = 1000;
+                    var step = -1;//Will be incremented on first call
+                    //var query = {"sTag":sTag,"sRule":sRule,"sTimeStart" :sTimeStart, "sTimeEnd":sTimeEnd, "sSplice":sSplice};
+                    var request = {};
+                    var scriptLocation = "http://localhost:8000/cgi-bin/test_cgi.py";
+                    $('#response').append('<h4>Started query</h4> <button type="button" id="endquery" class="btn btn-danger btn-app-sm" onclick="stopCount()"><i class="fa fa-spinner fa-spin"></i></button><br><h4 id="count"></h4>');
+                    
+                    //Setup query
+                    setupQuery(datestart,dateend);
+                    
+                    //Start the cycle
+                    nextQuery();
+                    
+                    
+                    
+                    $('#endquery').on('click',function ()
+                    {
+                        ajaxQuery.abort();
+                        $('#count').append("<br>CANCELLED");    
+                    });
+                    
+                    //Update display of count
+                    function updateCount(finalUpdate)
+                    {
+                        if(finalUpdate)
+                        {
+                            $('#count').html("Final count = " + currentCount);
+                        } else {
+                            $('#count').html("Current count = " + currentCount);
+                        }
+                    };
+                    
+                    //Setup all query information
+                    function setupQuery(datestart,dateend) {
+                        
+                        var newStartDate = new Date(datestart);
+                        newStartDate.setDate(1);//make the 1st of the month so +1 on month works correctly
+                        var newEndDate = new Date(dateend);
+                        
+                        while(dates.compare(newStartDate,newEndDate) <= 0)
+                        {
+                            var strmonth = (newStartDate.getMonth() + 1).toString();
+                            if(strmonth.length < 2) { strmonth = '0' + strmonth;}
+                            strCollection = newStartDate.getFullYear().toString() + strmonth;
+                            
+                            if(isTwitter) {
+                                //Add 1-6 per month
+                                for(var k=1;k<7;k++)
+                                {
+                                     collectionRange.push(strCollection + '_' + k.toString());
+                                }   
+                            } else {                           
+                                collectionRange.push(strCollection);
+                            }
+                            
+                            //Increment one month
+                            newStartDate.setMonth(newStartDate.getMonth() + 1);
+                        }
+                    };
+                    
+                    //Handle breaking down the query into different collections
+                    function nextQuery() {
+                        collectionInc++;
+                        if(collectionRange.length > collectionInc)
+                        {
+                            step = -1;//reset Step - will be incremented later
+                            request = {"query":query,"collection":collectionRange[collectionInc],"increment":increment,"step":step};
+                            ajaxProcess();
+                        } else {
+                            //Complete
+                            updateCount(true);
+                        }
+                        
+                    };
+                    
+                    //Callback from success of AJAX call
+                    function process(response) {
+                        //{"success":'true', "totalcount" : totalcount};
+                        if(response['success'] == 'true')
+                        {
+                            currentCount = currentCount + response['totalcount'];
+                            updateCount(false);
+                        }
+                        if(response['totalcount'] > 0)
+                        {
+                            //Call again
+                            ajaxProcess();
+                        } else {
+                            nextQuery();
+                        }
+                    };
+                    
+                    //Cycle through steps until result total is 0
+                    function ajaxProcess() {
+                        request['step'] = request['step'] + 1;
+                        ajaxQuery = $.ajax({
+                            url: scriptLocation,
+                            type: "post",
+                            data: JSON.stringify(request),
+                            dataType: "json",
+                            success: process
+                        });
+                    };
+                }
+
+            });//end READY FUNCTION
+            window.no_ajax = true;
+            </script>
+            <style>
+            .hidden {
+              display:none;
+            }
+            </style>
+            <script src='plugins/datatables/jquery.dataTables.js'></script>
+            <script src='plugins/datatables/ZeroClipboard.js'></script>
+            <script src='plugins/datatables/TableTools.js'></script>
+            <script src='plugins/datatables/dataTables.colReorder.min.js'></script>
+            <script src='plugins/datatables/dataTables.bootstrap.js'></script>
+            <script src='plugins/select2/select2.min.js'></script>
+            <script src='plugins/jquery-ui-timepicker-addon/jquery-ui-timepicker-addon.min.js'></script>
+        </div>
+        <!--End Content-->
+    </div>
+</div>
+<!--End Container-->
+</body>
+</html>

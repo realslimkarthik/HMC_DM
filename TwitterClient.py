@@ -13,6 +13,7 @@ import calendar
 from pympler import asizeof
 import pandas as pd
 from utility import mkdir_p, dump
+from general_functions import Simplemovingaverage
 
 
 class TwitterClient(object):
@@ -513,18 +514,43 @@ class TwitterClient(object):
         mkdir_p(self.dest)
         # Initialize a list to hold all the data queried from the Database
         dataSet = []
+        incrdata = 0
         for j in range(1, 7):
             coll_names.add(collName + '_' + str(j))
         # Maintain counter to track the file number of the corresponding rule file
         counter = 1
         # For each of the collections
+        sma = Simplemovingaverage(50) #allow for 50 datapoints for running average
         for i in coll_names:
             coll = self._db[i]
             # Query to find all records of a particular rule
-            data = coll.find({'mrv': {'$in': [int(filterRule)]}}, no_cursor_timeout=True)
+            data = coll.find({'mrv': {'$eq': int(filterRule)}}, no_cursor_timeout=True)
+            max_rule = data.count()
             # For each record returned by the query
+            totalincrdata = 0
+            incrdisplay = 5
+            numsubdisplays = 100/incrdisplay
+            curincrdisplay = 0;
+            starttime = datetime.now()
+            print "Searching set " + i
             for k in data:
-                print k['_id']
+                incrdata = incrdata + 1
+                totalincrdata = totalincrdata + 1
+                while( ((totalincrdata*100 / max_rule) - curincrdisplay*incrdisplay) > incrdisplay ):                    
+                    curincrdisplay = curincrdisplay + 1
+                    print "  " + str(curincrdisplay*incrdisplay) + "% done",
+                    
+                    endtime = datetime.now()
+                    deltatime = endtime - starttime
+                    predict = sma(deltatime.total_seconds())
+#                    pieces = [deltatime.total_seconds(), numsubdisplays - curincrdisplay, predict * (numsubdisplays - curincrdisplay), ((predict * (numsubdisplays - curincrdisplay))/10**6)]
+#                    print pieces
+                    estimate = ((predict * (numsubdisplays - curincrdisplay)))
+#                    print "DEBUG:"+str(curincrdisplay)+":"+str(numsubdisplays)+":"+str(predict)
+                    print "  ==>Download time (sec) / Estimate left (sec): {:.2f} / {:.2f}".format(deltatime.total_seconds(),estimate)
+                    starttime = datetime.now()
+                    
+#                print k['_id'],
                 modifiedObj = {}
                 # Translate field names
                 for (key, val) in k.iteritems():
@@ -582,8 +608,10 @@ class TwitterClient(object):
                 # Add the record to the dataset list
                 dataSet.append(modifiedObj)
                 # If the size of the dataSet list exceeds a certain threshold, write to a file
-                if asizeof.asizeof(dataSet) > 104857600:
-                    print "\nWriting to File...\n"
+                #if asizeof.asizeof(dataSet) > 104857600: - TOOK WAY TO LONG, AND KEEPS GETTING LONGER
+                if incrdata > 14500:
+                    incrdata = 0
+                    print "    Writing to File..."
                     # Create a new DataFrame and write to a csv file
                     df = pd.DataFrame(dataSet)
                     with open(self._dest + self.year + self.month + '_' + str(filterRule) + '_' + str(counter) + '.csv', 'wb') as csvfile:

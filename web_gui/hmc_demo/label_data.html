@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>HMC Demo</title>
+        <meta name="description" content="description">
+        <meta name="author" content="HMC">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="plugins/bootstrap/bootstrap.css" rel="stylesheet">
+        <link href="plugins/jquery-ui/jquery-ui.min.css" rel="stylesheet">
+        <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+        <link href='http://fonts.googleapis.com/css?family=Righteous' rel='stylesheet' type='text/css'>
+        <link href="plugins/fancybox/jquery.fancybox.css" rel="stylesheet">
+        <link href="plugins/fullcalendar/fullcalendar.css" rel="stylesheet">
+        <link href="plugins/xcharts/xcharts.min.css" rel="stylesheet">
+        <link href="plugins/select2/select2.css" rel="stylesheet">
+        <link href="css/style.css" rel="stylesheet">
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+                <script src="http://getbootstrap.com/docs-assets/js/html5shiv.js"></script>
+                <script src="http://getbootstrap.com/docs-assets/js/respond.min.js"></script>
+        <![endif]-->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <!--<script src="http://code.jquery.com/jquery.js"></script>-->
+    <script src="plugins/jquery/jquery-2.1.0.min.js"></script>
+    <script src="plugins/jquery-ui/jquery-ui.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="plugins/bootstrap/bootstrap.min.js"></script>
+    <script src="plugins/justified-gallery/jquery.justifiedgallery.min.js"></script>
+    <script src="plugins/tinymce/tinymce.min.js"></script>
+    <script src="plugins/tinymce/jquery.tinymce.min.js"></script>
+    <script src="plugins/jquery-csv/jquery.csv.js">/*cannot use .min*/</script>
+    <script src="plugins/FileSaver/FileSaver.min.js"></script>
+    <script src="plugins/jquery-jeditable/jquery.jeditable.mini.js"></script>
+    <!-- All functions for this theme + document.ready processing -->
+    <script src="js/devoops.js"></script>
+    </head>
+<body>
+<!--Start Header-->
+<div id="screensaver">
+    <canvas id="canvas"></canvas>
+    <i class="fa fa-lock" id="screen_unlock"></i>
+</div>
+<div id="overlay"></div>
+<script type="text/javascript">
+function addLabelAnswer() {
+    var option = document.createElement("option");
+    option.text=document.labelForm.answer_text.value;
+    document.labelForm.label_data.add(option);
+    document.labelForm.answer_text.value = "";
+};
+function sortLabel(isUp) {
+    if(document.labelForm.label_data.selectedIndex >= 0)
+    {
+        // get all options
+        var shippingOptions = $('select[name=label_data] option');
+        var firstidx = document.labelForm.label_data.selectedIndex;
+        var secondidx;
+        if(isUp)
+        {
+            //swap places with above one
+            if(0 <= firstidx - 1)
+            {
+                secondidx = firstidx - 1;
+            } else {
+                //Do not need to shift
+                return;
+            }
+        } else {
+            //swap places with below one
+            if(shippingOptions.length > firstidx + 1)
+            {
+                secondidx = firstidx + 1;
+            } else {
+                //Do not need to shift
+                return;
+            }
+        }
+        var optiontemp = shippingOptions[firstidx];
+        shippingOptions[firstidx] = shippingOptions[secondidx]; 
+        shippingOptions[secondidx] = optiontemp; 
+        
+        
+        // update the select with the new option order
+        $('select[name=label_data]').append(shippingOptions);
+    }
+};
+function removeLabel() {
+    if(document.labelForm.label_data.selectedIndex >= 0)
+    {
+        document.labelForm.label_data.remove(document.labelForm.label_data.selectedIndex);
+    }
+};
+
+function checkLabelAnswer(event) {
+    
+    if (event.keyCode == 13) {
+        event.preventDefault();
+        addLabelAnswer();
+    }
+};
+function setLabelForm(question,answerset) {
+    document.labelForm.question_text.value = question;
+    
+    for(var i=0; i<answerset.length; i++)
+    {
+        var option = document.createElement("option");
+        option.text=answerset[i];
+        document.labelForm.label_data.add(option);
+    }
+    
+};
+function clearLabelForm() {
+    document.labelForm.question_text.value = "";
+    document.labelForm.answer_text.value = "";
+    
+    //Clear select
+    var i;
+    for(i=document.labelForm.label_data.options.length-1;i>=0;i--)
+    {
+        document.labelForm.label_data.remove(i);
+    }
+};
+</script>
+<div id="specialBox">
+    <form name="labelForm">
+    <h4>Label attributes</h4>
+    Question:&nbsp;<input id="question_text" type="text" name="question_text" size="40"/><br>
+    <hr width=100% align=left color=black>
+    <table width=100%>
+        <tr style="padding: 50px">
+            <td style="vertical-align: top" >
+                <div title="Hit enter to add answer"><input onkeydown='checkLabelAnswer(event)' type="text" name="answer_text" size="40"/></div>
+            </td>
+            <td>
+                <button type="button" class="btn btn-primary btn-lg" onmousedown='addLabelAnswer()'>Add Answer</button>                    
+            </td>
+        </tr>
+    </table>
+    Answer List:
+    <table width=100% align=center>
+        <tr style="padding: 10px">
+            <td valign=center align=center style="padding: 10px">
+                <a onclick="sortLabel(true)"><i class="fa fa-arrow-up"></i></a><br>
+                <a onclick="removeLabel()"><i class="fa fa-times"></i></a><br>
+                <a onclick="sortLabel(false)"><i class="fa fa-arrow-down"></i></a><br>
+            </td>
+            <td>
+                <select size=5 name="label_data" style="width: 300px">
+                </select>
+            </td>
+        </tr>
+    </table>
+    <hr width=100% align=left color=black>
+    <table width=500>
+        <tr>
+            <td width=50% align=center>
+                <button type="button" class="btn btn-primary btn-lg" onmousedown="addLabel()">Apply</button>
+            </td>
+            <td width=50% align=center>
+                <button type="button" class="btn btn-primary btn-lg" onmousedown="toggleOverlay()">Cancel</button>
+            </td>
+        </tr>
+    </table>
+    </form>
+</div>
+<div id="modalbox">
+    <div class="devoops-modal">
+        <div class="devoops-modal-header">
+            <div class="modal-header-name">
+                <span>Basic table</span>
+            </div>
+            <div class="box-icons">
+                <a class="close-link">
+                    <i class="fa fa-times"></i>
+                </a>
+            </div>
+        </div>
+        <div class="devoops-modal-inner">
+        </div>
+        <div class="devoops-modal-bottom">
+        </div>
+    </div>
+</div>
+<header class="navbar">
+    <div class="container-fluid expanded-panel">
+        <div class="row">
+            <div id="logo" class="col-xs-12 col-sm-2">
+                <a href="index.html"><img src="img/UIC-HealthMediaColab.jpg"></a>
+            </div>
+            <div id="top-panel" class="col-xs-12 col-sm-10">
+                <div class="row">
+                    <div class="col-xs-8 col-sm-4">
+                        <a href="#" class="show-sidebar">
+                          <i class="fa fa-bars"></i>
+                        </a>
+                        <div id="search">
+                            <input type="text" placeholder="search"/>
+                            <i class="fa fa-search"></i>
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-8 top-panel-right">
+                        <ul class="nav navbar-nav pull-right panel-menu">
+                            <li class="hidden-xs">
+                                <a href="index.html" class="modal-link">
+                                    <i class="fa fa-bell"></i>
+                                    <span class="badge">7</span>
+                                </a>
+                            </li>
+                            <li class="hidden-xs">
+                                <a class="ajax-link" href="ajax/calendar.html">
+                                    <i class="fa fa-calendar"></i>
+                                    <span class="badge">7</span>
+                                </a>
+                            </li>
+                            <li class="hidden-xs">
+                                <a href="ajax/page_messages.html" class="ajax-link">
+                                    <i class="fa fa-envelope"></i>
+                                    <span class="badge">7</span>
+                                </a>
+                            </li>
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle account" data-toggle="dropdown">
+                                    <div class="avatar">
+                                        <img src="img/avatar.jpg" class="img-rounded" alt="avatar" />
+                                    </div>
+                                    <i class="fa fa-angle-down pull-right"></i>
+                                    <div class="user-mini pull-right">
+                                        <span class="welcome">Welcome,</span>
+                                        <span>Jane Devoops</span>
+                                    </div>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a href="#">
+                                            <i class="fa fa-user"></i>
+                                            <span>Profile</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="ajax/page_messages.html" class="ajax-link">
+                                            <i class="fa fa-envelope"></i>
+                                            <span>Messages</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="ajax/gallery_simple.html" class="ajax-link">
+                                            <i class="fa fa-picture-o"></i>
+                                            <span>Albums</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="ajax/calendar.html" class="ajax-link">
+                                            <i class="fa fa-tasks"></i>
+                                            <span>Tasks</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#">
+                                            <i class="fa fa-cog"></i>
+                                            <span>Settings</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#">
+                                            <i class="fa fa-power-off"></i>
+                                            <span>Logout</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+<!--End Header-->
+<!--Start Container-->
+<div id="main" class="container-fluid">
+    <div class="row">
+        <div id="sidebar-left" class="col-xs-2 col-sm-2">
+            <ul class="nav main-menu">
+                <li>
+                    <a href="ajax/dashboard.html" class="active ajax-link">
+                        <i class="fa fa-dashboard"></i>
+                        <span class="hidden-xs">Dashboard</span>
+                    </a>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fa fa-bar-chart-o"></i>
+                        <span class="hidden-xs">Charts</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="ajax-link" href="ajax/charts_xcharts.html">xCharts</a></li>
+                        <li><a class="ajax-link" href="ajax/charts_flot.html">Flot Charts</a></li>
+                        <li><a class="ajax-link" href="ajax/charts_google.html">Google Charts</a></li>
+                        <li><a class="ajax-link" href="ajax/charts_morris.html">Morris Charts</a></li>
+                        <li><a class="ajax-link" href="ajax/charts_coindesk.html">CoinDesk realtime</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fa fa-table"></i>
+                         <span class="hidden-xs">Tables</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="ajax-link" href="ajax/tables_simple.html">Simple Tables</a></li>
+                        <li><a class="ajax-link" href="ajax/tables_datatables.html">Data Tables</a></li>
+                        <li><a class="ajax-link" href="ajax/tables_beauty.html">Beauty Tables</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fa fa-pencil-square-o"></i>
+                         <span class="hidden-xs">Forms</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="ajax-link" href="ajax/forms_elements.html">Elements</a></li>
+                        <li><a class="ajax-link" href="ajax/forms_layouts.html">Layouts</a></li>
+                        <li><a class="ajax-link" href="ajax/forms_file_uploader.html">File Uploader</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fa fa-desktop"></i>
+                         <span class="hidden-xs">UI Elements</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="ajax-link" href="ajax/ui_grid.html">Grid</a></li>
+                        <li><a class="ajax-link" href="ajax/ui_buttons.html">Buttons</a></li>
+                        <li><a class="ajax-link" href="ajax/ui_progressbars.html">Progress Bars</a></li>
+                        <li><a class="ajax-link" href="ajax/ui_jquery-ui.html">Jquery UI</a></li>
+                        <li><a class="ajax-link" href="ajax/ui_icons.html">Icons</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">
+                        <i class="fa fa-list"></i>
+                         <span class="hidden-xs">Pages</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="ajax/page_login.html">Login</a></li>
+                        <li><a href="ajax/page_register.html">Register</a></li>
+                        <li><a id="locked-screen" class="submenu" href="ajax/page_locked.html">Locked Screen</a></li>
+                        <li><a class="ajax-link" href="ajax/page_contacts.html">Contacts</a></li>
+                        <li><a class="ajax-link" href="ajax/page_feed.html">Feed</a></li>
+                        <li><a class="ajax-link add-full" href="ajax/page_messages.html">Messages</a></li>
+                        <li><a class="ajax-link" href="ajax/page_pricing.html">Pricing</a></li>
+                        <li><a class="ajax-link" href="ajax/page_invoice.html">Invoice</a></li>
+                        <li><a class="ajax-link" href="ajax/page_search.html">Search Results</a></li>
+                        <li><a class="ajax-link" href="ajax/page_404.html">Error 404</a></li>
+                        <li><a href="ajax/page_500.html">Error 500</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <!--Start Content-->
+        <div id="content" class="col-xs-12 col-sm-10">
+            <div class="row">
+                <div id="breadcrumb" class="col-md-12">
+                    <ol class="breadcrumb">
+                        <li><a href="#">Dashboard</a></li>
+                        <li><a href="#">Tables</a></li>
+                        <li><a href="#">Filter Tables</a></li>
+                    </ol>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="box">
+                        <div class="box-header">
+                            <div class="box-name">
+                                <span>Setup Labels</span>
+                            </div>
+                            <div class="box-icons">
+                                <a class="label-to-load-csv">
+                                    <i class="fa fa-upload"></i>&nbsp;Append from CSV
+                                    <input type="file" id="fileUploadLabel" accept=".csv" style='display:none;'/>
+                                </a>                                
+                                <a class="label-to-csv">
+                                    <i class="fa fa-download"></i>&nbsp;Save to CSV
+                                </a>
+                                <a class="collapse-link">
+                                    <i class="fa fa-chevron-up"></i>
+                                </a>
+                            </div>
+                            <div class="no-move"></div>
+                        </div>
+                        <div class="box-content">
+                            <div class="row form-group">
+                                <div class="col-sm-12">
+                                    <a onmousedown="openLabel(-1)"><i class="fa fa-plus"></i>&nbsp;Add Label</a>&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <a class="remove-label"><i class="fa fa-times"></i>&nbsp;Remove Label</a>&nbsp;&nbsp;&nbsp;<i>(double-click to edit)</i>
+                                    <div title="Double-click to edit">
+                                        <select id="label-list" ondblclick="editLabel()" class="form-control" size="5"></select>
+                                    </div>
+                                    <i>Note: Labels are automatically loaded/saved to Cloud</i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="box">
+                        <div class="box-header">
+                            <div class="box-name">
+                                <span>Information</span>
+                            </div>
+                            <div class="box-icons">
+                                <a class="collapse-link">
+                                    <i class="fa fa-chevron-up"></i>
+                                </a>
+                                <a class="close-link">
+                                    <i class="fa fa-times"></i>
+                                </a>
+                            </div>
+                            <div class="no-move"></div>
+                        </div>
+                        <div class="box-content no-padding table-responsive">
+                            <h4>Select a file to load.</h4>
+                            <h5>Column titles that include "LABEL" will be editable.</h5>
+                            <h5>While editing the LABEL columns in the table you can use the keyboard to navigate cells, see below</h5>
+                            <ol>
+                                <li><kbd>SHIFT</kbd>+<kbd>arrow key</kbd>-Prev(Next) cell at row/col</li>
+                                <li><kbd>CTRL</kbd>+<kbd>arrow key</kbd>-First(End) cell at col ONLY</li>
+                                <li><kbd>Enter/Tab</kbd>-Next cell in table</li>
+                            </ol>
+                            <span>To search using a regular expression by column, put a "~" as the first character, and then when expression is complete press <kbd>ENTER</kbd></span>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="box">
+                        <div class="box-header">
+                            <div class="box-name">
+                                <span>Toggle columns</span>
+                            </div>
+                            <div class="box-icons">
+                                <a class="collapse-link">
+                                    <i class="fa fa-chevron-up"></i>
+                                </a>
+                            </div>
+                            <div class="no-move"></div>
+                        </div>
+                        <div id="toggleMe" class="box-content">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="box">
+                        <div class="box-header">
+                            <div class="box-name">
+                                <span>Filter Data</span>
+                            </div>
+                            <div class="box-icons">
+                                <a class="beauty-table-to-load">
+                                    <i class="fa fa-cloud-download"></i>&nbsp;Temp Load
+                                </a>
+                                <a class="beauty-table-to-save">
+                                    <i class="fa fa-cloud-upload"></i>&nbsp;Temp Save All
+                                </a>
+                                <a class="beauty-table-to-load-csv">
+                                    <i class="fa fa-upload"></i>&nbsp;Load from CSV
+                                    <input type="file" id="fileUpload"  accept=".csv" style='display:none;'/>
+                                </a>                                
+                                <a class="beauty-table-to-csv">
+                                    <i class="fa fa-download"></i>&nbsp;Save filter to CSV
+                                </a>                                
+                                <a class="beauty-table-to-crop">
+                                    <i class="fa fa-crop"></i>&nbsp;Crop non-Filtered
+                                </a>                                
+                                <a class="collapse-link">
+                                    <i class="fa fa-chevron-up"></i>
+                                </a>
+                            </div>
+                            <div class="no-move"></div>
+                        </div>
+                        <div class="box-content no-padding table-responsive">
+                            <table class="table table-bordered table-striped table-hover table-heading table-datatable beauty-table-mod" id="datatable-3">  
+                                <thead>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                                <tfoot>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <script type="text/javascript">
+            function MakeSelect2(){
+                //$('select').select2();
+                $('.dataTables_filter').each(function(){
+                    $(this).find('label input[type=text]').attr('placeholder', 'Search');
+                });
+            }
+            
+            //Global labelData
+            var labelData = [];
+            
+            //Currently editing label index in labelData
+            var currentEditLabel = -1;
+            
+            //Update the list based on labelData
+            function updateLabelList(){
+                //remove all remaining list items
+                //Clear select
+                var i;
+                for(i=document.getElementById('label-list').options.length-1;i>=0;i--)
+                {
+                    document.getElementById('label-list').remove(i);
+                }
+
+                var newoptions = [];
+                var oneopt;
+                var i;
+                for(i=0; i<labelData.length; i++)
+                {
+                    var str = labelData[i]["question"] + "? (";
+                    for(j=0; j<labelData[i]["answerset"].length; j++)
+                    {
+                        if(j>0) {str+=", ";}
+                        str += labelData[i]["answerset"][j];
+                    }
+                    oneopt = document.createElement("option");
+                    oneopt.text=str + ")";
+                    //newoptions.push(oneopt);
+                    document.getElementById('label-list').add(oneopt);
+                }
+                //Save
+                saveToStorage();
+            };
+            
+            //Submit Add/Edit label defined in label set (might already be editted)
+            function addLabel(){
+                //pull all options into an array
+                var shippingOptions = document.labelForm.label_data.options;
+                
+                //Convert option array to text array
+                var textoptions = [];
+                for(var i=0; i<shippingOptions.length; i++)
+                {
+                    textoptions[i] = shippingOptions[i].text;
+                }
+                
+                var question = document.labelForm.question_text.value;
+                
+                if(currentEditLabel >= 0)
+                {
+                    //replace
+                    labelData[currentEditLabel] = { "question" : question,
+                                              "answerset" : textoptions};
+                } else {
+                    //Add new
+                    labelData[labelData.length] = { "question" : question,
+                                                    "answerset" : textoptions};
+                }
+                
+                //call update of select based on labelData
+                updateLabelList();
+                
+                toggleOverlay();
+                
+            };
+            
+            //Open label add/edit display
+            function openLabel(editNumber) {
+                
+                clearLabelForm();
+                
+                if(editNumber >= 0 && labelData.length > editNumber)
+                {
+                    currentEditLabel = editNumber;
+                    setLabelForm(labelData[editNumber]["question"],labelData[editNumber]["answerset"]);
+                } else {
+                    currentEditLabel = -1;
+                }
+                
+                toggleOverlay();
+                
+                //Focus after update
+                setTimeout ( function () {
+                    /* show the cursor */
+                    $('#question_text').focus();
+                }, 100);
+            };
+
+            //Edit label
+            function editLabel() {
+                if(document.getElementById('label-list').selectedIndex >= 0)
+                {
+                    openLabel(document.getElementById('label-list').selectedIndex);
+                }
+            }
+            $('.edit-label').on('click', editLabel);
+            
+            //Remove label
+            $('.remove-label').on('click', function(){
+                if(document.getElementById('label-list').selectedIndex >= 0)
+                {
+                     var removeidx = document.getElementById('label-list').selectedIndex;
+
+                    //remove from array
+                    labelData.splice(removeidx,1);
+                }
+                
+                //Update display to match
+                updateLabelList();
+            });
+
+            //Save the label setup to persistant location in browswer
+            function saveToStorage() {
+                localStorage.setItem('labelData',JSON.stringify(labelData));
+            };
+            
+            function loadFromStorage() {
+                if(!localStorage.getItem('labelData'))
+                {
+                } else {
+                    labelData = JSON.parse(localStorage.getItem('labelData'));
+                    updateLabelList();
+                }
+            };
+            
+
+            $(document).ready(function() {
+                // Load Datatables and run plugin on tables 
+                TestTable3(true);//true means Label
+                
+                // Add Drag-n-Drop feature
+                WinMove();
+                
+                loadFromStorage();
+                
+                
+                //DOWNLOAD BUTTON
+                $('.label-to-csv').on('click', function(e){
+                    e.preventDefault();
+                    
+                    //Temporary solution - change to save to CSV and load CSV
+                    //var result_json = JSON.stringify(labelData);
+                    //OpenModalBox('Table to JSON values', result_json);
+                    var headerdata = ['question'];
+                    var data = [];
+                    var maxlength= 0;
+                    if(labelData.length == 0) {return;}//stop if no data
+                    for(var i=0;i<labelData.length;i++)
+                    {
+                        //Find max length
+                        if(labelData[i]['answerset'].length > maxlength)
+                        {
+                            maxlength = labelData[i]['answerset'].length;
+                        }
+                        
+                    } 
+                    for(var i=0; i<maxlength; i++)
+                    {
+                        headerdata.push('answer' + (i+1));
+                    }
+                    for(var i=0;i<labelData.length;i++)
+                    {
+                        data[i] = [labelData[i]['question']];
+                        var alen = labelData[i]['answerset'].length;
+                        for(var j=0; j<alen; j++)
+                        {
+                            data[i][j+1] = labelData[i]['answerset'][j];
+                        }
+                        //Pack in empty set to make it max columns
+                        for(var k=0; k<maxlength - alen; k++)
+                        {
+                            data[i][alen+k+1] = "";//shift by one for question
+                        }
+                    }                    
+                    
+                    //Add Header row
+                    var alldata = [headerdata].concat(data);
+                    var csvdata = $.csv.fromArrays(alldata,{'experimental':true});
+                    var blob = new Blob([csvdata], {type: "text/csv;charset=utf-8"});
+                    saveAs(blob, 'labelset.csv');
+                });
+                
+                
+                
+                //Setup Upload of Label
+                var fileUploadLabel = document.getElementById("fileUploadLabel");
+            
+                fileUploadLabel.addEventListener('change', function(e) {
+                    var file = fileUploadLabel.files[0];
+                    var reader = new FileReader();
+            
+            
+                    reader.onload = function(e) {
+                        //DO NOT NEED:
+                        //fileUploadLabel.disabled = true;
+                        
+                        var headerrow = [];
+                        dataSet = $.csv.toArrays(e.target.result);
+                        if(dataSet.length == 0 || dataSet[0].length == 0)
+                        {
+                            //No data, so return
+                            return;
+                        }
+                        var headerdata = dataSet[0];            
+
+                        //DO NOT NEED
+//                         if(headerdata.length > 0) {
+//                             for(var i = 0; i<headerdata.length; i++) {
+//                             }
+//                         }
+                        
+                        dataSet.shift();//remove header row
+            
+                        dataSet.forEach(function(l){
+                            var maxlabel = labelData.length;
+                            var qq = l[0];
+                            l.shift();//remove first element
+                            for(var kk=0; kk<l.length; kk++)
+                            {
+                                if(l[kk] == "")
+                                {
+                                    l.splice(kk);//remove all remaining blanks
+                                    break;
+                                }
+                            }
+                            labelData[maxlabel] = {"question": qq, "answerset":l};
+                        });
+                        updateLabelList();
+                    };
+        
+                    //console.log("Starting upload");
+                    reader.readAsText(file);
+                });
+        
+                //BROWSWER LOAD BUTTON
+                $('.beauty-table-to-load').on('click', function(e){
+                    if(window.notLoadedDataTable)
+                    {
+                        
+                        if(!localStorage.getItem('dataTable'))
+                        {
+                            console.log('Tried to load, but no data');
+                        } else {
+                            var jsondata = decodeURIComponent(localStorage.getItem('dataTable'));
+                            var filename = localStorage.getItem('filename');
+                            var viscol = JSON.parse(localStorage.getItem('viscol'));
+                            setupDataTable(JSON.parse(jsondata),filename,viscol);
+                            console.log('Tried to load, with data');
+                            
+                            //Disable fileUpload to not load anything
+                            var fileUpload = document.getElementById("fileUpload");
+                            fileUpload.disabled = true;
+                            $('.beauty-table-to-load').hide();
+                            $('.beauty-table-to-load-csv').hide();
+                        }
+                    }
+                });
+                
+                //BROWSWER LOAD BUTTON
+                $('.beauty-table-to-load-csv').on('click', function(e){
+                    if(window.notLoadedDataTable)
+                    {
+                        var fileUpload = document.getElementById("fileUpload");
+                        fileUpload.click();
+                    }
+                });
+                
+                
+                //LABEL LOAD BUTTON
+                $('.label-to-load-csv').on('click', function(e){
+                    var fileUploadLabel = document.getElementById("fileUploadLabel");
+                    fileUploadLabel.click();
+                });
+                
+                //Initially hide the options
+                $('.beauty-table-to-save').hide();
+                $('.beauty-table-to-csv').hide();
+                $('.beauty-table-to-crop').hide();
+
+                //Hide temp load if nothing to load
+                if(!localStorage.getItem('dataTable'))
+                {
+                   $('.beauty-table-to-load').hide();
+                }
+            });//end READY FUNCTION
+            window.no_ajax = true;
+            window.notLoadedDataTable = true;
+            </script>
+            <style>
+            .hidden {
+              display:none;
+            }
+            </style>
+            <script src='plugins/datatables/jquery.dataTables.js'></script>
+            <script src='plugins/datatables/ZeroClipboard.js'></script>
+            <script src='plugins/datatables/TableTools.js'></script>
+            <script src='plugins/datatables/dataTables.colReorder.min.js'></script>
+            <script src='plugins/datatables/dataTables.bootstrap.js'></script>
+            <script src='plugins/select2/select2.min.js'></script>
+        </div>
+        <!--End Content-->
+    </div>
+</div>
+<!--End Container-->
+</body>
+</html>
