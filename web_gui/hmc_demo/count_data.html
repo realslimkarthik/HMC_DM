@@ -301,8 +301,10 @@
                             </div>
                             <div class="no-move"></div>
                         </div>
-                        <div id="morris-chart-1" style="height: 200px;"></div>
-                        <div id="response" class="box-content">
+                        <div class="box-content">
+                            <div id="morris-chart-1" style="height: 400px;"></div>
+                            <div id="response">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -322,7 +324,7 @@
                     defaultDate: "+lw",
                     changeMonth: true,
                     changeYear: true,
-                    numberOfMonths: 3,
+                    numberOfMonths: 1,
                     onClose: function( selectedDate ) {
                         $( "#dateend" ).datepicker( "option", "minDate", selectedDate );
                     }
@@ -331,7 +333,7 @@
                     defaultDate: "+lw",
                     changeMonth: true,
                     changeYear: true,
-                    numberOfMonths: 3,
+                    numberOfMonths: 1,
                     onClose: function( selectedDate ) {
                         $( "#datestart" ).datepicker( "option", "maxDate", selectedDate );
                     }
@@ -370,6 +372,7 @@
                 function countData(query,datestart,dateend,timeslice) /*sTag,sRule,sTimeStart,sTimeEnd,sSplice*/
                 {                  
                     var dddData = {};
+                    var chart;
                     var isTwitter = true;//temp  
                     var currentCount = 0;
                     var ajaxQuery;
@@ -385,7 +388,7 @@
                     //var query = {"sTag":sTag,"sRule":sRule,"sTimeStart" :sTimeStart, "sTimeEnd":sTimeEnd, "sSplice":sSplice};
                     var request = {};
                     var scriptLocation = "http://localhost:8000/cgi-bin/test_cgi.py";
-                    $('#response').append('<h4>Started query</h4> <button type="button" id="endquery" class="btn btn-danger btn-app-sm"><i class="fa fa-spinner fa-spin"></i></button><br><h4 id="count"></h4>');
+                    $('#response').html('<h4>Started query</h4> <button type="button" id="endquery" class="btn btn-danger btn-app-sm"><i class="fa fa-spinner fa-spin"></i></button><br><h6 id="updatetime"></h4>');
                     
                     
                     
@@ -403,22 +406,22 @@
                     $('#endquery').on('click',function ()
                     {
                         ajaxQuery.abort();
-                        $('#count').append("<br>CANCELLED");    
+                        $('#count').html("CANCELLED");    
                     });
                     
                     //Plots the data
                     function plotData()
                     {                
-                        Morris.Bar({
+                        chart = Morris.Bar({
                             element: 'morris-chart-1',
                             data: collectionRanges,
                             xkey: 'slice',
                             ykeys: ['tempresult', 'result'],
                             labels: ['Updating # Tweets', 'Complete # Tweets'],
-                            hideHover: 'always',
+                            hideHover: true,
                             barColors: ['#A30000','#038C2C'],
                             stacked: true,
-                            xLabelAngle: 60
+                            //xLabelAngle: 60
                         });
                     };
                     
@@ -430,10 +433,15 @@
                             collectionRanges[group]['result'] = currentCount;
                             collectionRanges[group]['tempresult'] = 0;
                             collectionRanges[group]['complete'] = true;
+                            chart.setData(collectionRanges);
+                            console.log("Finished group");
                         } else {
                             collectionRanges[group]['tempresult'] = currentCount;
-                            plotData();
+                            chart.setData(collectionRanges);
+                            console.log("Finished segment");
                         }
+                        var newdate = new Date();//gets current time
+                        $('#updatetime').html("Last updated: " + newdate.toUTCString());
                     };
                     
                     //Setup all query information
