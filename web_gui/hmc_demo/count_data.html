@@ -262,27 +262,46 @@
                             <div class="no-move"></div>
                         </div>
                         <div class="box-content">
-                            Query:<input type="text" id="query" size=100 value="{'mrt' : {'$ne': 7}}"/><br>
-                            <label class="col-sm-4 control-label">Date period</label>
-                            <div class="col-sm-4">
-                                <input type="text" class="form-control" id="datestart" placeholder="Date period">
-                            </div>
-                            <div class="col-sm-4">
-                                <input type="text" class="form-control" id="dateend" placeholder="Date period">
-                            </div>
-                            <div class="col-sm-2">
-                                <select id="timeSlice">
-                                    <option selected>All</option>
-                                    <option>Yearly</option>
-                                    <option>Monthly</option>
-                                    <option>Weekly</option>
-                                    <option>Daily</option>
-                                </select>
-                            </div>
-                            <button id="submitQuery" type="cancel" class="btn btn-default btn-label-left">
-                            <span><i class="fa fa-clock-o txt-danger"></i></span>
-                                Run
-                            </button>
+                            <form id="queryform" class="form-horizontal">
+                                <div class="form-group">
+                                    <div class="col-sm-12">
+                                        <div class="checkbox-inline">
+                                            <label>
+                                                <input type="checkbox" id='querycheck' checked> Use Query:
+                                                <i class="fa fa-square-o"></i>
+                                            </label>
+                                        </div>
+                                        <input name='querystring' type="text" id="query" size=100 value="{'mrt' : {'$ne': 7}}"/>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Date period</label>
+                                    <div class="col-sm-3">
+                                        <input type="text" class="form-control" id="datestart" placeholder="Date period">
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <input type="text" class="form-control" id="dateend" placeholder="Date period">
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <label class="control-label">Time Slice</label>
+                                        <select id="timeSlice">
+                                            <option selected>All</option>
+                                            <option>Yearly</option>
+                                            <option>Monthly</option>
+                                            <option>Weekly</option>
+                                            <option>Daily</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-sm-2">
+                                        <button type='button' id="submitQuery" class="btn btn-default btn-label-left">
+                                            <span><i class="fa fa-rocket txt-danger"></i></span>
+                                                Run Query
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -311,6 +330,23 @@
             </div>
             
             <script type="text/javascript">
+            function isJSON (jsonString){
+                try {
+                    var o = JSON.parse(jsonString);
+            
+                    // Handle non-exception-throwing cases:
+                    // Neither JSON.parse(false) or JSON.parse(1234) throw errors, hence the type-checking,
+                    // but... JSON.parse(null) returns 'null', and typeof null === "object", 
+                    // so we must check for that, too.
+                    if (o && typeof o === "object" && o !== null) {
+                        return true;
+                    }
+                }
+                catch (e) { }
+            
+                return false;
+            };
+
             function MakeSelect2(){
                 //$('select').select2();
                 $('.dataTables_filter').each(function(){
@@ -325,8 +361,14 @@
                     changeMonth: true,
                     changeYear: true,
                     numberOfMonths: 1,
+                    maxDate: '0',//set to +0 days from current date
+                    minDate: new Date('January 1, 2013 00:00:00'), //set to 1/2013
                     onClose: function( selectedDate ) {
                         $( "#dateend" ).datepicker( "option", "minDate", selectedDate );
+                        if($( "#dateend" ).val() == '')
+                        {
+                            $( "#dateend" ).val(selectedDate);
+                        }
                     }
                 });
                 $('#dateend').datepicker({
@@ -334,8 +376,14 @@
                     changeMonth: true,
                     changeYear: true,
                     numberOfMonths: 1,
+                    maxDate: '0',//set to +0 days from current date
+                    minDate: new Date('January 1, 2013 00:00:00'), //set to 1/2013
                     onClose: function( selectedDate ) {
                         $( "#datestart" ).datepicker( "option", "maxDate", selectedDate );
+                        if($( "#datestart" ).val() == '')
+                        {
+                            $( "#datestart" ).val(selectedDate);
+                        }
                     }
                 });
             };
@@ -349,30 +397,52 @@
                 WinMove();
                 
                 $('#submitQuery').on('click', function(e) {
-                    var querytext = $('#query').val();
-                    var datestart = $('#datestart').val();
-                    var dateend = $('#dateend').val();
-                    //convert all single ' to "
-                    var newtext = querytext.replace(/'/g,'"');
-                    var query = JSON.parse(newtext);
-                    var timeslice = $('#timeSlice').val();
-                    countData(query,datestart,dateend,timeslice);
+                    var isquery = $('#querycheck').val;
+                    var error = false;
+                    if(isquery)
+                    {
+                        var querytext = $('#query').val();
+                        var newtext = querytext.replace(/'/g,'"');
+                        //Validate querytext if is JSON
+                        if(!isJSON(newtext))
+                        {
+                            OpenModalBox('Form Error', 'Bad query: it is not a JSON');
+                            error = true;
+                        }
+                    } else {
+                        var newtext = '';//start with no query
+                    }
+                    
+                    if(error == false)
+                    {      
+                        var datestart = $('#datestart').val();
+                        var dateend = $('#dateend').val();
+                        
+                        if(datestart == '' || dateend == '')
+                        {
+                            OpenModalBox('Form Error', 'Bad date start/end: must be filled in');
+                        } else {
+                            //convert all single ' to "
+                            var query = JSON.parse(newtext);
+                            var timeslice = $('#timeSlice').val();
+                            countData(query,datestart,dateend,timeslice);
+                        }
+                    }
                 });
                 
                 
                 
-                
+                //Constants:
                 var searchtag = "matchingrulestag";
                 var searchrule = "matchingrulesvalue"; //by number
                 var dataColumns = ["Idpost","bodypost","retweetCount","generatordname","filterlevel","kloutscore","matchingrulestag1","matchingrulestag2","matchingrulestag3","matchingrulestag4","matchingrulestag5","matchingrulestag6","matchingrulesvalues","matchingrulesvalue1","matchingrulesvalue2","matchingrulesvalue3","matchingrulesvalue4","matchingrulesvalue5","matchingrulesvalue6","languagevalue","favoritesCount","objpostedTime","objsummary","objlink","objid","objobjType","bodyoriginal","actorpreferredusername","actorname","actorlinkshref","actorTimeZone","actorimage","actorverified","actorstatusuesCount","actorsummary","actorlanguages","actorutcOffset","actorlink","actorfollowersCount","actorfavoritesCount","actorfriendsCount","actorlistedCount","actorPostedTime","actorid","actorObjType","entitiesusrmentionsidstr1","entitiesusrmentionssname1","entitiesusrmentionsname1","entitiesusrmentionsidstr2","entitiesusrmentionssname2","entitiesusrmentionsname2","entitiesusrmentionsidstr3","entitiesusrmentionssname3","entitiesusrmentionsname3","entitiesusrmentionsidstr4","entitiesusrmentionssname4","entitiesusrmentionsname4","entitiesusrmentionsidstr5","entitiesusrmentionssname5","entitiesusrmentionsname5","entitieshtagstext1","entitieshtagstext2","entitieshtagstext3","entitieshtagstext4","entitieshtagstext5","entitiesurlexpandedurl","entitiesmdaexpandedurl","lang","postedTime","Year","Month","Day","Time","objgeotype","objlocdname","geotype","geocoordinates","verb","link","locdname","locname","loctwcountrycode","loccountrycode","locgeocoordinates","gniplocdname","gniploccountry","gniplocregion","gniploccounty","gniploclocality","gniplocgeocoordinates","gnipurl","gnipexpandedurl"];
                 var timeColumn = "postedTime";
                 
-                //countData();
-                
+                //Start a pull of count data
                 function countData(query,datestart,dateend,timeslice) /*sTag,sRule,sTimeStart,sTimeEnd,sSplice*/
                 {                  
                     var dddData = {};
-                    var chart;
+                    var chart = null;
                     var isTwitter = true;//temp  
                     var currentCount = 0;
                     var ajaxQuery;
@@ -388,13 +458,18 @@
                     //var query = {"sTag":sTag,"sRule":sRule,"sTimeStart" :sTimeStart, "sTimeEnd":sTimeEnd, "sSplice":sSplice};
                     var request = {};
                     var scriptLocation = "http://localhost:8000/cgi-bin/test_cgi.py";
-                    $('#response').html('<h4>Started query</h4> <button type="button" id="endquery" class="btn btn-danger btn-app-sm"><i class="fa fa-spinner fa-spin"></i></button><br><h6 id="updatetime"></h4>');
                     
                     
                     
                     //Setup query
-                    setupQuery(datestart,dateend,timeslice);
+                    if(!setupQuery(datestart,dateend,timeslice))
+                    {
+                        OpenModalBox('Form Error', 'Resulted in no query data');
+                        return null;
+                    }
                     
+                    $('#response').html('<h4>Started query</h4> <button type="button" id="endquery" class="btn btn-danger btn-app-sm"><i class="fa fa-spinner fa-spin"></i></button><br><h6 id="updatetime"></h4>');
+
                     //Create plot after setup done
                     plotData();
                     
@@ -411,18 +486,27 @@
                     
                     //Plots the data
                     function plotData()
-                    {                
-                        chart = Morris.Bar({
-                            element: 'morris-chart-1',
-                            data: collectionRanges,
-                            xkey: 'slice',
-                            ykeys: ['tempresult', 'result'],
-                            labels: ['Updating # Tweets', 'Complete # Tweets'],
-                            hideHover: true,
-                            barColors: ['#A30000','#038C2C'],
-                            stacked: true,
-                            //xLabelAngle: 60
-                        });
+                    {
+                        //Do not allow a re-plot setup
+                        if(chart == null)
+                        {  
+                            chart = Morris.Bar({
+                                element: 'morris-chart-1',
+                                data: collectionRanges,
+                                xkey: 'slice',
+                                ykeys: ['tempresult', 'result'],
+                                labels: ['Updating Count', 'Complete Count'],
+                                hideHover: true,
+                                barColors: ['#A30000','#038C2C'],
+                                stacked: true,
+                                //xLabelAngle: 60
+                            });
+                        }
+                    };
+                    
+                    function updatePlot()
+                    {
+                        chart.setData(collectionRanges);
                     };
                     
                     //Update display of count
@@ -433,12 +517,12 @@
                             collectionRanges[group]['result'] = currentCount;
                             collectionRanges[group]['tempresult'] = 0;
                             collectionRanges[group]['complete'] = true;
-                            chart.setData(collectionRanges);
-                            console.log("Finished group");
+                            updatePlot();
+                            //console.log("Finished group");
                         } else {
                             collectionRanges[group]['tempresult'] = currentCount;
-                            chart.setData(collectionRanges);
-                            console.log("Finished segment");
+                            updatePlot();
+                            //console.log("Finished segment");
                         }
                         var newdate = new Date();//gets current time
                         $('#updatetime').html("Last updated: " + newdate.toUTCString());
@@ -448,9 +532,24 @@
                     function setupQuery(datestart,dateend,timeslice) {
                         
                         var collectionRange = [];
-                        var newStartDate = new Date(datestart);
-                        newStartDate.setDate(1);//make the 1st of the month so +1 on month works correctly
+                        var inputStartDate = new Date(datestart);
+                        //Set to beginning of day
+                        inputStartDate.setHours(0);
+                        inputStartDate.setMinutes(0);
+                        inputStartDate.setSeconds(0);
+                        inputStartDate.setMilliseconds(0);
+                        var newStartDate = new Date(inputStartDate.getTime());
+                        //Only set to first of month if doing monthly incrementing
+                        if(timeslice == 'All' || timeslice == 'Yearly' || timeslice == 'Monthly')
+                        {
+                            newStartDate.setDate(1);//make the 1st of the month so +1 on month works correctly
+                        }
                         var newEndDate = new Date(dateend);
+                        //Push to end of day
+                        newEndDate.setHours(23);
+                        newEndDate.setMinutes(59);
+                        newEndDate.setSeconds(59);
+                        newEndDate.setMilliseconds(999);
                         var currentWeek = 0;
                         var currentDay = 0;
                         
@@ -473,31 +572,76 @@
                             //Perform timeslice split
                             if(timeslice == 'All')
                             {
-                                //Increment one month
+                                //Look at next month now
                                 newStartDate.setMonth(newStartDate.getMonth() + 1);      
-                                if(dates.compare(newStartDate,newEndDate) <= 0)
+                                if(dates.compare(newStartDate,newEndDate) > 0)
                                 {
+                                    //Always narrow down by date
+                                    //TODO: Could be better if broke out by month query
+                                    var weekQuery = "{timeColumn:{'$gte': ISODate('" + inputStartDate.toISOString() +"'), '$lte': ISODate('" + newEndDate.toISOString() +"')}}" 
+                                    
                                     //all done:
-                                    collectionRanges.push({"range":collectionRange, "timequery":"", "slice":"All", "complete":false, "tempresult":0, "result":0});
+                                    collectionRanges.push({"range":collectionRange, "timequery":weekQuery, "slice":"All", "complete":false, "tempresult":0, "result":0});
                                     collectionRange = [];
                                 }                      
                             } else if(timeslice == 'Yearly')
                             {
+                                var prevStartDate = new Date(newStartDate.getTime());
                                 //Increment one month
                                 newStartDate.setMonth(newStartDate.getMonth() + 1);   
                                 //Check for year roll-over
                                 if(newStartDate.getMonth == 1)
                                 {
+                                    //narrow down by day if in the same year
+                                    //TODO: Could be better if broke out by query
+                                    var weekQuery = '';
+                                    if(inputStartDate.getFullYear() == prevStartDate.getFullYear() || prevStartDate.getFullYear() == newEndDate.getFullYear())
+                                    {
+                                        weekQuery = "{timeColumn:{";
+                                        var setFirst = false;
+                                        if(inputStartDate.getMonth() == prevStartDate.getMonth())
+                                        {
+                                            weekQuery += "'$gte': ISODate('" + inputStartDate.toISOString() +"')";
+                                            setFirst = true;
+                                        }
+                                        if(prevStartDate.getMonth() == newEndDate.getMonth())
+                                        {
+                                            if(setFirst) {weekQuery +=",";}
+                                            weekQuery += "'$lte': ISODate('" + newEndDate.toISOString() +"')";
+                                        }
+                                        weekQuery += "}}";
+                                    }
+                                    
                                     //at end of year:
                                     var sliceText = newStartDate.getFullYear().toString();
-                                    collectionRanges.push({"range":collectionRange, "timequery":"", "slice":sliceText, "complete":false, "tempresult":0, "result":0});
+                                    collectionRanges.push({"range":collectionRange, "timequery":weekQuery, "slice":sliceText, "complete":false, "tempresult":0, "result":0});
                                     collectionRange = [];
                                 }                                    
                             
                             } else if(timeslice == 'Monthly')
                             {
                                 var sliceText = (newStartDate.getMonth()+1) + "/" + newStartDate.getFullYear();
-                                collectionRanges.push({"range":collectionRange, "timequery":"", "slice":sliceText, "complete":false, "tempresult":0, "result":0});
+                                
+                                //narrow down by day if in the same month
+                                var weekQuery = '';
+                                if(inputStartDate.getMonth() == newStartDate.getMonth() || newStartDate.getMonth() == newEndDate.getMonth())
+                                {
+                                    weekQuery = "{timeColumn:{";
+                                    var setFirst = false;
+                                    if(inputStartDate.getMonth() == newStartDate.getMonth())
+                                    {
+                                        weekQuery += "'$gte': ISODate('" + inputStartDate.toISOString() +"')";
+                                        setFirst = true;
+                                    }
+                                    if(newStartDate.getMonth() == newEndDate.getMonth())
+                                    {
+                                        if(setFirst) {weekQuery +=",";}
+                                        weekQuery += "'$lte': ISODate('" + newEndDate.toISOString() +"')";
+                                    }
+                                    weekQuery += "}}";
+                                }
+
+                                collectionRanges.push({"range":collectionRange, "timequery":weekQuery, "slice":sliceText, "complete":false, "tempresult":0, "result":0});
                                 collectionRange = [];
                                 //Increment one month
                                 newStartDate.setMonth(newStartDate.getMonth() + 1);                  
@@ -520,6 +664,7 @@
                                     //back up one day from countShift because that day failed a test
                                     newStartDate.setDate(newStartDate.getDate() + countShift-1);                                    
                                 }
+                                                                
                                 var sliceText = prevStartDate.toLocaleDateString() + " to " + newStartDate.toLocaleDateString();
                                 var weekQuery = "{timeColumn:{'$gte': ISODate('" + prevStartDate.toISOString() +"'), '$lte': ISODate('" + newStartDate.toISOString() +"')}}" 
                                 collectionRanges.push({"range":collectionRange, "timequery":weekQuery, "slice":sliceText, "complete":false, "tempresult":0, "result":0});
@@ -531,8 +676,11 @@
                             {
                             
                                 var nextStartDate = new Date(newStartDate.getTime());
-                                nextStartDate.setDate(nextStartDate.getDate() + 1);
-                                nextStartDate.setSeconds(-1);//Back-up one minute, which should make it end of day
+                                //Push to end of day
+                                nextStartDate.setHours(23);
+                                nextStartDate.setMinutes(59);
+                                nextStartDate.setSeconds(59);
+                                nextStartDate.setMilliseconds(999);
                                 
                                 var sliceText = newStartDate.toLocaleDateString();
                                 var weekQuery = "{timeColumn:{'$gte': ISODate('" + newStartDate.toISOString() +"'), '$lte': ISODate('" + nextStartDate.toISOString() +"')}}" 
@@ -544,7 +692,13 @@
                             }
                         }
                         
-                        
+                        console.log(collectionRanges);
+                        if(collectionRanges.length == 0)
+                        {
+                            return false;
+                        } else {
+                            return true;
+                        }
                         
                     };
                     
@@ -561,7 +715,21 @@
                             } else {
                                 //Complete
                                 updateCount(collectionGroup,true);
+                                
                                 collectionGroup++;
+                                
+                                //Check if more groups
+                                if(collectionGroup < collectionRanges.length)
+                                {
+                                    //Reset group counters
+                                    step = -1;//reset Step - will be incremented later
+                                    collectionInc = 0;
+                                    currentCount = 0;
+                                    
+                                    request = {"query":query,"collection":collectionRanges[collectionGroup]['range'][collectionInc],"increment":increment,"step":step};
+                                    
+                                    ajaxProcess();
+                                }
                             }
                         }
                         
@@ -596,6 +764,10 @@
                         });
                     };
                 }
+
+                
+                
+
 
             });//end READY FUNCTION
             window.no_ajax = true;
