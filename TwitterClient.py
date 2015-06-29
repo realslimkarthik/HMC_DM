@@ -528,7 +528,7 @@ class TwitterClient(object):
             max_rule = data.count()
             # For each record returned by the query
             totalincrdata = 0
-            incrdisplay = 5
+            incrdisplay = 10
             numsubdisplays = 100/incrdisplay
             curincrdisplay = 0;
             starttime = datetime.now()
@@ -569,9 +569,13 @@ class TwitterClient(object):
                 # Unroll all the arrays
                 index = 1
                 if 'entitieshtagstext' in modifiedObj:
-                    for i in modifiedObj['entitieshtagstext']:
-                        modifiedObj['entitieshtagstext' + str(index).zfill(2)] = i
-                        index += 1
+                    #Fix for when it is not an array
+                    if isinstance(modifiedObj['entitieshtagstext'],list):
+                        for i in modifiedObj['entitieshtagstext']:
+                            modifiedObj['entitieshtagstext' + str(index).zfill(2)] = i
+                            index += 1
+                    else:
+                        modifiedObj['entitieshtagstext' + str(index).zfill(2)] = modifiedObj['entitieshtagstext']
                     del(modifiedObj['entitieshtagstext'])
                     index = 1
                 if 'entitiesusrmentions' in modifiedObj:

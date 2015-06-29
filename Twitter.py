@@ -52,7 +52,6 @@ if __name__ == "__main__":
     elif op == 'download':
         if idx_or_sf != "":
             startidx = int(idx_or_sf) #allow custom start range
-        startidx = int(sys.argv[5])
         rules = {}
         with open('config\\twitter\\tw_rules.json') as r:
             rules = json.loads(r.read())
