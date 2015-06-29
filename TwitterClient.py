@@ -425,6 +425,11 @@ class TwitterClient(object):
         # Packing the entitieshtagstext field into an array
         if 'entitieshtagstext' not in inputTweet:
             inputTweet['entitieshtagstext'] = []
+        else:
+            #Fix problem where JSON has just a string of one value, not in array format
+            #So make it into array of one element
+            if not isinstance(inputTweet['entitieshtagstext'],list):
+                inputTweet['entitieshtagstext'] = [inputTweet['entitieshtagstext']]
 
         # Renaming id field
         inputTweet['_id'] = inputTweet['Idpost'].split(':')[2]

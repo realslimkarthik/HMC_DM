@@ -313,7 +313,10 @@
                             <div class="box-name">
                                 <span>Query Results</span>
                             </div>
-                            <div class="box-icons">
+                            <div class="box-icons">                
+                                <a class="label-to-csv">
+                                    <i class="fa fa-download"></i>&nbsp;Save to CSV
+                                </a>
                                 <a class="collapse-link">
                                     <i class="fa fa-chevron-up"></i>
                                 </a>
@@ -330,6 +333,33 @@
             </div>
             
             <script type="text/javascript">
+            function simple_moving_averager(period) {
+                var nums = [];
+                return function(num) {
+                    nums.push(num);
+                    if (nums.length > period)
+                        nums.splice(0,1);  // remove the first element of the array
+                    var sum = 0;
+                    for (var i in nums)
+                        sum += nums[i];
+                    var n = period;
+                    if (nums.length < period)
+                        n = nums.length;
+                    return(sum/n);
+                }
+            }
+             //EXAMPLE OF SMA above
+//             var sma3 = simple_moving_averager(3);
+//             var sma5 = simple_moving_averager(5);
+//             var data = [1,2,3,4,5,5,4,3,2,1];
+//             for (var i in data) {
+//                 var n = data[i];
+//                 // using WSH
+//                 WScript.Echo("Next number = " + n + ", SMA_3 = " + sma3(n) + ", SMA_5 = " + sma5(n));
+//             }
+            
+            
+            
             function isJSON (jsonString){
                 try {
                     var o = JSON.parse(jsonString);
@@ -395,37 +425,41 @@
                 
                 // Add Drag-n-Drop feature
                 WinMove();
-                
+                var queryStarted = false;//Allow only one query to be going on at a time
                 $('#submitQuery').on('click', function(e) {
-                    var isquery = $('#querycheck').val;
-                    var error = false;
-                    if(isquery)
+                    if(!queryStarted)
                     {
-                        var querytext = $('#query').val();
-                        var newtext = querytext.replace(/'/g,'"');
-                        //Validate querytext if is JSON
-                        if(!isJSON(newtext))
+                        var isquery = $('#querycheck').val;
+                        var error = false;
+                        if(isquery)
                         {
-                            OpenModalBox('Form Error', 'Bad query: it is not a JSON');
-                            error = true;
-                        }
-                    } else {
-                        var newtext = '';//start with no query
-                    }
-                    
-                    if(error == false)
-                    {      
-                        var datestart = $('#datestart').val();
-                        var dateend = $('#dateend').val();
-                        
-                        if(datestart == '' || dateend == '')
-                        {
-                            OpenModalBox('Form Error', 'Bad date start/end: must be filled in');
+                            var querytext = $('#query').val();
+                            var newtext = querytext.replace(/'/g,'"');
+                            //Validate querytext if is JSON
+                            if(!isJSON(newtext))
+                            {
+                                OpenModalBox('Form Error', 'Bad query: it is not a JSON');
+                                error = true;
+                            }
                         } else {
-                            //convert all single ' to "
-                            var query = JSON.parse(newtext);
-                            var timeslice = $('#timeSlice').val();
-                            countData(query,datestart,dateend,timeslice);
+                            var newtext = '';//start with no query
+                        }
+                        
+                        if(error == false)
+                        {      
+                            var datestart = $('#datestart').val();
+                            var dateend = $('#dateend').val();
+                            
+                            if(datestart == '' || dateend == '')
+                            {
+                                OpenModalBox('Form Error', 'Bad date start/end: must be filled in');
+                            } else {
+                                //convert all single ' to "
+                                var query = JSON.parse(newtext);
+                                var timeslice = $('#timeSlice').val();
+                                queryStarted = true;
+                                countData(query,datestart,dateend,timeslice);
+                            }
                         }
                     }
                 });
@@ -436,7 +470,8 @@
                 var searchtag = "matchingrulestag";
                 var searchrule = "matchingrulesvalue"; //by number
                 var dataColumns = ["Idpost","bodypost","retweetCount","generatordname","filterlevel","kloutscore","matchingrulestag1","matchingrulestag2","matchingrulestag3","matchingrulestag4","matchingrulestag5","matchingrulestag6","matchingrulesvalues","matchingrulesvalue1","matchingrulesvalue2","matchingrulesvalue3","matchingrulesvalue4","matchingrulesvalue5","matchingrulesvalue6","languagevalue","favoritesCount","objpostedTime","objsummary","objlink","objid","objobjType","bodyoriginal","actorpreferredusername","actorname","actorlinkshref","actorTimeZone","actorimage","actorverified","actorstatusuesCount","actorsummary","actorlanguages","actorutcOffset","actorlink","actorfollowersCount","actorfavoritesCount","actorfriendsCount","actorlistedCount","actorPostedTime","actorid","actorObjType","entitiesusrmentionsidstr1","entitiesusrmentionssname1","entitiesusrmentionsname1","entitiesusrmentionsidstr2","entitiesusrmentionssname2","entitiesusrmentionsname2","entitiesusrmentionsidstr3","entitiesusrmentionssname3","entitiesusrmentionsname3","entitiesusrmentionsidstr4","entitiesusrmentionssname4","entitiesusrmentionsname4","entitiesusrmentionsidstr5","entitiesusrmentionssname5","entitiesusrmentionsname5","entitieshtagstext1","entitieshtagstext2","entitieshtagstext3","entitieshtagstext4","entitieshtagstext5","entitiesurlexpandedurl","entitiesmdaexpandedurl","lang","postedTime","Year","Month","Day","Time","objgeotype","objlocdname","geotype","geocoordinates","verb","link","locdname","locname","loctwcountrycode","loccountrycode","locgeocoordinates","gniplocdname","gniploccountry","gniplocregion","gniploccounty","gniploclocality","gniplocgeocoordinates","gnipurl","gnipexpandedurl"];
-                var timeColumn = "postedTime";
+                //var timeColumn = "postedTime";//full name
+                var timeColumn = "pt";//abreviated name
                 
                 //Start a pull of count data
                 function countData(query,datestart,dateend,timeslice) /*sTag,sRule,sTimeStart,sTimeEnd,sSplice*/
@@ -453,12 +488,16 @@
                     //query = {'mrt' : {'$ne': 7}};
                     
                     //collectionRange = [datestart, dateend];
-                    var increment = 10000;
+                    var increment = 100000;
                     var step = -1;//Will be incremented on first call
                     //var query = {"sTag":sTag,"sRule":sRule,"sTimeStart" :sTimeStart, "sTimeEnd":sTimeEnd, "sSplice":sSplice};
                     var request = {};
-                    var scriptLocation = "http://localhost:8000/cgi-bin/test_cgi.py";
                     
+                    //var scriptLocation = "http://localhost:8000/cgi-bin/test_cgi.py";
+                    var scriptLocation = "http://10.177.54.27:8080/db.json";
+                    var startquerydate = new Date();//gets current time
+                    var lastdate = new Date();
+                    var sma = simple_moving_averager(5);
                     
                     
                     //Setup query
@@ -468,7 +507,8 @@
                         return null;
                     }
                     
-                    $('#response').html('<h4>Started query</h4> <button type="button" id="endquery" class="btn btn-danger btn-app-sm"><i class="fa fa-spinner fa-spin"></i></button><br><h6 id="updatetime"></h4>');
+                    
+                    $('#response').html('<h4>Started query</h4> <button type="button" id="endquery" class="btn btn-danger btn-app-sm"><i class="fa fa-spinner fa-spin"></i></button><br><h6 id="updatetime"></h4><div class="progress progress-striped active"><div class="progress-bar progress-bar-danger" id="thebar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;"><span id="textbar">0% Complete</span></div></div>');
 
                     //Create plot after setup done
                     plotData();
@@ -481,12 +521,59 @@
                     $('#endquery').on('click',function ()
                     {
                         ajaxQuery.abort();
-                        $('#count').html("CANCELLED");    
+                        $('#response').html("<h4>QUERY CANCELLED</h4>");    
+                        queryStarted = false;
+                    });
+                    
+                    function completeUpdate()
+                    {
+                        var newdate = new Date();//gets current time
+                        var diffdate = newdate.getTime() - startquerydate.getTime();
+                        diffdate /= 1000;
+                        $('#response').html("<h4>QUERY COMPLETE</h4><br>Total Elapsed Seconds: " + diffdate);  
+                        queryStarted = false;
+                    };
+                    
+                    $('.label-to-csv').show()
+                    $('.label-to-csv').on('click', function(e){
+                        e.preventDefault();
+                        var data = [];
+                        //Create header
+                        var temp = [];
+                        for(var i=0;i<collectionRanges.length;i++)
+                        {
+                            if(collectionRanges[i]['complete'])
+                            {
+                                temp.push(collectionRanges[i]['slice']);
+                            } else {
+                                temp.push(collectionRanges[i]['slice'] + " (incomplete result)");
+                            }
+                        }
+                        data.push(temp);
+                        temp = [];
+                        for(var i=0;i<collectionRanges.length;i++)
+                        {
+                            //Only save final results
+                            if(collectionRanges[i]['complete'])
+                            {
+                                temp.push(collectionRanges[i]['result'].toString());
+                            } else {
+                                temp.push(collectionRanges[i]['tempresult'].toString());
+                            }
+                        }            
+                        data.push(temp);        
+                        
+                        //Add Header row
+                        var csvdata = $.csv.fromArrays(data,{'experimental':true});
+                        var blob = new Blob([csvdata], {type: "text/csv;charset=utf-8"});
+                        saveAs(blob, 'queryResults.csv');
                     });
                     
                     //Plots the data
                     function plotData()
                     {
+                        $('#morris-chart-1').empty();//destroy previous
+                        var colors = ['#A30000','#038C2C'];
                         //Do not allow a re-plot setup
                         if(chart == null)
                         {  
@@ -496,10 +583,26 @@
                                 xkey: 'slice',
                                 ykeys: ['tempresult', 'result'],
                                 labels: ['Updating Count', 'Complete Count'],
-                                hideHover: true,
-                                barColors: ['#A30000','#038C2C'],
+                                hideHover: 'auto',
+                                barColors: colors,
                                 stacked: true,
-                                //xLabelAngle: 60
+                                resize: true,
+                                hoverCallback: function(index, options, content) {
+                                    var data = options.data[index];
+                                    var stringName = 'Count: ';
+                                    var outstr =  '<div style="color:';
+                                    if(collectionRanges[index]['complete'])
+                                    {
+                                        outstr += colors[1] + '">' + collectionRanges[index]['slice'] + '<br>'+ stringName;
+                                        outstr += data.result.toLocaleString();
+                                    } else {
+                                        outstr += colors[0] + '">' + collectionRanges[index]['slice'] + '<br>'+ stringName;
+                                        outstr += data.tempresult.toLocaleString();
+                                    }
+                                    outstr += '</div>';
+                                    return outstr;
+                                },
+                                xLabelAngle: 60
                             });
                         }
                     };
@@ -509,23 +612,43 @@
                         chart.setData(collectionRanges);
                     };
                     
+                    var currentpercent = 0;
+                    var estimatestr = "";//allow old times to be there
                     //Update display of count
                     function updateCount(group,finalUpdate)
                     {
+                        var newdate = new Date();//gets current time
                         if(finalUpdate)
                         {
                             collectionRanges[group]['result'] = currentCount;
                             collectionRanges[group]['tempresult'] = 0;
                             collectionRanges[group]['complete'] = true;
                             updatePlot();
+                            
+                            //Calculate estimate by simple moving average (last 5)
+                            var diffdateprev = newdate.getTime() - lastdate.getTime();
+                            diffdateprev /= 1000;
+                            var avg = sma(diffdateprev);
+                            var numleft = collectionRanges.length - group + 1;//group starts at 0
+                            var estimate = avg*numleft;
+                            estimate = Math.round(estimate*100)/100;//2 decimal places
+                            currentpercent = Math.floor(100*(group + 1)/collectionRanges.length);//assume every step is equal
+                            estimatestr = "<br>Seconds Estimate Left: " + estimate;
                             //console.log("Finished group");
                         } else {
                             collectionRanges[group]['tempresult'] = currentCount;
+                            currentpercent = Math.floor(100*(collectionInc+1)/collectionRanges.length/collectionRanges[group]['range'].length + 100*(group)/collectionRanges.length);//assume all are equal
+                            
                             updatePlot();
                             //console.log("Finished segment");
                         }
-                        var newdate = new Date();//gets current time
-                        $('#updatetime').html("Last updated: " + newdate.toUTCString());
+                        //Update progress bar
+                        $('#thebar').css('width', currentpercent+'%').attr('aria-valuenow', currentpercent);
+                        $('#textbar').html(currentpercent + "% Complete");
+                        
+                        var diffdate = newdate.getTime() - startquerydate.getTime();
+                        diffdate /= 1000;
+                        $('#updatetime').html("Last updated: " + newdate.toUTCString() + "<br>Total Elapsed Seconds: " + diffdate + estimatestr);
                     };
                     
                     //Setup all query information
@@ -578,7 +701,8 @@
                                 {
                                     //Always narrow down by date
                                     //TODO: Could be better if broke out by month query
-                                    var weekQuery = "{timeColumn:{'$gte': ISODate('" + inputStartDate.toISOString() +"'), '$lte': ISODate('" + newEndDate.toISOString() +"')}}" 
+                                    var weekQuery = {};
+                                    weekQuery[timeColumn] = {'$gte': inputStartDate.toISOString() , '$lte': newEndDate.toISOString() }; 
                                     
                                     //all done:
                                     collectionRanges.push({"range":collectionRange, "timequery":weekQuery, "slice":"All", "complete":false, "tempresult":0, "result":0});
@@ -589,31 +713,37 @@
                                 var prevStartDate = new Date(newStartDate.getTime());
                                 //Increment one month
                                 newStartDate.setMonth(newStartDate.getMonth() + 1);   
-                                //Check for year roll-over
-                                if(newStartDate.getMonth == 1)
+                                //Check for year roll-over, or end of time period
+                                if(newStartDate.getMonth() == 0 || dates.compare(newStartDate,newEndDate) > 0)
                                 {
+                                    prevStartDate.setMonth(newStartDate.getMonth() + 1);
+                                    prevStartDate.setDate( prevStartDate.getDate() - 1);//Backup to end of month
+                                    //Set end of day on last day
+                                    prevStartDate.setHours(23);
+                                    prevStartDate.setMinutes(59);
+                                    prevStartDate.setSeconds(59);
+                                    prevStartDate.setMilliseconds(999);
                                     //narrow down by day if in the same year
                                     //TODO: Could be better if broke out by query
-                                    var weekQuery = '';
+                                    var weekQuery = {};
                                     if(inputStartDate.getFullYear() == prevStartDate.getFullYear() || prevStartDate.getFullYear() == newEndDate.getFullYear())
                                     {
-                                        weekQuery = "{timeColumn:{";
-                                        var setFirst = false;
-                                        if(inputStartDate.getMonth() == prevStartDate.getMonth())
+                                        var tempWeekGT = {};
+                                        var tempWeekLT = {};
+                                        if(inputStartDate.getFullYear() == prevStartDate.getFullYear())
                                         {
-                                            weekQuery += "'$gte': ISODate('" + inputStartDate.toISOString() +"')";
-                                            setFirst = true;
+                                            tempWeekGT = {'$gte': inputStartDate.toISOString()};  
                                         }
-                                        if(prevStartDate.getMonth() == newEndDate.getMonth())
+                                        if(prevStartDate.getFullYear() == newEndDate.getFullYear())
                                         {
-                                            if(setFirst) {weekQuery +=",";}
-                                            weekQuery += "'$lte': ISODate('" + newEndDate.toISOString() +"')";
+                                            tempWeekLT = {'$lte': newEndDate.toISOString()};  
                                         }
-                                        weekQuery += "}}";
+                                        var tempquery = $.extend({}, tempWeekGT, tempWeekLT);
+                                        weekQuery[timeColumn] = tempquery;
                                     }
                                     
                                     //at end of year:
-                                    var sliceText = newStartDate.getFullYear().toString();
+                                    var sliceText = prevStartDate.getFullYear().toString();
                                     collectionRanges.push({"range":collectionRange, "timequery":weekQuery, "slice":sliceText, "complete":false, "tempresult":0, "result":0});
                                     collectionRange = [];
                                 }                                    
@@ -623,22 +753,21 @@
                                 var sliceText = (newStartDate.getMonth()+1) + "/" + newStartDate.getFullYear();
                                 
                                 //narrow down by day if in the same month
-                                var weekQuery = '';
+                                var weekQuery = {};
                                 if(inputStartDate.getMonth() == newStartDate.getMonth() || newStartDate.getMonth() == newEndDate.getMonth())
                                 {
-                                    weekQuery = "{timeColumn:{";
-                                    var setFirst = false;
+                                    var tempWeekGT = {};
+                                    var tempWeekLT = {};
                                     if(inputStartDate.getMonth() == newStartDate.getMonth())
                                     {
-                                        weekQuery += "'$gte': ISODate('" + inputStartDate.toISOString() +"')";
-                                        setFirst = true;
+                                        tempWeekGT = {'$gte': inputStartDate.toISOString()};  
                                     }
                                     if(newStartDate.getMonth() == newEndDate.getMonth())
                                     {
-                                        if(setFirst) {weekQuery +=",";}
-                                        weekQuery += "'$lte': ISODate('" + newEndDate.toISOString() +"')";
+                                        tempWeekLT = {'$lte': newEndDate.toISOString()};  
                                     }
-                                    weekQuery += "}}";
+                                    var tempquery = $.extend({}, tempWeekGT, tempWeekLT);
+                                    weekQuery[timeColumn] = tempquery;
                                 }
 
                                 collectionRanges.push({"range":collectionRange, "timequery":weekQuery, "slice":sliceText, "complete":false, "tempresult":0, "result":0});
@@ -664,9 +793,17 @@
                                     //back up one day from countShift because that day failed a test
                                     newStartDate.setDate(newStartDate.getDate() + countShift-1);                                    
                                 }
-                                                                
+                                                 
+                                var nextStartDate = new Date(newStartDate.getTime());
+                                //Push to end of day
+                                nextStartDate.setHours(23);
+                                nextStartDate.setMinutes(59);
+                                nextStartDate.setSeconds(59);
+                                nextStartDate.setMilliseconds(999);       
+                                        
                                 var sliceText = prevStartDate.toLocaleDateString() + " to " + newStartDate.toLocaleDateString();
-                                var weekQuery = "{timeColumn:{'$gte': ISODate('" + prevStartDate.toISOString() +"'), '$lte': ISODate('" + newStartDate.toISOString() +"')}}" 
+                                var weekQuery = {};
+                                weekQuery[timeColumn] = {'$gte': prevStartDate.toISOString(), '$lte': nextStartDate.toISOString()};  
                                 collectionRanges.push({"range":collectionRange, "timequery":weekQuery, "slice":sliceText, "complete":false, "tempresult":0, "result":0});
                                 collectionRange = [];
                                 
@@ -683,7 +820,8 @@
                                 nextStartDate.setMilliseconds(999);
                                 
                                 var sliceText = newStartDate.toLocaleDateString();
-                                var weekQuery = "{timeColumn:{'$gte': ISODate('" + newStartDate.toISOString() +"'), '$lte': ISODate('" + nextStartDate.toISOString() +"')}}" 
+                                var weekQuery = {};
+                                weekQuery[timeColumn] = {'$gte': newStartDate.toISOString(), '$lte': nextStartDate.toISOString()};
                                 collectionRanges.push({"range":collectionRange, "timequery":weekQuery, "slice":sliceText, "complete":false, "tempresult":0, "result":0});
                                 collectionRange = [];
                                 
@@ -702,6 +840,14 @@
                         
                     };
                     
+                    function updateRequest()
+                    {
+                        //merge query and timequery if exists
+                        var tempquery = $.extend({}, query, collectionRanges[collectionGroup]['timequery']);
+                        console.log(tempquery);
+                        request = {"query":tempquery,"collection":collectionRanges[collectionGroup]['range'][collectionInc],"increment":increment,"step":step};
+                    };
+                    
                     //Handle breaking down the query into different collections
                     function nextQuery() {
                         if(collectionRanges.length > collectionGroup)
@@ -710,7 +856,9 @@
                             if(collectionRanges[collectionGroup]['range'].length > collectionInc)
                             {
                                 step = -1;//reset Step - will be incremented later
-                                request = {"query":query,"collection":collectionRanges[collectionGroup]['range'][collectionInc],"increment":increment,"step":step};
+                                
+                                updateRequest();
+
                                 ajaxProcess();
                             } else {
                                 //Complete
@@ -726,9 +874,12 @@
                                     collectionInc = 0;
                                     currentCount = 0;
                                     
-                                    request = {"query":query,"collection":collectionRanges[collectionGroup]['range'][collectionInc],"increment":increment,"step":step};
+                                    updateRequest();
                                     
                                     ajaxProcess();
+                                } else {
+                                    //fully complete
+                                    completeUpdate();
                                 }
                             }
                         }
@@ -737,29 +888,34 @@
                     
                     //Callback from success of AJAX call
                     function process(response) {
-                        //{"success":'true', "totalcount" : totalcount};
+                        //{"success":'true', "totalcount" : totalcount, "input": input};
                         if(response['success'] == 'true')
                         {
                             currentCount = currentCount + response['totalcount'];
                             updateCount(collectionGroup,false);
                         }
-                        if(response['totalcount'] > 0)
+                        if(response['totalcount'] == increment)
                         {
                             //Call again
                             ajaxProcess();
                         } else {
                             nextQuery();
                         }
+                        //console.log(response['input1']);
+                        //console.log(response['input2']);
+                        //console.log(response['input3']);
                     };
                     
                     //Cycle through steps until result total is 0
                     function ajaxProcess() {
                         request['step'] = request['step'] + 1;
+                        //console.log(request['query']);
                         ajaxQuery = $.ajax({
                             url: scriptLocation,
                             type: "post",
                             data: JSON.stringify(request),
                             dataType: "json",
+                            contentType: 'application/json; charset=utf-8',
                             success: process
                         });
                     };
@@ -767,7 +923,7 @@
 
                 
                 
-
+                $('.label-to-csv').hide();
 
             });//end READY FUNCTION
             window.no_ajax = true;
