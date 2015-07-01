@@ -768,8 +768,8 @@ function CloseModalBox(){
         this.on('keydown', function(event) {
             var target = event.target;
             var tr = $(target).closest("tr");
-            //var input = $(target).closest("input");
             var input = $(target).closest("input");
+            //var input = $(target).closest("select");
             var col = $(target).closest("td");
             var findstr = "td.editable";
             if (target.tagName.toUpperCase() == 'INPUT'){
@@ -821,7 +821,7 @@ function CloseModalBox(){
                          break;
                      }
                  }
-                //keyCode == 13 : DO NOT NEED - handled in submit for jeditable
+                //keyCode == 13 - not tab
                 if (event.keyCode == 13 || event.keyCode == 9 ) {
                     event.preventDefault();
                     if (string_fill==false){
@@ -1787,9 +1787,9 @@ function setupDataTable(dataSet,filename,viscol) {
     var isLabel = true;//default to true right now
     //Save off first row
     var headerrow = [];
-    if(typeof labelData == 'undefined')
+    if(typeof window.labelData == 'undefined')
     {
-        var labelData = [];
+        window.labelData = [];
     }
     if(dataSet.length == 0)
     {
@@ -1797,29 +1797,33 @@ function setupDataTable(dataSet,filename,viscol) {
         return;
     }
     //Add labels to header data
-    if(labelData.length > 0)
+    var labelColumn_to_LabelData = {};
+    if(window.labelData.length > 0)
     {
         var maxcol = dataSet[0].length;
-        for(var lblidx = 0; lblidx<labelData.length; lblidx++)
+        for(var lblidx = 0; lblidx<window.labelData.length; lblidx++)
         {
             var doNotAdd = false;
+            var foundIdx = maxcol+lblidx;
             //Check if Label already exists:
             for(var jj=0; jj<dataSet[0].length; jj++)
             {
-                if(dataSet[0][jj] == 'LABEL_' + labelData[lblidx]["question"])
+                if(dataSet[0][jj] == 'LABEL_' + window.labelData[lblidx]["question"])
                 {
+                    foundIdx = jj;
                     doNotAdd = true;
                     break;
                 }
             }
             if(!doNotAdd)
             {
-                dataSet[0][maxcol+lblidx] = 'LABEL_' + labelData[lblidx]["question"];
+                dataSet[0][maxcol+lblidx] = 'LABEL_' + window.labelData[lblidx]["question"];
                 for(var i=1; i<dataSet.length; i++)
                 {
                     dataSet[i][maxcol+lblidx] = "";
                 }
             }
+            labelColumn_to_LabelData[foundIdx] = window.labelData[lblidx]["answerset"];
         }
     }
     var headerdata = dataSet[0];            
@@ -1860,7 +1864,41 @@ function setupDataTable(dataSet,filename,viscol) {
     $('#datatable-3 > thead').append('<tr>' + colheader + '</tr>');//The TRs need to be here (for some reason), and this needs to be before the footer line otherwise 
     $('#datatable-3 > thead').append('<tr>' + colfooter + '</tr>');
     dataSet.shift();//remove header row
-
+//     
+//     //Used by typeahead
+//     var substringMatcher = function(strs) {
+//       return function findMatches(q, cb) {
+//         var matches, substrRegex;
+//      
+//         // an array that will be populated with substring matches
+//         matches = [];
+//      
+//         // regex used to determine if a string contains the substring `q`
+//         substrRegex = new RegExp(q, 'i');
+//      
+//         // iterate through the pool of strings and for any string that
+//         // contains the substring `q`, add it to the `matches` array
+//         $.each(strs, function(i, str) {
+//           if (substrRegex.test(str)) {
+//             matches.push(str);
+//           }
+//         });
+//      
+//         cb(matches);
+//       };
+//     };
+    var states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
+      'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii',
+      'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
+      'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
+      'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
+      'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota',
+      'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island',
+      'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
+      'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
+    ];
+    
+    
     var datafields = "";
     dataSet.forEach(function(l){
         var rowfields = "";
@@ -1906,6 +1944,39 @@ function setupDataTable(dataSet,filename,viscol) {
         editableOnPrev = val;
     }
     var redrawDelay = false;
+    var editGood = false;
+    $.expr[':'].textEquals = function (a, i, m) {
+        return $(a).text().match("^" + m[3] + "$");
+    };
+    var tempInputData = [];
+    //Used for editable in table
+    $.editable.addInputType('autocomplete', {
+        element : $.editable.types.text.element,
+        plugin : function(settings, original) {
+            var $inputs = $('input', this).autocomplete({
+                source: tempInputData,
+                change: function (event, ui) {
+                    //if the value of the textbox does not match a suggestion, clear its value
+                    if ($(".ui-autocomplete li:textEquals('" + $(this).val() + "')").size() == 0) {
+                        $(this).val('');
+                    }
+                }
+            }).on('keydown', function (e) {
+                var keyCode = e.keyCode || e.which;
+                //if TAB or RETURN is pressed and the text in the textbox does not match a suggestion, set the value of the textbox to the text of the first suggestion
+                if((keyCode == 9 || keyCode == 13) && ($(".ui-autocomplete li:textEquals('" + $(this).val() + "')").size() == 0)) {
+                    if($(".ui-autocomplete li:visible:first").text() != "")
+                    {
+                        $(this).val($(".ui-autocomplete li:visible:first").text());
+                    } else {
+                        if($.inArray($(this).val(),tempInputData) < 0) {
+                            $(this).val('');
+                        }
+                    }
+                }
+            });
+        }
+    });
 
     var oTable = $('#datatable-3').dataTable( {
         "aaSorting": [[ 0, "asc" ]],
@@ -1938,29 +2009,44 @@ function setupDataTable(dataSet,filename,viscol) {
         "iDisplayLength":5,//initial display number
         "aLengthMenu":[[1,5,10,20,50,100,-1],[1,5,10,20,50,100,'ALL']],
         "fnDrawCallback": function () {
+            var prevValue = "";
             $('#datatable-3 tbody td.editable').editable( function(value,settings) {
-                return(value);
+                //if($.inArray(value,states) >= 0)
+                //{
+                //    editGood = true;
+                    return(value);
+                //} else {
+                //    return(prevValue);
+                //}
             },
             {
                 "placeholder" : "",
                 "callback": function( sValue, y ) {
                     /* Update the table from the new data set */
                     var idxdata = oTable.fnGetPosition(this);
-                    
-                    oTable.fnUpdate(sValue,idxdata[0],idxdata[2]);
+                    //if(editGood)
+                    //{
+                        oTable.fnUpdate(sValue,idxdata[0],idxdata[2]);//FOR INPUT
+                        //oTable.fnUpdate(y.data[sValue],idxdata[0],idxdata[2]);//FOR SELECT
+                    //}
                     
                     //DO NOT NEED - was done elsewhere: Select the next object
                     //var tr = $(this).closest("tr");
                     //var col = $(this).closest("td");
                     //tr.next().find('td:eq('+col.index()+') ').click().focus();
                     
+                    
+                    
                     editableOn(false);
                 },
                 "height": "14px",
-                "cssclass" : "search_init",
                 "tooltip" : "Click to edit...",
                 "onedit" : function() {
                     editableOn(true);
+                    prevValue = $(this).val();//Save previous value
+                    //$(this).autocomplete = {data : labelColumn_to_LabelData[oTable.fnGetPosition(this)[2]]};
+                    tempInputData = labelColumn_to_LabelData[oTable.fnGetPosition(this)[2]];
+                    editGood = false;
                 },
                 "onerror":function () {
                     editableOn(false);
@@ -1968,9 +2054,14 @@ function setupDataTable(dataSet,filename,viscol) {
                 "onreset" : function () {
                     editableOn(false);
                 },
-//                 "type" : "select",
-//                 "data" : ['','A','B']
+                "type" : "autocomplete",
+                "cssclass":"typeahead",
+                //"autocomplete":{"data":labelColumn_to_LabelData[oTable.fnGetPosition(this)[0]]},
+                //"type" : "select",
+                //"data" : ['','A','B'],
+                 //"submit":'OK'
             } );
+            
         }
         //DO NOT NEED - not needed now
         //"bStateSave": false //save the state of the personal configuration of displaying table
@@ -2973,7 +3064,7 @@ $(document).ready(function () {
     });
     var ajax_url = location.hash.replace(/^#/, '');
     if (ajax_url.length < 1) {
-        ajax_url = 'ajax/dashboard.html';
+        ajax_url = 'ajax/filter_data.html';
     }
     //Temporary Special check for prototype
     //Default isLabel to false

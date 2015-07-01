@@ -1,0 +1,118 @@
+            <div class="row">
+                <div id="breadcrumb" class="col-md-12">
+                    <ol class="breadcrumb">
+                        <li><a href="#">Filter Data</a></li>
+                    </ol>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="box">
+                        <div class="box-header">
+                            <div class="box-name">
+                                <span>Toggle columns</span>
+                            </div>
+                            <div class="box-icons">
+                                <a class="collapse-link">
+                                    <i class="fa fa-chevron-up"></i>
+                                </a>
+                            </div>
+                            <div class="no-move"></div>
+                        </div>
+                        <div id="toggleMe" class="box-content">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="box">
+                        <div class="box-header">
+                            <div class="box-name">
+                                <span>Filter Data</span>
+                            </div>
+                            <div class="box-icons">
+                                <a class="beauty-table-to-load">
+                                    <i class="fa fa-cloud-download"></i>&nbsp;Temp Load
+                                </a>
+                                <a class="beauty-table-to-save">
+                                    <i class="fa fa-cloud-upload"></i>&nbsp;Temp Save All
+                                </a>
+                                <a class="beauty-table-to-load-csv">
+                                    <i class="fa fa-upload"></i>&nbsp;Load from CSV
+                                    <input type="file" id="fileUpload"  accept=".csv" style='display:none;'/>
+                                </a>                                
+                                <a class="beauty-table-to-csv">
+                                    <i class="fa fa-download"></i>&nbsp;Save filter to CSV
+                                </a>                                
+                                <a class="beauty-table-to-crop">
+                                    <i class="fa fa-crop"></i>&nbsp;Crop non-Filtered
+                                </a>                                
+                                <a class="collapse-link">
+                                    <i class="fa fa-chevron-up"></i>
+                                </a>
+                            </div>
+                            <div class="no-move"></div>
+                        </div>
+                        <div class="box-content no-padding table-responsive">
+                            <table class="table table-bordered table-striped table-hover table-heading table-datatable beauty-table-mod" id="datatable-3">  
+                                <thead>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                                <tfoot>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <script type="text/javascript">
+            function MakeSelect2(){
+                //$('select').select2();
+                $('.dataTables_filter').each(function(){
+                    $(this).find('label input[type=text]').attr('placeholder', 'Search');
+                });
+            }
+                
+
+            $(document).ready(function() {
+                // Load Datatables and run plugin on tables 
+                TestTable3(false);//true means Label
+                
+                // Add Drag-n-Drop feature
+                WinMove();
+                
+                
+                //BROWSWER LOAD BUTTON
+                $('.beauty-table-to-load-csv').on('click', function(e){
+                    if(window.notLoadedDataTable)
+                    {
+                        var fileUpload = document.getElementById("fileUpload");
+                        fileUpload.click();
+                    }
+                });
+                
+                
+                
+                //Initially hide the options
+                $('.beauty-table-to-save').hide();
+                $('.beauty-table-to-csv').hide();
+                $('.beauty-table-to-crop').hide();
+
+                //Hide temp load if nothing to load
+                if(!localStorage.getItem('dataTable'))
+                {
+                   $('.beauty-table-to-load').hide();
+                }
+            });//end READY FUNCTION
+            window.no_ajax = true;
+            window.notLoadedDataTable = true;
+            </script>
+            <script src='plugins/datatables/jquery.dataTables.js'></script>
+            <script src='plugins/datatables/ZeroClipboard.js'></script>
+            <script src='plugins/datatables/TableTools.js'></script>
+            <script src='plugins/datatables/dataTables.colReorder.min.js'></script>
+            <script src='plugins/datatables/dataTables.bootstrap.js'></script>
+            <script src='plugins/select2/select2.min.js'></script>

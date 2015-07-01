@@ -747,7 +747,7 @@ td.beauty-hover {
 }
 #overlay {
     display: none;
-    z-index: 3000;
+    z-index: 2502;
     background: #000;
     position: absolute;
     width: 100%;
@@ -759,7 +759,7 @@ td.beauty-hover {
 #specialBox {
     display: none;
     position: fixed;
-    z-index: 3001;
+    z-index: 2503;
     top:50%;
     left:50%;
     margin-top: -200px; /* negative half the size of height */
