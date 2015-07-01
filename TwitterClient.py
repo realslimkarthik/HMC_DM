@@ -533,18 +533,18 @@ class TwitterClient(object):
             max_rule = data.count()
             # For each record returned by the query
             totalincrdata = 0
-            incrdisplay = 10
+            incrdisplay = 25
             numsubdisplays = 100/incrdisplay
             curincrdisplay = 0;
             starttime = datetime.now()
-            print "Searching set " + i
+            print "Searching set " + i + ", size=" + str(max_rule)
             for k in data:
                 incrdata = incrdata + 1
                 totalincrdata = totalincrdata + 1
                 while( ((totalincrdata*100 / max_rule) - curincrdisplay*incrdisplay) > incrdisplay ):                    
                     curincrdisplay = curincrdisplay + 1
                     print "  " + str(curincrdisplay*incrdisplay) + "% done",
-                    
+                     
                     endtime = datetime.now()
                     deltatime = endtime - starttime
                     predict = sma(deltatime.total_seconds())
