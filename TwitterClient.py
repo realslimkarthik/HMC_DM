@@ -537,6 +537,8 @@ class TwitterClient(object):
             numsubdisplays = 100/incrdisplay
             curincrdisplay = 0;
             starttime = datetime.now()
+            countBigNum = 300000
+            countBigPrinted = False
             print "Searching set " + i + ", size=" + str(max_rule)
             for k in data:
                 incrdata = incrdata + 1
@@ -558,7 +560,13 @@ class TwitterClient(object):
 #                print k['_id'],
                 modifiedObj = {}
                 # Translate field names
+                countBig = 0
+                countBigPrinted = False
                 for (key, val) in k.iteritems():
+                    countBig = countBig + 1
+                    if countBig > countBigNum and not countBigPrinted:
+                        print "Excessive size of items"
+                        countBigPrinted = True
                     modifiedObj[self.mongo_fields[key]] = val
 
                 # Add extra fields for Posted Time
@@ -576,15 +584,29 @@ class TwitterClient(object):
                 if 'entitieshtagstext' in modifiedObj:
                     #Fix for when it is not an array
                     if isinstance(modifiedObj['entitieshtagstext'],list):
+#                        print "Updating eumh..."
+                        countBig = 0
+                        countBigPrinted = False
                         for i in modifiedObj['entitieshtagstext']:
+                            countBig = countBig + 1
+                            if countBig > countBigNum and not countBigPrinted:
+                                print "Excessive size of entitieshtagstext"
+                                countBigPrinted = True
                             modifiedObj['entitieshtagstext' + str(index).zfill(2)] = i
                             index += 1
                     else:
+#                        print "Updating eumh new..."
                         modifiedObj['entitieshtagstext' + str(index).zfill(2)] = modifiedObj['entitieshtagstext']
                     del(modifiedObj['entitieshtagstext'])
                     index = 1
                 if 'entitiesusrmentions' in modifiedObj:
+                    countBig = 0
+                    countBigPrinted = False
                     for i in modifiedObj['entitiesusrmentions']:
+                        countBig = countBig + 1
+                        if countBig > countBigNum and not countBigPrinted:
+                            print "Excessive size of entitiesusrmentions"
+                            countBigPrinted = True
                         modifiedObj['entitiesusrmentionsidstr' + str(index).zfill(2)] = i['is']
                         modifiedObj['entitiesusrmentionsname' + str(index).zfill(2)] = i['n']
                         modifiedObj['entitiesusrmentionssname' + str(index).zfill(2)] = i['sn']
@@ -594,7 +616,13 @@ class TwitterClient(object):
                 # Translated and unroll matchingrulestag array
                 if 'matchingrulestag' in modifiedObj:
                     translatedTags = []
+                    countBig = 0
+                    countBigPrinted = False
                     for i in modifiedObj['matchingrulestag']:
+                        countBig = countBig + 1
+                        if countBig > countBigNum and not countBigPrinted:
+                            print "Excessive size of matchingrulestag"
+                            countBigPrinted = True
                         tag = self._invertedTags[int(i)]
                         modifiedObj['matchingrulestag' + str(index).zfill(2)] = tag
                         index += 1
@@ -603,7 +631,13 @@ class TwitterClient(object):
                 # Unroll matchingrulesvalue array and create a new field to hold all the translated matchingrulesvalues
                 if 'matchingrulesvalue' in modifiedObj:
                     translatedRules = []
+                    countBig = 0
+                    countBigPrinted = False
                     for i in modifiedObj['matchingrulesvalue']:
+                        countBig = countBig + 1
+                        if countBig > countBigNum and not countBigPrinted:
+                            print "Excessive size of matchingrulesvalue"
+                            countBigPrinted = True
                         modifiedObj['matchingrulesvalue' + str(index).zfill(2)] = i
                         index += 1
                         try:
