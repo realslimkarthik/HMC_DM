@@ -1761,10 +1761,12 @@ function TestTable3(isLabel){
     fileUpload.addEventListener('change', function(e) {
         var file = fileUpload.files[0];
         var reader = new FileReader();
+        fileUpload.disabled = true;
 
+        //While loading
+        
 
         reader.onload = function(e) {
-            fileUpload.disabled = true;
             $('.beauty-table-to-load-csv').hide();
             $('.beauty-table-to-load').hide();
             //console.log("Finished upload");
@@ -1779,13 +1781,14 @@ function TestTable3(isLabel){
     });
 
 }
-
+//------------------------------
+// Create the Datatable    
+//------------------------------    
 function setupDataTable(dataSet,filename,viscol) {
 
     window.notLoadedDataTable = false;//not allow to load again
     var asInitVals = [];
     var isLabel = true;//default to true right now
-    //Save off first row
     var headerrow = [];
     if(typeof window.labelData == 'undefined')
     {
@@ -1796,7 +1799,10 @@ function setupDataTable(dataSet,filename,viscol) {
         //No data, so return
         return;
     }
+
+    //----------------------------
     //Add labels to header data
+    //----------------------------
     var labelColumn_to_LabelData = {};
     if(window.labelData.length > 0)
     {
@@ -1833,6 +1839,9 @@ function setupDataTable(dataSet,filename,viscol) {
     var labelColumns = [];
     var isLabelFont = "";
     
+    //----------------------------
+    //Setup Labels and Header row
+    //----------------------------
     if(headerdata.length > 0) {
         for(var i = 0; i<headerdata.length; i++) {
             isLabelFont = "";
@@ -1864,68 +1873,34 @@ function setupDataTable(dataSet,filename,viscol) {
     $('#datatable-3 > thead').append('<tr>' + colheader + '</tr>');//The TRs need to be here (for some reason), and this needs to be before the footer line otherwise 
     $('#datatable-3 > thead').append('<tr>' + colfooter + '</tr>');
     dataSet.shift();//remove header row
-//     
-//     //Used by typeahead
-//     var substringMatcher = function(strs) {
-//       return function findMatches(q, cb) {
-//         var matches, substrRegex;
-//      
-//         // an array that will be populated with substring matches
-//         matches = [];
-//      
-//         // regex used to determine if a string contains the substring `q`
-//         substrRegex = new RegExp(q, 'i');
-//      
-//         // iterate through the pool of strings and for any string that
-//         // contains the substring `q`, add it to the `matches` array
-//         $.each(strs, function(i, str) {
-//           if (substrRegex.test(str)) {
-//             matches.push(str);
-//           }
-//         });
-//      
-//         cb(matches);
-//       };
-//     };
-    var states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
-      'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii',
-      'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
-      'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
-      'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
-      'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota',
-      'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island',
-      'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
-      'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
-    ];
-    
-    
-    var datafields = "";
-    dataSet.forEach(function(l){
-        var rowfields = "";
-        var idx = 0;
-        l.forEach(function(val){
-                if($.inArray(idx,labelColumns) > -1) {
-                    rowfields += '<td><input type="text" value="' + val + '"></td>\n';
-                } else {
-                    rowfields += '<td>' + val + '</td>\n';
-                }
-                idx++;
-        });
-        datafields += '<tr>\n' + rowfields + '</tr>\n';
-    });
-
+        
     //DO NOT NEED - datafields added directly by data variable
+//     var datafields = "";
+//     dataSet.forEach(function(l){
+//         var rowfields = "";
+//         var idx = 0;
+//         l.forEach(function(val){
+//                 if($.inArray(idx,labelColumns) > -1) {
+//                     rowfields += '<td><input type="text" value="' + val + '"></td>\n';
+//                 } else {
+//                     rowfields += '<td>' + val + '</td>\n';
+//                 }
+//                 idx++;
+//         });
+//         datafields += '<tr>\n' + rowfields + '</tr>\n';
+//     });
     //$('#datatable-3 > tbody').html("");
     //$('#datatable-3 > tbody').append(datafields);
 
     var header_inputs = $("#datatable-3 thead input");//must be before dataTable created
-
-
     var totalColumns = headerdata.length;
     var allNonViselem = [];
     var allelem = [];
     var allVisElem = [0, 1];
+    
+    //--------------------
     //Allow custom visible
+    //--------------------
     if(viscol.length > 0)
     {
         allVisElem = viscol;
@@ -1934,8 +1909,10 @@ function setupDataTable(dataSet,filename,viscol) {
     for(var i=0; i<totalColumns;i++) {if($.inArray(i,allVisElem) == -1) {allNonViselem.push(i);}}//remove label columns
     for(var i=0; i<totalColumns;i++) {allelem.push(i);}
 
-    var editableOnPrev = false;
+    //------------------
     //Used for resize update of table - to delay it if in the middle of editing
+    //------------------
+    var editableOnPrev = false;
     var editableOn = function(val) {
         if(val != editableOnPrev && editableOnPrev && redrawDelay) {
             resizeTable();
@@ -1944,12 +1921,18 @@ function setupDataTable(dataSet,filename,viscol) {
         editableOnPrev = val;
     }
     var redrawDelay = false;
-    var editGood = false;
+    
+    //-----------------------------
+    //Search method for table entry
+    //-----------------------------
     $.expr[':'].textEquals = function (a, i, m) {
         return $(a).text().match("^" + m[3] + "$");
     };
-    var tempInputData = [];
+    
+    //--------------------------
     //Used for editable in table
+    //--------------------------
+    var tempInputData = [];
     $.editable.addInputType('autocomplete', {
         element : $.editable.types.text.element,
         plugin : function(settings, original) {
@@ -1960,7 +1943,8 @@ function setupDataTable(dataSet,filename,viscol) {
                     if ($(".ui-autocomplete li:textEquals('" + $(this).val() + "')").size() == 0) {
                         $(this).val('');
                     }
-                }
+                },
+                delay: 0
             }).on('keydown', function (e) {
                 var keyCode = e.keyCode || e.which;
                 //if TAB or RETURN is pressed and the text in the textbox does not match a suggestion, set the value of the textbox to the text of the first suggestion
@@ -1978,64 +1962,126 @@ function setupDataTable(dataSet,filename,viscol) {
         }
     });
 
-    var oTable = $('#datatable-3').dataTable( {
-        "aaSorting": [[ 0, "asc" ]],
-        "sDom": "R<'box-content'<'col-sm-6'f><'col-sm-6 text-right'l><'clearfix'>>rt<'box-content'<'col-sm-6'i><'col-sm-6 text-right'p><'clearfix'>>",
-        //"sDom": "TR<'box-content'<'col-sm-6'f><'col-sm-6 text-right'l><'clearfix'>>rt<'box-content'<'col-sm-6'i><'col-sm-6 text-right'p><'clearfix'>>", //DO NOT NEED - adds Save To
-         "aoColumnDefs": [
-             {"bVisible":true, "aTargets":allVisElem},
-             {"bVisible":false, "aTargets":allNonViselem},//only show first 2 columns
-             {"sClass" : "editable", "aTargets" : labelColumns}
-         ],
-        "aaData": dataSet,
-        //"aoColumns": headerrow, //DO NOT NEED
-        "bAutoWidth":true,
-        "sPaginationType": "bootstrap",
-        "oLanguage": {
-            "sSearch": "",
-            "sLengthMenu": '_MENU_'
-        },
-        "sScrollX" : "100%", 
-        //DO NOT NEED: Already have another implementation of download that works on client-side
-//                 "oTableTools": {
-//                     "sSwfPath": "plugins/datatables/copy_csv_xls_pdf.swf",
-//                     "aButtons": [
-//                         {
-//                             "sExtends": "csv",
-//                             "sButtonText": "Save to CSV"
-//                         }
-//                     ]
+    //------------------
+    //Setup Table
+    //------------------
+//     var oTable = $('#datatable-3').dataTable( {
+//         "aaSorting": [[ 0, "asc" ]],
+//         "sDom": "<'box-content'<'col-sm-6'fl><'col-sm-6 text-right'pi><'clearfix'>>rt",
+// //        "sDom": "R<'top'flpi>rt",        
+//         //"sDom": "TR<'box-content'<'col-sm-6'f><'col-sm-6 text-right'l><'clearfix'>>rt<'box-content'<'col-sm-6'i><'col-sm-6 text-right'p><'clearfix'>>", //DO NOT NEED - adds Save To
+//          "aoColumnDefs": [
+//              {"bVisible":true, "aTargets":allVisElem},
+//              {"bVisible":false, "aTargets":allNonViselem},//only show first 2 columns
+//              {"sClass" : "editable", "aTargets" : labelColumns},
+//              {
+//                 "mRender":function (data,type,row){
+//                     //Linkify all data
+//                     return linkifyStr(data);
 //                 },
-        "iDisplayLength":5,//initial display number
-        "aLengthMenu":[[1,5,10,20,50,100,-1],[1,5,10,20,50,100,'ALL']],
-        "fnDrawCallback": function () {
+//                 "aTargets" : allelem
+//              }
+//          ],
+//         "aaData": dataSet,
+//         //"aoColumns": headerrow, //DO NOT NEED
+//         "bAutoWidth":true,
+//         "bScrollCollapse": true,
+//         "sPaginationType": "bootstrap",
+//         "oLanguage": {
+//             "sSearch": "",
+//             "sLengthMenu": '_MENU_'
+//         },
+//         "sScrollX" : "100%", 
+//         //DO NOT NEED: Already have another implementation of download that works on client-side
+// //                 "oTableTools": {
+// //                     "sSwfPath": "plugins/datatables/copy_csv_xls_pdf.swf",
+// //                     "aButtons": [
+// //                         {
+// //                             "sExtends": "csv",
+// //                             "sButtonText": "Save to CSV"
+// //                         }
+// //                     ]
+// //                 },
+//         "iDisplayLength":5,//initial display number
+//         "aLengthMenu":[[1,5,10,20,50,100,-1],[1,5,10,20,50,100,'ALL']],
+//         "fnDrawCallback": function () {
+//             var prevValue = "";
+//             $('#datatable-3 tbody td.editable').editable( function(value,settings) {
+//                 return(value);
+//             },
+//             {
+//                 "placeholder" : "",
+//                 "callback": function( sValue, y ) {
+//                     /* Update the table from the new data set */
+//                     var idxdata = oTable.fnGetPosition(this);
+//                     oTable.fnUpdate(sValue,idxdata[0],idxdata[2],false);//FOR INPUT (don't let redraw)
+//                     //oTable.fnUpdate(y.data[sValue],idxdata[0],idxdata[2],false);//FOR SELECT (don't let redraw)
+//                     
+//                     editableOn(false);
+//                 },
+//                 "height": "14px",
+//                 "tooltip" : "Click to edit...",
+//                 "onedit" : function() {
+//                     editableOn(true);
+//                     prevValue = $(this).val();//Save previous value
+//                     tempInputData = labelColumn_to_LabelData[oTable.fnGetPosition(this)[2]];
+//                 },
+//                 "onerror":function () {
+//                     editableOn(false);
+//                 },
+//                 "onreset" : function () {
+//                     editableOn(false);
+//                 },
+//                 "type" : "autocomplete",
+//                 "cssclass":"typeahead",
+//             } );
+//             
+//         }
+//         //DO NOT NEED - not needed now
+//         //"bStateSave": false //save the state of the personal configuration of displaying table
+//         //"bFilter":false, //disable filters
+//         //"bDestroy": true //delete previous table
+//     });
+    var oTable = $('#datatable-3').DataTable( {
+        "order": [[ 0, "asc" ]],
+        "dom": "<'box-content'<'col-sm-6'fl><'col-sm-6 text-right'pi><'clearfix'>>rt",
+//        "sDom": "R<'top'flpi>rt",        
+        //"sDom": "TR<'box-content'<'col-sm-6'f><'col-sm-6 text-right'l><'clearfix'>>rt<'box-content'<'col-sm-6'i><'col-sm-6 text-right'p><'clearfix'>>", //DO NOT NEED - adds Save To
+         "columnDefs": [
+             {"visible":true, "targets":allVisElem},
+             {"visible":false, "targets":allNonViselem},//only show first 2 columns
+             {"className" : "editable", "targets" : labelColumns},
+             {
+                "render":function (data,type,row){
+                    //Linkify all data
+                    return linkifyStr(data);
+                },
+                "targets" : allelem
+             }
+         ],
+        "data": dataSet,
+        //"columns": headerrow, //DO NOT NEED
+        "autoWidth":false,
+        "pagingType": "bootstrap",
+        "language": {
+            "search": "",
+            "lengthMenu": '_MENU_'
+        },
+        //"scrollX" : "100%", 
+        "scrollX" : true, 
+        "scrollCollapse": true,
+        "pageLength":5,//initial display number
+        "lengthMenu":[[1,5,10,20,50,100,-1],[1,5,10,20,50,100,'ALL']],
+        "drawCallback": function () {
             var prevValue = "";
             $('#datatable-3 tbody td.editable').editable( function(value,settings) {
-                //if($.inArray(value,states) >= 0)
-                //{
-                //    editGood = true;
-                    return(value);
-                //} else {
-                //    return(prevValue);
-                //}
+                return(value);
             },
             {
                 "placeholder" : "",
                 "callback": function( sValue, y ) {
                     /* Update the table from the new data set */
-                    var idxdata = oTable.fnGetPosition(this);
-                    //if(editGood)
-                    //{
-                        oTable.fnUpdate(sValue,idxdata[0],idxdata[2]);//FOR INPUT
-                        //oTable.fnUpdate(y.data[sValue],idxdata[0],idxdata[2]);//FOR SELECT
-                    //}
-                    
-                    //DO NOT NEED - was done elsewhere: Select the next object
-                    //var tr = $(this).closest("tr");
-                    //var col = $(this).closest("td");
-                    //tr.next().find('td:eq('+col.index()+') ').click().focus();
-                    
-                    
+                    oTable.cell(this).data(sValue);//FOR INPUT (don't let redraw)
                     
                     editableOn(false);
                 },
@@ -2044,9 +2090,8 @@ function setupDataTable(dataSet,filename,viscol) {
                 "onedit" : function() {
                     editableOn(true);
                     prevValue = $(this).val();//Save previous value
-                    //$(this).autocomplete = {data : labelColumn_to_LabelData[oTable.fnGetPosition(this)[2]]};
-                    tempInputData = labelColumn_to_LabelData[oTable.fnGetPosition(this)[2]];
-                    editGood = false;
+                    var idxdata = oTable.cell(this).index().column;
+                    tempInputData = labelColumn_to_LabelData[idxdata];
                 },
                 "onerror":function () {
                     editableOn(false);
@@ -2056,10 +2101,6 @@ function setupDataTable(dataSet,filename,viscol) {
                 },
                 "type" : "autocomplete",
                 "cssclass":"typeahead",
-                //"autocomplete":{"data":labelColumn_to_LabelData[oTable.fnGetPosition(this)[0]]},
-                //"type" : "select",
-                //"data" : ['','A','B'],
-                 //"submit":'OK'
             } );
             
         }
@@ -2068,12 +2109,26 @@ function setupDataTable(dataSet,filename,viscol) {
         //"bFilter":false, //disable filters
         //"bDestroy": true //delete previous table
     });
-    //console.log("Recreated datatable");
+    console.log("Recreated datatable");
+    
+    
+    //-------------------------------
+    //Setup fixed columns - WORKING HERE
+    //-------------------------------   
+//     new $.fn.dataTable.FixedColumns( oTable, {
+//             leftColumns:2,
+//             heightMatch: 'none'
+//     } );
+    
+    
+    //-------------------------------
+    //Setup resize of window to table
+    //-------------------------------   
     var resizeTable = function() {
         //toggle visibility of first column back and forth to cause auto width
-        var bVis = oTable.fnSettings().aoColumns[0].bVisible;
-        oTable.fnSetColumnVis( 0, bVis ? false : true );
-        oTable.fnSetColumnVis( 0, bVis ? true : false );
+        var bVis = oTable.column( 0).visible();
+        oTable.column( 0).visible(bVis ? false : true );
+        oTable.column( 0).visible( bVis ? true : false ,true);
     }
     $( window ).resize(function() {
         if(editableOnPrev) {
@@ -2085,14 +2140,17 @@ function setupDataTable(dataSet,filename,viscol) {
     });
 
 
+    //------------------------------    
     //Add table keys
+    //------------------------------    
     $('.beauty-table-mod').each(function(){
         // Run keyboard navigation in table
         $(this).beautyTablesModified();
     });
     
+    //------------------------------    
     //Re-establish filters
-    //LoadSelect2Script(MakeSelect2);//DO NOT NEED
+    //------------------------------    
     MakeSelect2();
 
     //DO NOT NEED - allows for selection in the future
@@ -2103,12 +2161,18 @@ function setupDataTable(dataSet,filename,viscol) {
 //                 alert( table.rows('.selected').data().length +' row(s) selected' );
 //             } );
 
+    //------------------------------------------    
+    //Setup button clicks for Column visability
+    //------------------------------------------    
     $('a.toggle-vis').on( 'click', function (e) {
         e.preventDefault();
           
         // // Toggle the visibility
-        var bVis = oTable.fnSettings().aoColumns[$(this).attr('data-column')].bVisible;
-        oTable.fnSetColumnVis( $(this).attr('data-column'), bVis ? false : true );
+        var bVis = oTable.column($(this).attr('data-column')).visible();
+        oTable.column($(this).attr('data-column')).visible( bVis ? false : true ,true);
+        oTable.columns.adjust().draw();
+        //setTimeout(oTable.columns.adjust().draw(),10);
+        
     } );
     //Show All
     $('a.toggle-allvis').on('click',function(e) {
@@ -2119,12 +2183,13 @@ function setupDataTable(dataSet,filename,viscol) {
         for(var ii = 0; ii<totalColumns; ++ii)
         {
             //Only make visible those that are not visible
-            bVis = oTable.fnSettings().aoColumns[ii].bVisible;
+            bVis = oTable.column(ii).visible();
             if(!bVis)
             {
-                oTable.fnSetColumnVis(ii,true);
+                oTable.column(ii).visible(true);
             }
         }
+        oTable.columns.adjust().draw();
 
     });
     //Hide all
@@ -2134,33 +2199,30 @@ function setupDataTable(dataSet,filename,viscol) {
 
         for(var ii = 0; ii<totalColumns; ++ii)
         {
-            bVis = oTable.fnSettings().aoColumns[ii].bVisible;
+            bVis = oTable.column(ii).visible();
             if(bVis)
             {
-                oTable.fnSetColumnVis(ii,false);
+                oTable.column(ii).visible(false);
             }
         }
+        oTable.columns.adjust().draw();
 
     });
+    
+    
+    //------------------------------    
     //DOWNLOAD BUTTON
+    //------------------------------    
     $('.beauty-table-to-csv').show();
     $('.beauty-table-to-csv').on('click', function(e){
         e.preventDefault();
-        var oSettings = oTable.fnSettings();
-        //var alldata = [headerdata];
 
         //Look at filter data
-        var filteredData = oSettings.aiDisplay;
-        var data = [];
-        for ( var i=0, iLen=filteredData.length ; i<iLen ; i++ ) {
-            data.push(oSettings.aoData[filteredData[i]]._aData);
-        }
+        var data = oTable.rows( { filter: 'applied' } ).data().toArray();
 
         if(data.length == 0) {
             //No filtered data, so get entire current data
-            for ( var i=0, iLen=oSettings.aoData.length ; i<iLen ; i++ ) {
-                data.push(oSettings.aoData[i]._aData);
-            }
+            data = oTable.data().toArray();
         }
 
         //Add Header row
@@ -2172,17 +2234,16 @@ function setupDataTable(dataSet,filename,viscol) {
     });
 
 
+    //------------------------------    
     //BROWSWER SAVE BUTTON
+    //------------------------------    
     $('.beauty-table-to-save').show();
     $('.beauty-table-to-save').on('click', function(e){
         e.preventDefault();
         var oSettings = oTable.fnSettings();
 
         //Always get entire current data
-        var data = [];
-        for ( var i=0, iLen=oSettings.aoData.length ; i<iLen ; i++ ) {
-            data.push(oSettings.aoData[i]._aData);
-        }
+        var data = oTable.data().toArray();
 
         //Add Header row
         var alldata = [headerdata].concat(data);
@@ -2190,12 +2251,12 @@ function setupDataTable(dataSet,filename,viscol) {
         var viscol = [];
         
         //Cycle through all columns and add what is visible
-        for(var ii = 0; ii<oTable.fnSettings().aoColumns.length; ++ii)
+        for(var ii = 0; ii<oTable.columns().length; ++ii)
         {
             //Only add if not a label column
             if($.inArray(ii,labelColumns) == -1)
             {
-                if(oTable.fnSettings().aoColumns[ii].bVisible)
+                if(oTable.column(ii).visible())
                 {
                     viscol.push(ii);
                 }
@@ -2212,44 +2273,41 @@ function setupDataTable(dataSet,filename,viscol) {
         OpenModalBox('Save Results', 'Save Successful');
     });
     
-    //CROP BY FILTER DATA
-    $('.beauty-table-to-crop').show();
+    //------------------------------    
+    //CROP BY FILTER DATA - FUTURE CAPABILITY
+    //------------------------------    
+    //$('.beauty-table-to-crop').show();
     $('.beauty-table-to-crop').on('click', function(e){
         e.preventDefault();
-        var oSettings = oTable.fnSettings();
 
         //Look at filter data
-        var filteredData = oSettings.aiDisplay.splice(0);
+        var filteredData = oTable.rows( { filter: 'applied' } );
+        var filteredDataRemove = oTable.rows( { filter: 'removed' } );
+        filteredDataRemove.remove();
         
         //Only crop if there is some filter
         if(filteredData.length > 0)
         {
-            var numberCropped = 0;
-            for ( var i=0, iLen=oSettings.aoData.length ; i<iLen ; i++ ) {
-                if($.inArray(i,filteredData) == -1)
-                {
-                    oTable.fnDeleteRow(i-numberCropped++);
-                }
-            }
             //clear all filters and set them back to default:
             header_inputs.val('').blur();
             //clear main filter text and set back to default
             $('#datatable-3_filter :input[type=text]').val('').blur();
             
             //Clear all internal table filters
-            for(var iCol = 0; iCol < oSettings.aoPreSearchCols.length; iCol++) {
-                oSettings.aoPreSearchCols[ iCol ].sSearch = '';
+            for(var iCol = 0; iCol < oTable.columns().length; iCol++) {
+                oTable.column( iCol ).search = '';
             }
-            oSettings.oPreviousSearch.sSearch = '';
             
             //Redraw
-            oTable.fnDraw();
+            oTable.draw();
         }
         
     });
     
     
+    //------------------------------    
     //Add filter hook-up for updating table
+    //------------------------------    
     header_inputs.on('keyup', function(e){
         /* Filter on the column (the index) of this element */
         if(this.value.length > 0 && this.value.charAt(0) == '~') {
@@ -2257,10 +2315,12 @@ function setupDataTable(dataSet,filename,viscol) {
                 e.preventDefault();
                 var inputstring = this.value.substring(1);
                 console.log('Doing regex = ' + inputstring);
-                oTable.fnFilter( inputstring, header_inputs.index(this) , true, false, true, false);
+                oTable.columns(header_inputs.index(this)).search( inputstring, true, false, false);
+                oTable.draw();
             }
         } else {
-            oTable.fnFilter( this.value, header_inputs.index(this) , false, true, true, true);
+            oTable.columns(header_inputs.index(this)).search( this.value , false, true, true);
+            oTable.draw();
             e.preventDefault();
         }
     })
@@ -2283,7 +2343,9 @@ function setupDataTable(dataSet,filename,viscol) {
         asInitVals[i] = this.value;
     });
     
+    //------------------------------    
     //we want this function to fire whenever the user types in the search-box
+    //------------------------------    
     $("#search-text").keyup(function () {
       
         //first we create a variable for the value from the search-box

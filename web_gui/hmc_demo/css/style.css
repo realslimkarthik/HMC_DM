@@ -520,11 +520,14 @@ table.no-border-bottom tr:last-child td {
 }
 .dataTables_wrapper {
   overflow: hidden;
+  background-color: #ffffff;
 }
 .dataTables_wrapper table.table {
   clear: both;
   max-width: inherit;
   margin-bottom: 0;
+  background-color: #ffffff;
+  border-collapse: collapse;
 }
 .table-datatable *, .table-datatable :after, .table-datatable :before {
   margin: 0;
@@ -532,6 +535,7 @@ table.no-border-bottom tr:last-child td {
   -webkit-box-sizing: content-box;
   box-sizing: content-box;
   -moz-box-sizing: content-box;
+  border-collapse: collapse;
 }
 .table-datatable label {
   position: relative;
