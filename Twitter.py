@@ -15,7 +15,7 @@ def upload(client,fixByMonth):
 def download(client, rule):
     client.queryDB(rule)
 
-# Eg python Twitter.py upload/download 2015 02 t/f <download:start_mrv_idx | upload:s/f> (LCC)
+# Eg python Twitter.py upload/download 2015 02 t/f <download:start_mrv_idx | upload:s/f> (LCC/dev)
 # t/f ==> t: running on server, f: running on a desktop machine
 # s/f ==> s: skip fixByMonth, f: run fixByMonth
 if __name__ == "__main__":
@@ -36,11 +36,18 @@ if __name__ == "__main__":
         idx_or_sf = ""
             
     try:
-        proj = sys.argv[6]
+        if sys.argv[6] == "dev":
+            dev = "t"
+            print "Running in Dev mode"
+            proj = ""
+        else:
+            proj = sys.argv[6]
+            dev = ""
     except IndexError:
         proj = ""
+        dev = ""            
 
-    client = TC.TwitterClient(year, month, server, proj)
+    client = TC.TwitterClient(year, month, server, proj, dev)
     client.updateRules() #Only need to update once
     if op == 'upload':
         if idx_or_sf != "":

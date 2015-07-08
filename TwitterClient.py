@@ -12,6 +12,7 @@ import logging
 import calendar
 from pympler import asizeof
 import pandas as pd
+import csv
 from utility import mkdir_p, dump
 from general_functions import Simplemovingaverage
 
@@ -42,14 +43,17 @@ class TwitterClient(object):
     """
 
 
-    def __init__(self, year, month, server, proj):
+    def __init__(self, year, month, server, proj, dev):
         self._server = server
         self._year = str(year)
         self._month = str(month).zfill(2)
         self._proj = proj
-
+        if dev == "t":
+            confFile = 'config\\config_dev.cfg'
+        else:
+            confFile = 'config\\config.cfg'
         self._conf = ConfigParser.ConfigParser()
-        self._conf.read('config\\config.cfg')
+        self._conf.read(confFile)
         
         rules_file = open(self._conf.get('twitter', 'rules'))
         self._rules = json.loads(rules_file.read())
@@ -658,7 +662,7 @@ class TwitterClient(object):
                     # Create a new DataFrame and write to a csv file
                     df = pd.DataFrame(dataSet)
                     with open(self._dest + self.year + self.month + '_' + str(filterRule) + '_' + str(counter) + '.csv', 'wb') as csvfile:
-                        df.to_csv(csvfile, sep=',', index=False)
+                        df.to_csv(csvfile, sep=',', index=False, quoting=csv.QUOTE_NONNUMERIC)
                     counter += 1
                     dataSet = []
             data.close()
@@ -667,5 +671,5 @@ class TwitterClient(object):
         # Create a new DataFrame and write to a csv file
         df = pd.DataFrame(dataSet)
         with open(self._dest + self.year + self.month + '_' + str(filterRule) + '_' + str(counter) + '.csv', 'wb') as csvfile:
-            df.to_csv(csvfile, sep=',', index=False)
+            df.to_csv(csvfile, sep=',', index=False, quoting=csv.QUOTE_NONNUMERIC)
         counter += 1
