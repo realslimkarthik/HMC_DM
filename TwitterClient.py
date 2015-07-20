@@ -16,7 +16,6 @@ import csv
 from utility import mkdir_p, dump
 from general_functions import Simplemovingaverage
 
-
 class TwitterClient(object):
 
     """
@@ -50,6 +49,8 @@ class TwitterClient(object):
         self._proj = proj
         if dev == "t":
             confFile = 'config\\config_dev.cfg'
+        elif dev == "dt":
+            confFile = 'config\\config_dt.cfg'
         else:
             confFile = 'config\\config.cfg'
         self._conf = ConfigParser.ConfigParser()
@@ -288,6 +289,8 @@ class TwitterClient(object):
                 self.dictFromTwitterJSON(self.src + j)
 
 
+    
+                
     # Generates an array of dicts from json files
     def dictFromTwitterJSON(self, jsonfilename, errorfile=None):
         jsonfile = open(jsonfilename, 'r')
@@ -472,6 +475,7 @@ class TwitterClient(object):
 
         collection.ensure_index([("mrv", ASCENDING)])
         collection.ensure_index([("mrt", ASCENDING)])
+        collection.ensure_index([("pt", ASCENDING)])
         
         # Mapping the rules into integers from the rules
         ruleIndex = []
@@ -511,6 +515,12 @@ class TwitterClient(object):
                     mrt = set(inputTweet['mrt'] + i['mrt'])
                 else:
                     mrt = set(inputTweet['mrt'])
+                
+                # Merge columns already in tweet that is not in update tweet
+                oldColumns = list( set(i.keys()) - set(inputTweet.keys()) )                
+                for col in oldColumns:
+                    inputTweet[col] = i[col]
+                    
             inputTweet['mrv'] = list(mrv)
             inputTweet['mrt'] = list(mrt)
             collection.save(inputTweet)
