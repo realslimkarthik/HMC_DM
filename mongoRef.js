@@ -1,6 +1,6 @@
 // Commonly used MongoDB queries:
 
-mongo -h 10.177.54.27/twitter -u HMCUser -authenticationDatabase admin -p Reader
+mongo -u HMCUser -authenticationDatabase admin -p Reader 10.177.54.27/twitter
 
 // Query for getting data after a date:
 db.coll_name.find({'pT': {$gte: new Date('Sep 1, 2014')}})
