@@ -4,10 +4,12 @@ import os
 import json
 import pandas as pd
 import re
-import datetime
+from csv import QUOTE_NONNUMERIC
+from datetime import datetime
+import calendar
 from bs4 import BeautifulSoup
 from pymongo import MongoClient, errors, ASCENDING
-from utility import mkdir_p
+from utility import mkdir_p, daterange
 
 
 
@@ -45,13 +47,13 @@ class InstagramClient(object):
         self._rules = json.loads(rules_file.read())
         rules_file.close()
 
-        self._max_rule = max(v for k, v in self._rules.iteritems())
+        self._max_rule = max(val for val in self._rules.values())
 
         tags_file = open(self._conf.get('instagram', 'tags'))
         self._tags = json.loads(tags_file.read())
         tags_file.close()
 
-        self._max_tag = max(v for k, v in self._tags.iteritems())
+        self._max_tag = max(val for val in self._tags.values())
 
         rules_tags_file = open(self._conf.get('instagram', 'rules_tags'))
         self._rules_tags = json.loads(rules_tags_file.read())
@@ -81,6 +83,89 @@ class InstagramClient(object):
         mongoClient = MongoClient(host, port)
         mongoClient.instagram.authenticate(username, password, source=authDB)
         self.db = mongoClient['instagram']
+
+
+    def countPosts(self, month, year):
+        month = str(month).zfill(2)
+        rules = self._rules
+        reverse_rules = dict((val, key) for key, val in rules.iteritems())
+        rules_tags = self._rules_tags
+        max_rule_index = self._max_rule + 1
+        counts_data = []
+
+        rule_file_name = 'H:\\Data\\RawData_csv\\GNIP\\Instagram\\{0}\\{1}\\COUNTS\\rule_count_full_month_{1}.csv'.format(year, month)
+        mkdir_p('\\'.join(rule_file_name.split('\\')[:-1]))
+        collection_name = str(year) + str(month)
+        collection = self.db[collection_name]
+        start_day = 1
+        _, end_day = calendar.monthrange(int(year), int(month))
+        start_date = datetime.strptime(year + '/' + month + '/' + str(start_day).zfill(2), '%Y/%m/%d')
+        end_date = datetime.strptime(year + '/' + month + '/' + str(end_day).zfill(2), '%Y/%m/%d')
+
+        for i in daterange(start_date, end_date):
+            day = str(i.day).zfill(2)
+            print day
+            query = {'su': {'$gte': start_date, '$lt': end_date}}
+            for rule_index in reverse_rules.keys():
+                query['mrv'] = rule_index
+                rule = reverse_rules[rule_index]
+                rule_count = collection.count(query)
+                tag = rules_tags[rule]
+                if rule_count > 0:
+                    counts_data.append([rule, rule_index, tag, rule_count, day, month])
+
+        df = pd.DataFrame(counts_data, columns=['Rule', 'Rule Index', 'Tag', 'Count', 'Day', 'Month'])
+        df.to_csv(rule_file_name, index=False, quoting=QUOTE_NONNUMERIC)
+
+
+        # rules_dict = {}
+        # rule_file_name = 'H:\\Data\\RawData_csv\\GNIP\\Instagram\\{0}\\{1}\\rule_count_insta{0}_{1}_{2}.csv'
+
+        # tags = self._tags
+        # reverse_tags = dict((val, key) for key, val in tags.iteritems())
+        # max_tag_index = self._max_tag + 1
+        # tags_dict = {}
+        # tag_file_name = 'H:\\Data\\RawData_csv\\GNIP\\Instagram\\{0}\\{1}\\tag_count_insta{0}_{1}_{2}.csv'
+
+        # collection_name = year + month
+        # collection = self.db[collection_name]
+        # start_day, end_day = calendar.monthrange(year, month)
+        # start_date = datetime.strptime(year + '/' + month + '/' + start_day, '%Y/%b/%d')
+        # end_date = datetime.strptime(year + '/' + month + '/' + end_day, '%Y/%b/%d')
+        # for i in daterange(start_date, end_date):
+        #     day = str(i.day).zfill(2)
+        #     rules_day_dict = {}
+        #     tags_day_dict = {}
+        #     query = {'su': {'$ge': start_date, '$lt': end_date}}
+        #     for rule_index in range(1, max_rule_index):
+        #         query['mrv'] = {'$in': [rule_index]}
+        #         rule = reverse_rules[rule_index]
+        #         rule_count = collection.count(query)
+        #         rules_day_dict[rule] = rule_count
+        #         if rules_dict.get(rule):
+        #             rules_dict[rule] += rule_count
+        #         else:
+        #             rules_dict[rule] = rule_count
+
+        #     for tag_index in range(1, max_tag_index):
+        #         query['mrt'] = {'$in': [tag_index]}
+        #         tag = reverse_tags[tag_index]
+        #         tag_count = collection.count(query)
+        #         tags_day_dict[tag] = tag_count
+        #         if tags_dict.get(tag):
+        #             tags_dict[tag] += tag_count
+        #         else:
+        #             tags_dict[tag] = tag_count
+            
+        #     rule_file = rule_file_name.format(year, month, day)
+        #     rules_day_data = [[rule, count] for rule, count in rules_day_dict.iteritems()]
+        #     rules_day_df = DataFrame(rules_day_data, columns=['Rule', 'Count'])
+        #     rules_day_df.to_csv(rule_file)
+
+        #     tag_file = tag_file_name.format(year, month, day)
+        #     tags_day_data = [[tag, count] for tag, count in tags_day_dict.iteritems()]
+        #     tags_day_df = DataFrame(tags_day_data, columns=['Tag', 'Count'])
+        #     tags_day_df.to_csv(tag_file)
 
 
 
