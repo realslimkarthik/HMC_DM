@@ -4,6 +4,7 @@ import json
 import ConfigParser
 import os, errno
 import csv, codecs, cStringIO
+from datetime import timedelta
 
 # =============================================================================================
 # Class to create a unicode based CSV writer
@@ -36,6 +37,13 @@ class CSVUnicodeWriter:
 
 # =============================================================================================
 # Function to emulate mkdir -p in Python
+def daterange(start_date, end_date):
+    for i in range(int((end_date - start_date).days) + 1):
+        yield start_date + timedelta(i)
+
+
+# =============================================================================================
+# Function to emulate mkdir -p in Python
 def mkdir_p(path):
     try:
         os.makedirs(path)
@@ -43,6 +51,7 @@ def mkdir_p(path):
         if exc.errno == errno.EEXIST and os.path.isdir(path):
             pass
         else: raise
+
 
 # =============================================================================================
 # twAggregateByDay("H:\\Data\\RawData\\GNIP\\TwitterHistoricalPowertrack\\September-2014-Master\\")
