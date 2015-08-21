@@ -1,20 +1,27 @@
-# python InstaUploader.py 2015 03 t/f
-# Example InstaUploader.py 2015 03 f
+# python InstaUploader.py [upload|count|backfill] [t/f] year month
+# Example InstaUploader.py upload f 2015 03
 
+import os
 import sys
 import InstagramClient as insta
 
 if __name__ == "__main__":
-    op = sys.argv[1]
-    year = sys.argv[2]
-    month = sys.argv[3]
-    server = sys.argv[4].lower()
+    op = sys.argv[1].lower()
+    server = sys.argv[2].lower()
+    year = sys.argv[3]
+    month = sys.argv[4].zfill(2)
     if server == 't':
         server = True
     elif server == 'f':
         server = False
-    uploader = insta.InstagramClient(year, month, server)
+    instaClient = insta.InstagramClient(year, month, server)
     if op == 'upload':
-        uploader.iterateOverFiles()
+        instaClient.iterateOverFiles()
     elif op == 'count':
-        uploader.countPosts(month, year)
+        instaClient.countPosts(month, year)
+    elif op == 'backfill':
+        backfillPath = 'H:\\Data\\RawData\\GNIP\\Instagram\\Backfill\\'
+        file_list = [backfillPath + file_name for file_name in os.listdir(backfillPath)]
+        for file_name in file_list:
+            if file_name.endswith('.xml'):
+                instaClient.processBackfill(file_name)
