@@ -118,57 +118,6 @@ class InstagramClient(object):
         df.to_csv(rule_file_name, index=False, quoting=QUOTE_NONNUMERIC)
 
 
-        # rules_dict = {}
-        # rule_file_name = 'H:\\Data\\RawData_csv\\GNIP\\Instagram\\{0}\\{1}\\rule_count_insta{0}_{1}_{2}.csv'
-
-        # tags = self._tags
-        # reverse_tags = dict((val, key) for key, val in tags.iteritems())
-        # max_tag_index = self._max_tag + 1
-        # tags_dict = {}
-        # tag_file_name = 'H:\\Data\\RawData_csv\\GNIP\\Instagram\\{0}\\{1}\\tag_count_insta{0}_{1}_{2}.csv'
-
-        # collection_name = year + month
-        # collection = self.db[collection_name]
-        # start_day, end_day = calendar.monthrange(year, month)
-        # start_date = datetime.strptime(year + '/' + month + '/' + start_day, '%Y/%b/%d')
-        # end_date = datetime.strptime(year + '/' + month + '/' + end_day, '%Y/%b/%d')
-        # for i in daterange(start_date, end_date):
-        #     day = str(i.day).zfill(2)
-        #     rules_day_dict = {}
-        #     tags_day_dict = {}
-        #     query = {'su': {'$ge': start_date, '$lt': end_date}}
-        #     for rule_index in range(1, max_rule_index):
-        #         query['mrv'] = {'$in': [rule_index]}
-        #         rule = reverse_rules[rule_index]
-        #         rule_count = collection.count(query)
-        #         rules_day_dict[rule] = rule_count
-        #         if rules_dict.get(rule):
-        #             rules_dict[rule] += rule_count
-        #         else:
-        #             rules_dict[rule] = rule_count
-
-        #     for tag_index in range(1, max_tag_index):
-        #         query['mrt'] = {'$in': [tag_index]}
-        #         tag = reverse_tags[tag_index]
-        #         tag_count = collection.count(query)
-        #         tags_day_dict[tag] = tag_count
-        #         if tags_dict.get(tag):
-        #             tags_dict[tag] += tag_count
-        #         else:
-        #             tags_dict[tag] = tag_count
-            
-        #     rule_file = rule_file_name.format(year, month, day)
-        #     rules_day_data = [[rule, count] for rule, count in rules_day_dict.iteritems()]
-        #     rules_day_df = DataFrame(rules_day_data, columns=['Rule', 'Count'])
-        #     rules_day_df.to_csv(rule_file)
-
-        #     tag_file = tag_file_name.format(year, month, day)
-        #     tags_day_data = [[tag, count] for tag, count in tags_day_dict.iteritems()]
-        #     tags_day_df = DataFrame(tags_day_data, columns=['Tag', 'Count'])
-        #     tags_day_df.to_csv(tag_file)
-
-
-
     def aggregate(self):
         for i in range(1, 31):
             dayPath = self.parts.format(self.year, self.month, str(i).zfill(2))
@@ -313,12 +262,14 @@ class InstagramClient(object):
 
         ruleIndex = set()
         tagIndex = set()
+        if not isinstance(newRecord['mrv'], list):
+            newRecord['mrv'] = newRecord['mrv'].split()
         for r in newRecord['mrv']:
             rule = r.lower()
             try:
                 ruleIndex.add(self._rules[rule])
             except KeyError:
-                print rule
+                print 'rule is ', rule
                 return
             tag = self._rules_tags[rule]
             tagIndex.add(self._tags[tag])
@@ -352,16 +303,12 @@ class InstagramClient(object):
         line = ""
         rawData = {}
         processedData = {}
-        
-        fields_file = open(conf_path.format("insta_fields.json"))
-        fields = json.loads(fields_file.read())
-        fields_file.close()
         date = ""
 
         for i in f.readlines():
             line += i
             if '</entry>' in i:
-                dataLine = self.extract(line, fields)
+                dataLine = self.extract(line)
                 if dataLine is not None:
                     date = dataLine['sourceupdated'].split('T')[0]
                     if date in processedData:
@@ -388,7 +335,7 @@ class InstagramClient(object):
             if not os.path.exists(os.path.dirname(csvFileName)):
                 os.makedirs(os.path.dirname(csvFileName))
 
-            backfillRawFiles(rawData[key], xmlFileName)
+            self.backfillRawFiles(rawData[key], xmlFileName)
             df = pd.DataFrame(processedData[key])
             with open(csvFileName, 'a') as csvfile:
                 df.to_csv(csvfile, sep=',', index=False, header=False)
