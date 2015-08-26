@@ -4,7 +4,7 @@ import json
 import ConfigParser
 import os, errno
 import csv, codecs, cStringIO
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 # =============================================================================================
 # Class to create a unicode based CSV writer
@@ -36,7 +36,17 @@ class CSVUnicodeWriter:
 
 
 # =============================================================================================
-# Function to emulate mkdir -p in Python
+# Function to parse date strings of a given format
+def parseDateString(dateStr):
+    try:
+        date = datetime.strptime(dateStr, '%Y-%m-%dT%H-%M-%SZ')
+    except ValueError:
+        date = datetime.strptime(dateStr, '%Y-%m-%dT%H:%M:%SZ')
+    return date
+
+
+# =============================================================================================
+# Function to emulate range for datetime objects
 def daterange(start_date, end_date):
     for i in range(int((end_date - start_date).days) + 1):
         yield start_date + timedelta(i)
