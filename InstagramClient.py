@@ -9,7 +9,7 @@ from datetime import datetime
 import calendar
 from bs4 import BeautifulSoup
 from pymongo import MongoClient, errors, ASCENDING
-from utility import mkdir_p, daterange
+from utility import mkdir_p, daterange, parseDateString
 
 
 
@@ -259,6 +259,10 @@ class InstagramClient(object):
         for (key, val) in inputTweet.iteritems():
             newKey = fieldsToMongo[key]
             newRecord[newKey] = val
+
+        newRecord['su'] = parseDateString(newRecord['su'])
+        newRecord['p'] = parseDateString(newRecord['p'])
+        newRecord['u'] = parseDateString(newRecord['u'])
 
         ruleIndex = set()
         tagIndex = set()
