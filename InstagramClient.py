@@ -12,7 +12,6 @@ from pymongo import MongoClient, errors, ASCENDING
 from utility import mkdir_p, daterange, parseDateString
 
 
-
 class InstagramClient(object):
 
     """
@@ -144,7 +143,6 @@ class InstagramClient(object):
             if len(i.split('_')) == 4:
                 print i
                 data = self.getData(self.src + i)
-                # fileName = dest + i.split('.')[0] + '.csv'
                 for i in data:
                     self.populateMongo(i)
 
@@ -160,13 +158,6 @@ class InstagramClient(object):
                 dataLine = self.extract(line.decode('utf-8', 'ignore'))
                 if dataLine is not None:
                     count = 1
-                    # if isinstance(dataLine['activityobjectcategory'], list):
-                    #     for i in dataLine['activityobjectcategory']:
-                    #         dataLine['activityobjectcategory' + str(count)] = i
-                    #         count += 1
-                    # else:
-                    #     dataLine['activityobjectcategory1'] = dataLine['activityobjectcategory']
-                    # del(dataLine['activityobjectcategory'])
                     data.append(dataLine)
                 line = ""
         f.close()
